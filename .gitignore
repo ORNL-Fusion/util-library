@@ -1,0 +1,7 @@
+#Emacs old files
+*~
+
+#modules etc
+*.o
+*.mod
+*.a
