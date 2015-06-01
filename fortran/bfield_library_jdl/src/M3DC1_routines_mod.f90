@@ -11,11 +11,12 @@
 !    m3dc1_itime  : time slice to read (0 = vacuum only, 1 = with response)
 !    m3dc1_factor : factor by which to multiply perturbed (linear) part of solution
 !    m3dc1_toroidal_on_err : On error flag from m3dc1 routine, return B=Bt=1
+!    m3dc1_field_type : return total field (0) or perturbed part only (1)
 !-----------------------------------------------------------------------------
 Module M3DC1_routines_mod
 Use kind_mod
 Implicit None
-Integer(iknd) :: m3dc1_itime
+Integer(iknd) :: m3dc1_itime, m3dc1_field_type
 Real(rknd)    :: m3dc1_factor
 Logical :: m3dc1_toroidal_on_err = .false.
 
@@ -60,7 +61,16 @@ Endif
 ! ~~~~~~~~~~~
 Call fio_get_options_f(isrc, ierr)
 Call fio_set_int_option_f(FIO_TIMESLICE, m3dc1_itime, ierr)
-Call fio_set_int_option_f(FIO_PART, FIO_PERTURBED_ONLY, ierr)  !FIO_TOTAL
+If (m3dc1_field_type .eq. 0) Then
+  Write(*,*) 'm3dc1 returning total field'
+  Call fio_set_int_option_f(FIO_PART, FIO_TOTAL, ierr) 
+Elseif (m3dc1_field_type .eq. 1) Then
+  Write(*,*) 'm3dc1 returning perturbed field'
+  Call fio_set_int_option_f(FIO_PART, FIO_PERTURBED_ONLY, ierr)
+Else
+  Write(*,*) 'Bad value for m3dc1_field_type:',m3dc1_field_type  
+Endif
+
 Call fio_set_real_option_f(FIO_LINEAR_SCALE, m3dc1_factor, ierr)
 
 ! read fields
@@ -87,6 +97,7 @@ Call fio_get_field_f(isrc, FIO_MAGNETIC_FIELD, imag, ierr)
 
 
 End Subroutine prepare_m3dc1_fields
+
 
 !-----------------------------------------------------------------------------
 !+ 

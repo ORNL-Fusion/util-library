@@ -17,7 +17,8 @@
 !                     0 -- gfile field only
 !                     1 -- gfile + rmp coil field
 !                     2 -- gfile + Pavel's screened fields with bspline interpolation (not fully implemented!)
-!                     3 -- M3DC1 fields (not fully implemented!)
+!                     3 -- gfile + M3DC1 fields 
+!                     4 -- M3DC1 fields 
 ! 
 !-----------------------------------------------------------------------------
 Module fieldline_follow_mod
@@ -367,7 +368,7 @@ Elseif (bfield_method == 2) Then ! g + screening B-spline
   Br   = bval(1,1) + bval_screened(1,1)
   Bz   = bval(1,2) + bval_screened(1,2)
   Bphi = bval(1,3) + bval_screened(1,3)
-Elseif (bfield_method == 3) Then  ! m3dc1 
+Elseif (bfield_method == 3) Then  ! g + m3dc1 
   phi_tmp(1) = phi
   bval_tmp =0.d0
   Call bfield_geq_bicub(RZ(1),RZ(2),Npts,bval,ierr_b)     
@@ -377,6 +378,12 @@ Elseif (bfield_method == 3) Then  ! m3dc1
   Bz   = bval(1,2)
   Bphi = bval(1,3)
   ierr_rmp = ierr_b + ierr_rmp
+Elseif (bfield_method == 4) Then  ! m3dc1 total field
+  phi_tmp(1) = phi
+  Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),Npts,bval,ierr_rmp)
+  Br   = bval(1,1)
+  Bz   = bval(1,2)
+  Bphi = bval(1,3)
 Else
   Write(*,*) 'Unknown bfield_method in fl_derivs_fun'
   stop
@@ -602,7 +609,7 @@ Do i=1,nsteps
     Br   = bval(1,1) + bval_screened(1,1)
     Bz   = bval(1,2) + bval_screened(1,2)
     Bphi = bval(1,3) + bval_screened(1,3)
-  Elseif (bfield_method == 3) Then  ! m3dc1 
+  Elseif (bfield_method == 3) Then  ! g+m3dc1 
     phi_tmp(1) = phi
     bval_tmp =0.d0
     Call bfield_geq_bicub(RZ(1),RZ(2),1,bval,ierr_b,verbose)     
@@ -612,6 +619,12 @@ Do i=1,nsteps
     Bz   = bval(1,2)
     Bphi = bval(1,3)
     ierr_rmp = ierr_b + ierr_rmp
+  Elseif (bfield_method == 4) Then  ! m3dc1 total field
+    phi_tmp(1) = phi
+    Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),1,bval,ierr_rmp)
+    Br   = bval(1,1)
+    Bz   = bval(1,2)
+    Bphi = bval(1,3)
   Else
     Write(*,*) 'Unknown bfield_method in rk45_fixed_step_integrate_diffuse'
     stop
