@@ -1,0 +1,23 @@
+&settings_nml
+
+!**************************************************************************
+! 2) Magnetic equilibrium data
+!**************************************************************************
+
+
+
+!!gfile_name = '/home/jjl/gfiles/DIII-D/g148712.04101'
+!!rmp_type = 'g3d'
+!!rmp_type = 'm3dc1' ! options: 'g3d', 'g3d+rmpcoil', 'm3dc1'
+!!m3dc1_filename = '/home/jjl/m3dc1/mesh21a_kap6_amu6_d0/C1.h5'
+!!m3dc1_scale_factor = 4.d0
+!!m3dc1_time = 1
+
+gfile_name = '/home/jjl/gfiles/DIII-D/g154929.03750'
+!rmp_type = 'g3d'
+
+rmp_current  = -897.705d0  2362.30d0  3228.76d0  897.705d0  -2362.30d0 -3228.76d0   ! Amps!
+rmp_type = 'g3d+rmpcoil'  ! options: 'g3d', 'g3d+rmpcoil'
+rmp_coil_type = 'd3d_ccoils'
+
+/
