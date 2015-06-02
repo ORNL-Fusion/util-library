@@ -17,8 +17,8 @@
 !                     0 -- gfile field only
 !                     1 -- gfile + rmp coil field
 !                     2 -- gfile + Pavel's screened fields with bspline interpolation (not fully implemented!)
-!                     3 -- gfile + M3DC1 fields 
-!                     4 -- M3DC1 fields 
+!                     3 -- gfile + M3DC1 perturbed field
+!                     4 -- M3DC1 total field
 ! 
 !-----------------------------------------------------------------------------
 Module fieldline_follow_mod

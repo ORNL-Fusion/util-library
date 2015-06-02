@@ -106,14 +106,16 @@ Do ii = 1,Npts
   ! Check for points off grid
   If ( (ir .le. 2) .or. (ir .ge. g_mw - 1) ) Then
     If (myverbose) &
-         Write(*,*) 'bfield_geq: Point off grid in R: R = ',R1(ii),'. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
+         Write(*,'(3(a,f12.3),a)') 'bfield_geq: Point off grid in R: R = ',R1(ii), &
+         '. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
     ierr = 1
     Bout = 0.d0
     return
   Endif
   If ( (iz .le. 1) .or. (iz .ge. g_mh - 1) ) Then
     If (myverbose) &
-         Write(*,*) 'bfield_geq: Point off grid in Z: Z = ',Z1(ii),'. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
+         Write(*,'(3(a,f12.3),a)') 'bfield_geq: Point off grid in Z: Z = ',Z1(ii), &
+         '. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
     ierr = 1
     Bout = 0.d0
     return
@@ -665,14 +667,16 @@ Do ii = 1,Npts
 
   ! Check for points off grid
   If ( (ir .le. 2) .or. (ir .ge. g_mw - 1) ) Then
-    Write(*,*) 'psi_geq: Point off grid in R: R = ',R1(ii),'. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
+    Write(*,'(3(a,f12.3),a)') 'psi_geq: Point off grid in R: R = ',R1(ii),&
+         '. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
     ierr = 1
     psiout(ii:Npts) = 0.d0
     psiNout(ii:Npts) = 0.d0
     return
   Endif
   If ( (iz .le. 1) .or. (iz .ge. g_mh - 1) ) Then
-    Write(*,*) 'psi_geq: Point off grid in Z: Z = ',Z1(ii),'. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
+    Write(*,'(3(a,f12.3),a)') 'psi_geq: Point off grid in Z: Z = ',Z1(ii),&
+         '. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
     ierr = 1
     psiout(ii:Npts) = 0.d0
     psiNout(ii:Npts) = 0.d0
@@ -736,13 +740,15 @@ Do ii = 1,Npts
 
   ! Check for points off grid
   If ( (ir .le. 2) .or. (ir .ge. g_mw - 1) ) Then
-    Write(*,*) 'psi_geq: Point off grid in R: R = ',R1(ii),'. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
+    Write(*,'(3(a,f12.3),a)') 'psi deriv: Point off grid in R: R = ',R1(ii),&
+         '. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
     ierr = 1
     psiout = 0.d0
     return
   Endif
   If ( (iz .le. 1) .or. (iz .ge. g_mh - 1) ) Then
-    Write(*,*) 'psi_geq: Point off grid in Z: Z = ',Z1(ii),'. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
+    Write(*,'(3(a,f12.3),a)') 'psi deriv: Point off grid in Z: Z = ',Z1(ii),&
+         '. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
     ierr = 1
     psiout = 0.d0
     return
