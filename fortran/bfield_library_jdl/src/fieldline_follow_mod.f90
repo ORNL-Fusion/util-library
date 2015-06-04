@@ -23,7 +23,7 @@
 !-----------------------------------------------------------------------------
 Module fieldline_follow_mod
 Implicit None
-Integer :: bfield_method ! Used to select fl derivs
+Integer, Save :: bfield_method = 0 ! Used to select fl derivs
 Contains
 
 !-----------------------------------------------------------------------------

@@ -16,8 +16,9 @@
 Module M3DC1_routines_mod
 Use kind_mod
 Implicit None
-Integer(iknd) :: m3dc1_itime, m3dc1_field_type
-Real(rknd)    :: m3dc1_factor
+Integer(iknd), Save :: m3dc1_itime = -1
+Integer(iknd), Save :: m3dc1_field_type = -1
+Real(rknd), Save    :: m3dc1_factor = 0.d0
 Logical :: m3dc1_toroidal_on_err = .false.
 
 Integer(iknd), Private, Save :: isrc, imag
@@ -60,6 +61,10 @@ Endif
 ! Set options
 ! ~~~~~~~~~~~
 Call fio_get_options_f(isrc, ierr)
+If ( m3dc1_itime == -1 ) Then
+  Write(*,*) 'm3dc1_itime has not been set!',m3dc1_itime
+  Stop
+Endif
 Call fio_set_int_option_f(FIO_TIMESLICE, m3dc1_itime, ierr)
 If (m3dc1_field_type .eq. 0) Then
   Write(*,*) 'm3dc1 returning total field'
@@ -68,9 +73,11 @@ Elseif (m3dc1_field_type .eq. 1) Then
   Write(*,*) 'm3dc1 returning perturbed field'
   Call fio_set_int_option_f(FIO_PART, FIO_PERTURBED_ONLY, ierr)
 Else
-  Write(*,*) 'Bad value for m3dc1_field_type:',m3dc1_field_type  
+  Write(*,*) 'Bad value for m3dc1_field_type:',m3dc1_field_type
+  Stop
 Endif
 
+Write(*,*) 'M3DC1 factor:', m3dc1_factor
 Call fio_set_real_option_f(FIO_LINEAR_SCALE, m3dc1_factor, ierr)
 
 ! read fields
