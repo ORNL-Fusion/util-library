@@ -5,3 +5,6 @@
 *.o
 *.mod
 *.a
+
+#test output files
+fortran/bfield_library_jdl/tests/*.out

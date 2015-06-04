@@ -478,8 +478,8 @@ EndFunction get_bicub_mat
 Subroutine find_xpt_jdl(second,refine,tol,quiet,rx,zx,rx2,zx2)
 ! tol is magnitude of bp at xpt
 Use kind_mod
-Use gfile_var_pass
-Use math_geo_module
+Use gfile_var_pass, Only: g_bdry, g_r, g_z, g_mh, g_mw
+Use math_geo_module, Only: rlinspace
 Implicit None
 Logical, Intent(in) :: second, refine, quiet
 Real(rknd), Intent(in) :: tol
@@ -487,17 +487,19 @@ Real(rknd), Intent(out) :: rx, zx, rx2, zx2
 
 Integer(iknd), Parameter :: niter_max = 15
 Integer(iknd), Parameter :: n1 = 100  ! grid dimension (square)
-Real(rknd), Parameter :: dx1_grid = 0.3d0, dx2_grid = 0.25d0  ! The second one needs to encompass 
-! second xpoint from starting point that is first xpoint flipped about Z=0 (m)
 
-Real(rknd) :: bp(n1,n1), rg(n1,n1), zg(n1,n1), rt(n1), zt(n1)
 Real(rknd), Allocatable :: rtmp(:), ztmp(:),Bout(:,:)
+Real(rknd) :: bp(n1,n1), rg(n1,n1), zg(n1,n1), rt(n1), zt(n1)
+Real(rknd) :: bpx, err, de, bpx2, dx1_grid, dx2_grid
 Integer(iknd) :: icount, i, npts_bdry, ierr, ix,ixjx(2), niter
-Real(rknd) :: bpx, err, de, bpx2
 
 npts_bdry = Size(g_bdry,2)
 Allocate(rtmp(npts_bdry))
 Allocate(ztmp(npts_bdry))
+
+! set search area based on grid size
+dx1_grid = (g_r(g_mw) - g_r(1))*.15  ! These seem to work ok, really should make sure 
+dx2_grid = (g_z(g_mh) - g_z(1))*.15  ! boundary not exceeded by these guesses
 
 ! Throw away zero points
 icount = 0
@@ -523,7 +525,7 @@ ix  = Minloc(Bout(:,1),1)
 rx  = rtmp(ix)
 zx  = ztmp(ix)
 If ( .NOT. quiet) Then
-  Write(*,'(a,3f12.8)') ' Very rough first X-point. [Bp,R,Z] = ',bpx,rx,zx
+  Write(*,'(a,e12.3,2f12.3)') ' Very rough first X-point. [Bp,R,Z] = ',bpx,rx,zx
 Endif
 Deallocate(rtmp,ztmp,Bout)
 
@@ -561,7 +563,7 @@ If (refine) Then
     Endif
   Enddo
   If ( .NOT. quiet ) Then
-    Write(*,'(a,3f18.12)') ' First X-point. [Bp,R,Z] = ',bpx,rx,zx
+    Write(*,'(a,e12.3,2f12.3)') ' 1st X-point. [Bp,R,Z] = ',bpx,rx,zx
   Endif
 Endif
 
@@ -613,7 +615,7 @@ If (second) Then
       Endif
     Enddo
     If ( .NOT. quiet ) Then
-      Write(*,'(a,3f18.12)') ' Second X-point. [Bp,R,Z] = ',bpx2,rx2,zx2
+      Write(*,'(a,e12.3,2f12.3)') ' 2nd X-point. [Bp,R,Z] = ',bpx2,rx2,zx2
     Endif
   Endif
 Endif
