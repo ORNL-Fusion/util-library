@@ -25,9 +25,9 @@ SOURCEPATH = ../src/
 LIBFILE = libbjdl.a
 
 # External library paths and libraries for m3dc1
-LIBDIR_m = -L/home/jjl/m3dc1/install/lib/_X86_64
+LIBDIR_m = -L$(M3DC1_INSTALL_DIR)/lib/_$(M3DC1_ARCH)
 LIBS_m = -lfusionio -lm3dc1_fortran -lm3dc1
-INCLUDE_m = -I/home/jjl/m3dc1/install/include/_X86_64
+INCLUDE_m = -I$(M3DC1_INSTALL_DIR)/include/_$(M3DC1_ARCH)
 
 RANLIB = ranlib
 
@@ -35,14 +35,14 @@ RANLIB = ranlib
 # Dependencies for the libray that use default rule
 OBJS90 = g3d_module.o numerics_module.o fieldline_follow_mod.o\
 g3df_math_routines_mod.o bspline90_22.o NSTX_routines_mod.o bfield_module.o \
-rmp_module.o screening_module.o DIIID_routines_mod.o 
+rmp_module.o screening_module.o DIIID_routines_mod.o util_routines.o
 
 # Dependencies that have their own rules
 OBJS90_SPC = M3DC1_routines_mod.o
 
 # Modules to be compiled which have identically named .f90 files
 MODS90 = g3d_module.mod numerics_module.mod fieldline_follow_mod.mod\
-g3df_math_routines_mod.mod  bfield_module.mod \
+g3df_math_routines_mod.mod  bfield_module.mod util_routines.mod \
 screening_module.mod 
 
 #-----------------------------------------------------------------------
@@ -85,6 +85,7 @@ bspline.mod: bspline90_22.o
 rmpcoil_module.mod: rmp_module.o
 nstx_routines_mod.mod: NSTX_routines_mod.o
 diiid_routines_mod.mod: DIIID_routines_mod.o
+util_routines.mod: kind_mod.mod fieldline_follow_mod.mod
 #-----------------------------------------------------------------------
 # The dash in front of a command means to continue even if that
 # command returns a nonzero error code.
