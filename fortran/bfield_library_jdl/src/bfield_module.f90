@@ -135,13 +135,13 @@ Do i = 1,npts
     RicrRf_y=Ri_z*Rf_x - Ri_x*Rf_z
     RicrRf_z=Ri_x*Rf_y - Ri_y*Rf_x
     
-    RidotRf = Ri_x*Rf_x + Ri_y*Rf_y + Ri_z*Rf_z;
+    RidotRf = Ri_x*Rf_x + Ri_y*Rf_y + Ri_z*Rf_z
     
-    back = Ival(1:nfil)*(Ri_mag+Rf_mag)/(Ri_mag*Rf_mag*(Ri_mag*Rf_mag+RidotRf));
+    back = Ival(1:nfil)*(Ri_mag+Rf_mag)/(Ri_mag*Rf_mag*(Ri_mag*Rf_mag+RidotRf))
     
-    Bx(i) = sum(RicrRf_x*back);
-    By(i) = sum(RicrRf_y*back);
-    Bz(i) = sum(RicrRf_z*back);
+    Bx(i) = sum(RicrRf_x*back)
+    By(i) = sum(RicrRf_y*back)
+    Bz(i) = sum(RicrRf_z*back)
     
 Enddo
 
