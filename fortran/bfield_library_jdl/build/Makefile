@@ -62,6 +62,7 @@ util_routines.mod
 # Dependencies that have their own recipes
 ifeq ($(strip $(USE_M3DC1)),1)
   OBJS90_SPC = M3DC1_routines_mod.o
+  MODS90_SPC = M3DC1_routines_mod.mod
 endif
 
 # Modules to be compiled which have identically named .f90 files
@@ -78,9 +79,9 @@ kind_mod.mod
 .PHONY: debug
 .default: $(LIBFILE)
 
-$(LIBFILE): $(OBJS90) $(OBJS90_SPC) $(OBJS90_PRE)
+$(LIBFILE): $(OBJS90) $(OBJS90_SPC) $(OBJS90_PRE) #$(MODS90) $(MODS90_PRE) $(MODS90_SPC)
 	@echo "Creating "$(LIBFILE)" in directory "$(PWD)
-	$(AR) rc $@ $^ #$(OBJS90) $(OBJS90_SPC)
+	$(AR) rc $@ $(OBJS90) $(OBJS90_SPC) $(OBJS90_PRE)
 	-$(RANLIB) $@
 
 
@@ -98,10 +99,13 @@ $(OBJS90) : %.o :  $(SOURCEPATH)%.f90
 $(OBJS90_PRE) : %.o : $(SOURCEPATH)%.F90
 	$(FCOMP) $(FFLAGS) $(DEFINES) -c $<
 
-$(MODS90_PRE) : %.mod : $(SOURCEPATH)%.F90
-	$(FCOMP) $(FFLAGS) $(DEFINES) -c $<
+#$(MODS90_PRE) : %.mod : $(SOURCEPATH)%.F90
+#	$(FCOMP) $(FFLAGS) $(DEFINES) -c $<
 
 M3DC1_routines_mod.o: %.o : $(SOURCEPATH)%.f90
+	$(FCOMP) $(FFLAGS) -L$(LIBDIR_m3dc1) $(LIBS_m3dc1) -I$(INCLUDE_m3dc1) -c $<
+
+M3DC1_routines_mod.mod: %.mod : $(SOURCEPATH)%.f90
 	$(FCOMP) $(FFLAGS) -L$(LIBDIR_m3dc1) $(LIBS_m3dc1) -I$(INCLUDE_m3dc1) -c $<
 
 #-----------------------------------------------------------------------
