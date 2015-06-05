@@ -397,16 +397,17 @@ Result(inside)
 !
 ! Inputs:
 !   npoly - size of vectors px and py (integer)
-!                                ;  x - The x coordinate of the point.
-!                                ;  y - The y coordinate of the point.
-!                                ; px - The x coordinates of the polygon.
-!                                ; py - The y coordinates of the polygon.
-!                                ;
-!                                ; The return value of the function is 1 if the point is inside the
-!                                ; polygon and 0 if it is outside the polygon.
+!   x - The x coordinate of the point.
+!   y - The y coordinate of the point.
+!   px - The x coordinates of the polygon.
+!   py - The y coordinates of the polygon.
+! 
+!  The return value of the function is 1 if the point is inside the
+!  polygon and 0 if it is outside the polygon.
 
 !
-! Polygon is closed by connecting first and last points
+! Polygon is closed by connecting first and last points. If polygon is already
+! closed this will not affect the results (theta contribution is zero)  
 !
 
 Use kind_mod

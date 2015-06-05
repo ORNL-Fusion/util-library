@@ -4,20 +4,23 @@
 !    to one field method
 !
 !   Contains:
-!     Subroutine calc_sep
-!   
+!     Module util_routines
+!       Subroutine calc_sep
+!       Subroutine find_xpt_jdl
 !-----------------------------------------------------------------------------
 Module util_routines
 Implicit None
 Contains
 
 !-----------------------------------------------------------------------------
-!+ Calculates and outputs approximate curve(s) for the sepatrix
+!+ Calculates approximate curve(s) for the sepatrix
 !-----------------------------------------------------------------------------
-Subroutine calc_sep
+Subroutine calc_sep(second_sep,fname_out)
 !
 ! Description:
-!  Calculates the separatrix curve(s) and outputs to file(s)
+!  Calculates the separatrix curve(s) 
+!
+!  bfield_method must be set first, and a gfile must also have been read
 !
 ! Input:
 ! Output:
@@ -30,23 +33,153 @@ Subroutine calc_sep
 !            6/4/15    Port from matlab
 ! Author(s): J.D. Lore 
 Use kind_mod
-Use fieldline_follow_mod, Only: bfield_method
+Use fieldline_follow_mod, Only: follow_fieldlines_rzphi
+Use gfile_var_pass, Only: g_ip_sign,g_lim,g_limitr,g_r,g_z,g_mw,g_mh
+Use math_geo_module, Only : inside_poly
 Implicit None
 !Input/output
+Logical, Intent(In) :: second_sep
+Character(Len=120),Intent(In) :: fname_out
 ! Local Variables
 Real(rknd) :: rx,zx,rx2,zx2
-Integer(iknd) :: idir
+Integer(iknd) :: idir,maxtries,ii,i,nlim,nbox,in1,in2,nsep1,nsep0,nseps,isep,icount
+Real(rknd), Allocatable, Dimension(:) :: rsep0,zsep0,rsep0_tmp,zsep0_tmp,lim_r,lim_z
+Real(rknd), Allocatable, Dimension(:) :: rsep1,zsep1
+Real(rknd), Allocatable, Dimension(:) ::  box_r,box_z
+! Fl folllowing vars
+Real(rknd), Dimension(1) :: rstart,zstart,phistart
+Integer(iknd), Dimension(1) :: fl_ierr,ilg
+Real(rknd), Allocatable, Dimension(:,:) :: fl_r,fl_z,fl_p
+Real(rknd) :: dphi_fl
+Integer(iknd) :: nsteps_fl
 ! Local Parameters
 Real(rknd), Parameter :: dx = 1.d-3
+Real(rknd), Parameter :: pi = 3.141592653589793238462643383279502_rknd
+Integer(rknd), Parameter :: nsep_div = 1000  ! total number of sep points from fl follow divided by this to output
 !- End of header -------------------------------------------------------------
+
+Open(99,file=fname_out)
+If (second_sep) Then
+  nseps = 3
+Else
+  nseps = 1
+Endif
+Write(99,*) nseps
+
+! Set up boundaries to search
+! 1) gfile lim
+Allocate(lim_r(g_limitr))
+Allocate(lim_z(g_limitr))
+! Throw away zero points 
+nlim = 0
+Do i = 1,g_limitr
+  If (g_lim(1,i) > 1.d-4) Then
+    nlim = nlim + 1
+    lim_r(nlim) = g_lim(1,i)
+    lim_z(nlim) = g_lim(2,i)
+  Endif
+Enddo
+If (nlim == 0) Then
+  Write(*,*) 'Error: could not create limiter bdry in calc_sep'
+  Stop
+Endif
+! 2) box based on gfile domain size
+nbox = 4
+Allocate(box_r(nbox),box_z(nbox))
+box_r = (/g_r(1),g_r(g_mw),g_r(g_mw),g_r(1)/)
+box_z = (/g_z(1),g_z(1),g_z(g_mh),g_z(g_mh)/)
 
 
 Call find_xpt_jdl(.true.,.true.,1.d-8,.false.,rx,zx,rx2,zx2)
-Do idir=-1,1,2
-  Write(*,*) 'Working on direction ',idir
+
+dphi_fl = g_ip_sign*0.1d0*pi/180.d0
+nsteps_fl = Floor(0.3d0*pi/Abs(dphi_fl))  ! Factor of 0.x to stop from leaving grid
+write(*,*) dphi_fl,nsteps_fl
+maxtries = 1000
+Allocate(fl_r(1,nsteps_fl+1),fl_z(1,nsteps_fl+1),fl_p(1,nsteps_fl+1))
+fl_r = 0.d0; fl_z = 0.d0; fl_p = 0.d0
+phistart = 0.d0
+
+Do isep=1,nseps
+  Write(*,*) 'Working on sep ',isep,'of ',nseps
+  Do idir=1,-1,-2
+    Write(*,*) 'Working on direction ',idir
+    If (isep == 1) Then
+      rstart = rx-dx
+      zstart = zx
+    Elseif (isep == 2) Then
+      rstart = rx2
+      zstart = zx2-dx
+    Else
+      rstart = rx2
+      zstart = zx2+dx      
+    Endif
+    
+    Do ii = 1,maxtries
+      Call follow_fieldlines_rzphi(rstart,zstart,phistart,1,dphi_fl*idir,nsteps_fl,fl_r,fl_z,fl_p,fl_ierr,ilg)
+      Allocate(rsep0(nsteps_fl*ii),zsep0(nsteps_fl*ii))
+      If ( ii .gt. 1) Then
+        rsep0 = [rsep0_tmp,fl_r(1,2:nsteps_fl+1)]
+        zsep0 = [zsep0_tmp,fl_z(1,2:nsteps_fl+1)]
+        Deallocate(rsep0_tmp,zsep0_tmp)
+      Else
+        rsep0 = fl_r(1,2:nsteps_fl+1)
+        zsep0 = fl_z(1,2:nsteps_fl+1)
+      Endif
+      rstart = fl_r(1,nsteps_fl+1)
+      zstart = fl_z(1,nsteps_fl+1)
+      
+      in1 = inside_poly(rstart(1),zstart(1),lim_r,lim_z,nlim)
+      in2 = inside_poly(rstart(1),zstart(1),box_r,box_z,nbox)    
+
+      If ( in1 + in2 .NE. 2 ) Exit
+      If ( ii == maxtries ) Then
+        Write(*,*) 'Increase maxtries in calc_sep'
+        Stop
+      Endif
+    
+      Allocate(rsep0_tmp(nsteps_fl*ii),zsep0_tmp(nsteps_fl*ii))
+      rsep0_tmp = rsep0
+      zsep0_tmp = zsep0
+      Deallocate(rsep0,zsep0)
+    Enddo  ! ii to maxtries
+    
+    If (idir == 1) Then
+      nsep1 = nsteps_fl*ii
+      Allocate(rsep1(nsep1),zsep1(nsep1))
+      rsep1 = rsep0
+      zsep1 = zsep0
+      Deallocate(rsep0,zsep0)
+    Endif
+  Enddo
+  ! reverse second direction
+  nsep0 = nsteps_fl*ii
+  rsep0 = rsep0(nsep0:1:-1)
+  zsep0 = zsep0(nsep0:1:-1)
+
+  ! drop last point
+  Write(99,*) (nsep0-1)/((nsep0+nsep1)/nsep_div)+nsep1/((nsep0+nsep1)/nsep_div)+2
+  Do i = 1,nsep0-1,(nsep0+nsep1)/nsep_div
+    Write(99,*) rsep0(i),zsep0(i)
+  Enddo
+  Do i = 1,nsep1,(nsep0+nsep1)/nsep_div
+    Write(99,*) rsep1(i),zsep1(i)    
+  Enddo
+  Deallocate(rsep1,zsep1)
 Enddo
 
+Close(99)
+Deallocate(fl_r,fl_z,fl_p)
+Deallocate(lim_r,lim_z,box_r,box_z)
+
+
 End Subroutine calc_sep
+
+
+
+
+
+
 
 !-----------------------------------------------------------------------------
 !+ Find x-point(s) from gfile or m3dc1 field
@@ -60,6 +193,7 @@ Use gfile_var_pass, Only: g_bdry, g_r, g_z, g_mh, g_mw
 Use math_geo_module, Only: rlinspace
 Use fieldline_follow_mod, Only: bfield_method
 Use m3dc1_routines_mod, Only: bfield_m3dc1
+Use g3d_module, Only: bfield_geq_bicub
 Implicit None
 Logical, Intent(in) :: second, refine, quiet
 Real(rknd), Intent(in) :: tol

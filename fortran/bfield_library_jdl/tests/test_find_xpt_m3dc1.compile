@@ -1,0 +1,1 @@
+gfortran test_find_xpt_m3dc1.f90 -L/home/jjl/util-library/fortran/bfield_library_jdl/build -lbjdl -I/home/jjl/util-library/fortran/bfield_library_jdl/build -L/home/jjl/m3dc1/install/lib/_X86_64 -lfusionio -lm3dc1  -lstdc++ -lz -lhdf5
