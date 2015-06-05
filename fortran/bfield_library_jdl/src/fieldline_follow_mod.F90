@@ -326,7 +326,9 @@ Use g3d_module, Only : bfield_geq_bicub
 Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
 Use bfield_module, Only : bfield_bs_cyl
+#ifdef HAVE_M3DC1
 Use m3dc1_routines_mod, Only : bfield_m3dc1
+#endif
 Implicit None
 Real(rknd), Intent(In) :: phi
 Integer(iknd), Intent(In) :: n
@@ -368,6 +370,7 @@ Elseif (bfield_method == 2) Then ! g + screening B-spline
   Br   = bval(1,1) + bval_screened(1,1)
   Bz   = bval(1,2) + bval_screened(1,2)
   Bphi = bval(1,3) + bval_screened(1,3)
+#ifdef HAVE_M3DC1
 Elseif (bfield_method == 3) Then  ! g + m3dc1 
   phi_tmp(1) = phi
   bval_tmp =0.d0
@@ -384,6 +387,7 @@ Elseif (bfield_method == 4) Then  ! m3dc1 total field
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
+#endif
 Else
   Write(*,*) 'Unknown bfield_method in fl_derivs_fun'
   stop
@@ -525,7 +529,10 @@ Use gfile_var_pass, Only : g_rmaxis, g_zmaxis
 Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
 Use bfield_module, Only : bfield_bs_cyl
+#ifdef HAVE_M3DC1
 Use m3dc1_routines_mod, Only : bfield_m3dc1
+#endif
+Use phys_const, Only : pi
 Implicit None
 
 
@@ -535,7 +542,6 @@ Real(rknd), Parameter :: nfac_diff = 3.d0
 Real(rknd), Parameter :: sigtheta = 20.d0*3.1415d0/180.d0
 Real(rknd)  :: theta, phi_factor, pol_factor
 
-Real(rknd), Parameter :: pi = 3.141592653589793238462643383279502_rknd
 Real(rknd), Intent(In), Dimension(n) :: y0
 Integer(iknd), Intent(In) :: n, nsteps
 Real(rknd), Intent(In) :: x0, dx, dmag
@@ -609,6 +615,7 @@ Do i=1,nsteps
     Br   = bval(1,1) + bval_screened(1,1)
     Bz   = bval(1,2) + bval_screened(1,2)
     Bphi = bval(1,3) + bval_screened(1,3)
+#ifdef HAVE_M3DC1
   Elseif (bfield_method == 3) Then  ! g+m3dc1 
     phi_tmp(1) = phi
     bval_tmp =0.d0
@@ -625,6 +632,7 @@ Do i=1,nsteps
     Br   = bval(1,1)
     Bz   = bval(1,2)
     Bphi = bval(1,3)
+#endif    
   Else
     Write(*,*) 'Unknown bfield_method in rk45_fixed_step_integrate_diffuse'
     stop

@@ -40,6 +40,7 @@ Subroutine bfield_bspline(rvec,pvec,zvec,Npts,Bout,ierr)
 ! Modules used:
 Use kind_mod                  ! Import rknd, iknd specifications
 Use bspline
+Use phys_const, Only: pi
 Implicit None
 
 ! Input/output                      !See above for descriptions
@@ -53,8 +54,6 @@ Integer(iknd) :: ii
 Real(rknd) :: rr,zz,pp
 Real(rknd) :: dAr_dz,dAr_dp,dAz_dr,dAz_dp,dAp_dr,dAp_dz,Aphi_local
 Real(rknd) :: Br,Bz,Bphi
-
-Real(rknd), Parameter :: pi = 3.141592653589793238462643383279502_rknd
 
 !- End of header -------------------------------------------------------------
 
@@ -234,11 +233,11 @@ End Subroutine read_spline_data
 Subroutine read_Afiles(Afile_path)
 Use kind_mod
 Use math_geo_module
+Use phys_const, Only: pi
 Implicit None
 Character(Len=200), Intent(in) :: Afile_path
 Character(Len=200) :: fname
 Integer(iknd) :: i,j,k
-Real(rknd), Parameter :: pi = 3.141592653589793238462643383279502d0
 
 Write(*,*) 'Reading Afile data from:',Afile_path
 

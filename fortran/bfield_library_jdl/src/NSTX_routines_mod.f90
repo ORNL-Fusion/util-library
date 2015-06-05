@@ -40,6 +40,7 @@ Subroutine build_nstx_rwmcoils_jl(taper,ntorpts,coil,current,ncoil_pts)
 ! 
 ! JDL
 Use kind_mod
+Use phys_const, Only : pi
 Implicit None
 
 Real(rknd), Intent(in) :: taper(6)
@@ -50,7 +51,6 @@ Real(rknd),Intent(out) :: coil(6*(2*ntorpts+1),3),current(6*(2*ntorpts+1))
 Integer(iknd) :: npts,nturn,i,j
 Real(rknd) :: phicens(6),phiext,R(2),Z(2),phi(ntorpts),taper2(6)
 
-Real(rknd),parameter :: pi = 3.14159265358979323846_rknd 
 
 !if (size(taper) .eq. 1)
 !    taper = taper*[1,-1,1,-1,1,-1];

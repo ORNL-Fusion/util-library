@@ -4,10 +4,10 @@
 !
 !   Contains:
 !     Subroutine build_d3d_ccoils_jl
+!     Subroutine build_d3d_icoils_jl
 !   
 !-----------------------------------------------------------------------------
 Module DIIID_routines_mod
-Use kind_mod
 Implicit None
 Contains
 
@@ -48,6 +48,7 @@ Subroutine build_d3d_ccoils_jl(taper,ntorpts,coil,current,ncoil_pts)
 ! Author(s): J.D. Lore
 !  -- Built on code by J.M. Canik and M. Schaffer
 Use kind_mod
+Use phys_const, Only: pi  
 Implicit None
 
 Real(rknd), Intent(in) :: taper(6)
@@ -58,7 +59,6 @@ Real(rknd),Intent(out) :: coil(6*(2*ntorpts+1),3),current(6*(2*ntorpts+1))
 Integer(iknd) :: npts,nturn,i,j
 Real(rknd) :: phicens(6),phiext,R(2),Z(2),phi(ntorpts),taper2(6)
 
-Real(rknd),parameter :: pi = 3.14159265358979323846_rknd 
 !- End of header -------------------------------------------------------------
 
 npts = 2*ntorpts + 1
@@ -132,6 +132,7 @@ Subroutine build_d3d_icoils_jl(taper,ntorpts,coil,current,ncoil_pts)
 ! Author(s): J.D. Lore
 !  -- Built on code by J.M. Canik and M. Schaffer
 Use kind_mod
+Use phys_const, Only: pi  
 Implicit None
 Integer, Parameter :: nc = 12
 Real(rknd), Intent(in) :: taper(nc)
@@ -141,8 +142,6 @@ Real(rknd),Intent(out) :: coil(nc*(2*ntorpts+1),3),current(nc*(2*ntorpts+1))
 
 Integer(iknd) :: npts,nturn,i,j
 Real(rknd) :: phicens(nc),phiext,R(2),Z(2),phi(ntorpts),taper2(nc)
-
-Real(rknd),parameter :: pi = 3.14159265358979323846_rknd 
 !- End of header -------------------------------------------------------------
 
 npts = 2*ntorpts + 1

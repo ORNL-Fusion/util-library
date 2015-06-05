@@ -1,26 +1,4 @@
 !-----------------------------------------------------------------------------
-!+ Kind specifications
-!-----------------------------------------------------------------------------
-Module kind_mod
-!
-! Description:
-!   This module contains the kind specifications for all subroutines 
-!   and modules.
-!
-! History:
-! Version   Date      Comment
-! -------   ----      -------
-!  1.0     04/12/2011   Adapted from PENTA.  JL
-! 
-! Author(s): J. Lore 7/2009 - 4/12/2011
-!
-  Implicit none
-  Integer, parameter :: rknd = selected_real_kind(15,307) 
-  Integer, parameter :: iknd = selected_int_kind(8)       
-End module kind_mod
-!- End of header -------------------------------------------------------------
-
-!-----------------------------------------------------------------------------
 !+ Math/geometric routines
 !-----------------------------------------------------------------------------
 Module math_geo_module
@@ -411,7 +389,7 @@ Result(inside)
 !
 
 Use kind_mod
-
+Use phys_const, Only : pi
 Implicit none
 
 Real(rknd), Intent(in) :: x,y
@@ -423,8 +401,6 @@ Integer(iknd) :: inside
 ! Local variables
 Real(rknd), Dimension(npoly+1) :: tmp_px, tmp_py
 Real(rknd), Dimension(npoly) :: theta,dp,cp
-
-Real(rknd),parameter :: pi = 3.14159265358979323846_rknd  
 
 !- End of header -------------------------------------------------------------
 

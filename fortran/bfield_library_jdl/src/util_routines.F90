@@ -36,6 +36,7 @@ Use kind_mod
 Use fieldline_follow_mod, Only: follow_fieldlines_rzphi
 Use gfile_var_pass, Only: g_ip_sign,g_lim,g_limitr,g_r,g_z,g_mw,g_mh
 Use math_geo_module, Only : inside_poly
+Use phys_const, Only: pi
 Implicit None
 !Input/output
 Logical, Intent(In) :: second_sep
@@ -54,7 +55,6 @@ Real(rknd) :: dphi_fl
 Integer(iknd) :: nsteps_fl
 ! Local Parameters
 Real(rknd), Parameter :: dx = 1.d-3
-Real(rknd), Parameter :: pi = 3.141592653589793238462643383279502_rknd
 Integer(rknd), Parameter :: nsep_div = 1000  ! total number of sep points from fl follow divided by this to output
 !- End of header -------------------------------------------------------------
 
@@ -192,8 +192,11 @@ Use kind_mod
 Use gfile_var_pass, Only: g_bdry, g_r, g_z, g_mh, g_mw
 Use math_geo_module, Only: rlinspace
 Use fieldline_follow_mod, Only: bfield_method
+#ifdef HAVE_M3DC1
 Use m3dc1_routines_mod, Only: bfield_m3dc1
+#endif
 Use g3d_module, Only: bfield_geq_bicub
+Use phys_const, Only: pi
 Implicit None
 Logical, Intent(in) :: second, refine, quiet
 Real(rknd), Intent(in) :: tol
@@ -208,7 +211,6 @@ Real(rknd) :: bp(n1,n1), rg(n1,n1), zg(n1,n1), rt(n1), zt(n1)
 Real(rknd) :: bpx, err, de, bpx2, dx1_grid, dx2_grid, my_phi_eval
 Integer(iknd) :: icount, i, npts_bdry, ierr, ix,ixjx(2), niter
 ! Local parameters               
-Real(rknd),parameter :: pi = 3.14159265358979323846_rknd
 !- End of header -------------------------------------------------------------
 my_phi_eval = 0.d0
 If (present(phi_eval_deg)) Then
@@ -274,6 +276,7 @@ If (refine) Then
       ztmp(:) = zt(i)            
       If (bfield_method == 0 ) Then      ! g only
         Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
+#ifdef HAVE_M3DC1        
       Elseif ( bfield_method ==  3) Then ! g + m3dc1 
         phi_tmp(:) = my_phi_eval
         Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)     
@@ -282,6 +285,7 @@ If (refine) Then
       Elseif (bfield_method == 4) Then  ! m3dc1 total field
         phi_tmp(:) = my_phi_eval
         Call bfield_m3dc1(rt,phi_tmp,ztmp,n1,Bout,ierr)
+#endif        
       Else
         Write(*,*) 'Bad value for bfield_method in find_xpt_jdl'
         Stop
@@ -340,6 +344,7 @@ If (second) Then
         ztmp(:) = zt(i)
         If (bfield_method == 0 ) Then      ! g only
           Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
+#ifdef HAVE_M3DC1
         Elseif ( bfield_method ==  3) Then ! g + m3dc1 
           phi_tmp(:) = my_phi_eval
           Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)     
@@ -348,6 +353,7 @@ If (second) Then
         Elseif (bfield_method == 4) Then  ! m3dc1 total field
           phi_tmp(:) = my_phi_eval
           Call bfield_m3dc1(rt,phi_tmp,ztmp,n1,Bout,ierr)
+#endif          
         Else
           Write(*,*) 'Bad value for bfield_method in find_xpt_jdl'
           Stop
