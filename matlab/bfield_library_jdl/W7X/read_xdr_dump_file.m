@@ -1,0 +1,100 @@
+function b = read_xdr_dump_file(out_path,fname)
+% clearvars;
+
+% out_path = 'C:\Work\Stellarator\ALL_W7X_WORK\xdr_dump_read\OUTPUT\';
+% fname = 'field181x181x96.w7x.1000_1000_1000_1000_+0750_+0750.vac.out';
+
+
+
+
+% check for mat file, create it if it does not exist
+fn_mat = [out_path,fname(1:end-3),'mat'];
+if exist(fn_mat) ~= 2
+    fn_out = [out_path,fname];
+    disp('Loading data from .out file and writing .mat file');
+    fid = fopen(fn_out,'r');
+    i1 = fscanf(fid,'%i',1);
+    i2 = fscanf(fid,'%i',1);
+    rnull = fscanf(fid,'%f',1);
+    ronull = fscanf(fid,'%f',1);
+    eta = fscanf(fid,'%f',1);
+    fnull = fscanf(fid,'%f',1);
+    nperio = fscanf(fid,'%i',1);
+    ialfa = fscanf(fid,'%i',1);
+    knull = fscanf(fid,'%i',1);
+    iganz = fscanf(fid,'%i',1);
+    ampby0 = fscanf(fid,'%f',1);
+    bz0 = fscanf(fid,'%f',1);
+    bfak = fscanf(fid,'%f',1);
+    k2 = fscanf(fid,'%i',1);
+    iald21 = fscanf(fid,'%i',1);
+    
+    brg = zeros(iald21,k2,k2);
+    bfg = zeros(iald21,k2,k2);
+    bzg = zeros(iald21,k2,k2);
+    
+    disp('Reading Bgrid info (probably going to take forever)')
+    for iz=1:k2
+        for ir=1:k2
+            for i=1:iald21
+                brg(i,ir,iz) = fscanf(fid,'%f',1);
+            end
+        end
+    end
+    disp('Done with brg')
+    for iz=1:k2
+        for ir=1:k2
+            for i=1:iald21
+                bfg(i,ir,iz) = fscanf(fid,'%f',1);
+            end
+        end
+    end
+    disp('Done with bfg')
+    for iz=1:k2
+        for ir=1:k2
+            for i=1:iald21
+                bzg(i,ir,iz) = fscanf(fid,'%f',1);
+            end
+        end
+    end    
+    disp('Done with bzg')
+    
+    fclose(fid);
+    
+    disp('Saving .mat file')
+    save(fn_mat);
+    
+    
+    
+else
+    disp('Loading data from .mat file');
+    load(fn_mat);
+end
+
+b.fname = fname;
+b.i1 = i1;
+b.i2 = i2;
+b.rnull = rnull;
+b.ronull = ronull;
+b.eta = eta;
+b.fnull = fnull;
+b.nperio = nperio;
+b.ialfa = ialfa;
+b.knull = knull;
+b.iganz = iganz;
+b.ampby0 = ampby0;
+b.bz0 = bz0;
+b.bfak = bfak;
+b.k2 = k2;
+b.iald21 = iald21;
+b.brg = brg;
+b.bfg = bfg;
+b.bzg = bzg;
+
+
+if iganz ~= 0
+    error('I think this means no stellarator symmetry!')
+end
+if iganz ~= 0 | ampby0 ~= 0 | bz0 ~= 0 | fnull ~= 1
+    error('old variables I have assumed have these values')
+end
