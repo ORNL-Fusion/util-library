@@ -31,6 +31,7 @@ ifeq ($(strip $(USE_M3DC1)),1)
   DEFINES = -DHAVE_M3DC1
   LIBDIR_m3dc1 = $(M3DC1_INSTALL_DIR)/lib/_$(M3DC1_ARCH)
   LIBS_m3dc1 = -lfusionio -lm3dc1_fortran -lm3dc1
+#  LIBS_m3dc1_full = libfusionio.a libm3dc1_fortran.a libm3dc1.a
   INCLUDE_m3dc1 = $(M3DC1_INSTALL_DIR)/include/_$(M3DC1_ARCH)
 endif
 
@@ -79,9 +80,10 @@ kind_mod.mod
 .PHONY: debug
 .default: $(LIBFILE)
 
-$(LIBFILE): $(OBJS90) $(OBJS90_SPC) $(OBJS90_PRE) #$(MODS90) $(MODS90_PRE) $(MODS90_SPC)
+$(LIBFILE): 
+$(LIBFILE): $(OBJS90) $(OBJS90_SPC) $(OBJS90_PRE) 
 	@echo "Creating "$(LIBFILE)" in directory "$(PWD)
-	$(AR) rc $@ $(OBJS90) $(OBJS90_SPC) $(OBJS90_PRE)
+	$(AR) rc $@ $^
 	-$(RANLIB) $@
 
 
@@ -90,8 +92,10 @@ debug: $(LIBFILE)
 
 #-----------------------------------------------------------------------
 
-$(MODS90) : %.mod : $(SOURCEPATH)%.f90
-	$(FCOMP) $(FFLAGS) -c $<
+#$(MODS90) : %.mod : $(SOURCEPATH)%.f90
+#	$(FCOMP) $(FFLAGS) -c $<
+
+$(MODS90) $(MODS90_PRE) M3DC1_routines_mod.mod : %.mod : %.o
 
 $(OBJS90) : %.o :  $(SOURCEPATH)%.f90
 	$(FCOMP) $(FFLAGS) -c $<
@@ -105,8 +109,8 @@ $(OBJS90_PRE) : %.o : $(SOURCEPATH)%.F90
 M3DC1_routines_mod.o: %.o : $(SOURCEPATH)%.f90
 	$(FCOMP) $(FFLAGS) -L$(LIBDIR_m3dc1) $(LIBS_m3dc1) -I$(INCLUDE_m3dc1) -c $<
 
-M3DC1_routines_mod.mod: %.mod : $(SOURCEPATH)%.f90
-	$(FCOMP) $(FFLAGS) -L$(LIBDIR_m3dc1) $(LIBS_m3dc1) -I$(INCLUDE_m3dc1) -c $<
+#M3DC1_routines_mod.mod: %.mod : $(SOURCEPATH)%.f90
+#	$(FCOMP) $(FFLAGS) -L$(LIBDIR_m3dc1) $(LIBS_m3dc1) -I$(INCLUDE_m3dc1) -c $<
 
 #-----------------------------------------------------------------------
 bfield_module.o bfield_module.mod:   kind_mod.mod

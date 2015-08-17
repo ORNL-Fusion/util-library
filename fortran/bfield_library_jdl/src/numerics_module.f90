@@ -10,7 +10,10 @@ Contains
 !+ Quicksort
 !------------------------------------------------------------------------------
 Recursive Subroutine quicksort(array,narray, order)
-! Order should be an integer array 1:narray
+  ! order must be an integer "index" array. order=[1:narray]
+  ! When finished, order is an index array that will order the
+  ! original array. I.e., array_orig(order) = array_sorted
+  ! Also, array2(order) = array_sorted will equal array_orig
 Use kind_mod
 Integer(iknd), Intent(in) :: narray
 Real(rknd), Intent(inout)  :: array(narray)
