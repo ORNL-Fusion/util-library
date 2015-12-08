@@ -17,7 +17,7 @@
 # The following flags should work for the gfortran compiler
 FCOMP = gfortran
 FFLAGS = -O3
-FFLAGS_DEBUG = -g -Wall -frange-check -fbounds-check 
+FFLAGS_DEBUG = -g -frange-check -fbounds-check -Wall -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fcheck=all -fbacktrace
 
 USE_M3DC1 = 1  # Set to 1 to compile with m3dc1
 

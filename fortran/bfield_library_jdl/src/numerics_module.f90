@@ -2,7 +2,6 @@
 !+ Math/geometric routines
 !-----------------------------------------------------------------------------
 Module math_geo_module
-Use kind_mod
 Implicit None
 Contains
 
@@ -14,13 +13,13 @@ Recursive Subroutine quicksort(array,narray, order)
   ! When finished, order is an index array that will order the
   ! original array. I.e., array_orig(order) = array_sorted
   ! Also, array2(order) = array_sorted will equal array_orig
-Use kind_mod
-Integer(iknd), Intent(in) :: narray
-Real(rknd), Intent(inout)  :: array(narray)
-Integer(iknd), Intent(inout)  :: order(narray)
+Use kind_mod, Only: real64, int32
+Integer(int32), Intent(in) :: narray
+Real(real64), Intent(inout)  :: array(narray)
+Integer(int32), Intent(inout)  :: order(narray)
 
-Integer(iknd) :: left, right, itemp, marker
-Real(rknd) :: temp, pivot
+Integer(int32) :: left, right, itemp, marker
+Real(real64) :: temp, pivot
 
 If (narray .le. 1) Return
 
@@ -64,20 +63,21 @@ Subroutine int_curve_curve(rline1,zline1,nline1,rline2,zline2,nline2,first,pint1
 ! First curve is stepped and both curves linearly interpolated
 ! Curve is defined by array of points
 ! JL 2/2011
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Implicit None
 Logical, Intent(in) :: first
-Integer(iknd), Intent(in) :: nline1, nline2
-Real(rknd), Intent(in) :: rline1(nline1), zline1(nline1), rline2(nline2), zline2(nline2)
-Real(rknd), Intent(out) :: pint1(2)
-Integer(iknd), Intent(out) :: ierr, found_ind1, found_ind2, int_count
+Integer(int32), Intent(in) :: nline1, nline2
+Real(real64), Intent(in) :: rline1(nline1), zline1(nline1), rline2(nline2), zline2(nline2)
+Real(real64), Intent(out) :: pint1(2)
+Integer(int32), Intent(out), Optional :: ierr, found_ind1, found_ind2, int_count
 
-Integer(iknd) :: ii1, ii2
-Real(rknd) :: p1(2), p2(2), p3(2), p4(2), dL1, dL2, dR1, dZ1, theta1, u1, u2
+Integer(int32) :: ii1, ii2
+Integer(int32) :: ierr_0, found_ind1_0, found_ind2_0, int_count_0
+Real(real64) :: p1(2), p2(2), p3(2), p4(2), dL1, dL2, dR1, dZ1, theta1, u1, u2
 
-int_count = 0
-found_ind1 = 0
-found_ind2 = 0
+int_count_0 = 0
+found_ind1_0 = 0
+found_ind2_0 = 0
 
 Do ii1 = 1,nline1 - 1
   p1 = [rline1(ii1),zline1(ii1)]
@@ -95,20 +95,30 @@ Do ii1 = 1,nline1 - 1
       dZ1 = p2(2)-p1(2)
       theta1 = Atan2(dZ1,dR1)
       pint1 = [dL1*u1*Cos(theta1)+p1(1),dL1*u1*Sin(theta1)+p1(2)]
-      ierr = 0
-      found_ind1 = ii1
-      found_ind2 = ii2
-      int_count = int_count + 1
-      If (first) Return 
+      ierr_0 = 0
+      found_ind1_0 = ii1
+      found_ind2_0 = ii2
+      int_count_0 = int_count_0 + 1
+      If (first) Then
+        If (Present(ierr)) ierr = ierr_0
+        If (Present(found_ind1)) found_ind1 = found_ind1_0
+        If (Present(found_ind2)) found_ind2 = found_ind2_0
+        If (Present(int_count)) int_count = int_count_0
+        Return
+      Endif
     Endif
   Enddo
 Enddo
 
-If (int_count .eq. 0) Then
+If (int_count_0 .eq. 0) Then
     pint1 = [0.d0,0.d0]
-    ierr = 1
+    ierr_0 = 1
+    If (Present(ierr)) ierr = ierr_0
+    If (Present(found_ind1)) found_ind1 = found_ind1_0
+    If (Present(found_ind2)) found_ind2 = found_ind2_0
+    If (Present(int_count)) int_count = int_count_0    
 Endif
-If (int_count > 1) Then
+If (int_count_0 > 1) Then
     Write(*,*) 'Warning: More than one intersection found in int_line_curve. Returning last point'
 Endif
 
@@ -121,16 +131,16 @@ End Subroutine int_curve_curve
 Subroutine int_line_curve(p1,p2,rline,zline,nline,first,pint1,ierr,found_ind,int_count)
 ! Curve is defined by array of points, L by p1,p2
 ! JL 2/2011
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Implicit None
 Logical, Intent(in) :: first
-Integer(iknd), Intent(in) :: nline
-Real(rknd), Intent(in) :: p1(2), p2(2), rline(nline), zline(nline)
-Real(rknd), Intent(out) :: pint1(2)
-Integer(iknd), Intent(out) :: ierr, found_ind, int_count
+Integer(int32), Intent(in) :: nline
+Real(real64), Intent(in) :: p1(2), p2(2), rline(nline), zline(nline)
+Real(real64), Intent(out) :: pint1(2)
+Integer(int32), Intent(out) :: ierr, found_ind, int_count
 
-Integer(iknd) :: ii
-Real(rknd) :: p3(2), p4(2), dL1, dL2, dR1, dZ1, theta1, u1, u2
+Integer(int32) :: ii
+Real(real64) :: p3(2), p4(2), dL1, dL2, dR1, dZ1, theta1, u1, u2
 
 int_count = 0
 found_ind = 0
@@ -175,16 +185,16 @@ Subroutine int_two_lines(p1,p2,p3,p4,u1,u2)
 ! between p1 and p2 of the intersection, and between p3 and p4.  This
 ! distance is normalized to the length of the lines.
 
-Use kind_mod
+Use kind_mod, Only: real64
 implicit none
 
-Real(rknd), Intent(in),Dimension(2) :: p1,p2,p3,p4
-Real(rknd), intent(out) :: u1,u2
-Real(rknd) :: denom
+Real(real64), Intent(in),Dimension(2) :: p1,p2,p3,p4
+Real(real64), intent(out) :: u1,u2
+Real(real64) :: denom
 
 denom = (p4(2)-p3(2))*(p2(1)-p1(1)) - (p4(1)-p3(1))*(p2(2)-p1(2))
 
-if ( denom .eq. 0._rknd ) then 
+if ( denom .eq. 0._real64 ) then 
   u1 = 1.d30
   u2 = 1.d30
 else
@@ -202,15 +212,15 @@ Subroutine move_L_on_C(L,rline,zline,nline,ic_near_L,err_near_L,R_L,Z_L)
 ! arrays rline,zline.  dL is defined as the
 ! linear distance between curve points.
 ! JL 2/2011
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Implicit None
-Integer(iknd), Intent(in) :: nline
-Real(rknd), Intent(in) :: L, rline(nline), zline(nline)
-Real(rknd), Intent(out) :: err_near_L, R_L, Z_L
-Integer(iknd), Intent(out) :: ic_near_L
+Integer(int32), Intent(in) :: nline
+Real(real64), Intent(in) :: L, rline(nline), zline(nline)
+Real(real64), Intent(out) :: err_near_L, R_L, Z_L
+Integer(int32), Intent(out) :: ic_near_L
 
-Real(rknd) :: dL(nline), Ltot, SumL(nline), delt(nline), diff, theta, dL_step
-Integer(iknd) :: ind_diff, ii, i
+Real(real64) :: dL(nline), Ltot, SumL(nline), delt(nline), diff, theta, dL_step
+Integer(int32) :: ind_diff, ii, i
 
 dL = 0.d0
 dL(2:nline) = Sqrt( (rline(1:nline-1)-rline(2:nline))**2 + (zline(1:nline-1)-zline(2:nline))**2 )
@@ -264,14 +274,14 @@ End Subroutine move_L_on_C
 !+ Linear interpolation
 !------------------------------------------------------------------------------
 Subroutine linear_interp(xarr,yarr,narr,xin,yout,ierr)
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Implicit None
-Integer(iknd), Intent(In) :: narr
-Real(rknd), Intent(In) :: xarr(narr), yarr(narr), xin
-Integer(iknd), Intent(Out) :: ierr
-Real(rknd), Intent(Out) :: yout
+Integer(int32), Intent(In) :: narr
+Real(real64), Intent(In) :: xarr(narr), yarr(narr), xin
+Integer(int32), Intent(Out) :: ierr
+Real(real64), Intent(Out) :: yout
 
-Integer(iknd) :: j
+Integer(int32) :: j
 
 Call locate_bisect(xarr,narr,xin,j,ierr)
 
@@ -294,13 +304,13 @@ Subroutine locate_bisect(xarr,narr,x,j,ierr)
 ! If x is off the table (including exactly equal to end values!) then
 !  j is set to 0 (off left end) or narr (off right end)
 !
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Implicit None
-Integer(iknd), Intent(In) :: narr
-Real(rknd), Intent(In) :: xarr(narr), x
-Integer(iknd), Intent(Out) :: j, ierr
+Integer(int32), Intent(In) :: narr
+Real(real64), Intent(In) :: xarr(narr), x
+Integer(int32), Intent(Out) :: j, ierr
 Logical :: test1
-Integer(iknd) :: jlo, jup, jmid
+Integer(int32) :: jlo, jup, jmid
 ierr = 0
 jlo = 0
 jup = narr + 1
@@ -351,23 +361,23 @@ Result(rlinvec)
 ! Author(s): J. Lore 07/2009 - 7/18/2011
 !
 ! Modules used:
-Use kind_mod                ! Import rknd, iknd specifications
+Use kind_mod, Only: real64, int32
 
 Implicit None
 
 ! Input/output                      !See above for descriptions
-Real(rknd),    Intent(in) :: xstart  
-Real(rknd),    Intent(in) :: xend
-Integer(iknd), Intent(in) :: numel
-Real(rknd)                :: rlinvec(numel)
+Real(real64),    Intent(in) :: xstart  
+Real(real64),    Intent(in) :: xend
+Integer(int32), Intent(in) :: numel
+Real(real64)                :: rlinvec(numel)
 
 ! Local scalars
-Integer(iknd)   ::  ii
+Integer(int32)   ::  ii
 !- End of header -------------------------------------------------------------
 
 Do ii = 1,numel
-  rlinvec(ii) = ( Real(ii,rknd) - 1._rknd ) * ( xend - xstart ) &
-       / ( numel - 1._rknd ) + xstart
+  rlinvec(ii) = ( Real(ii,real64) - 1._real64 ) * ( xend - xstart ) &
+       / ( numel - 1._real64 ) + xstart
 Enddo
 
 EndFunction rlinspace
@@ -391,19 +401,19 @@ Result(inside)
 ! closed this will not affect the results (theta contribution is zero)  
 !
 
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Use phys_const, Only : pi
 Implicit none
 
-Real(rknd), Intent(in) :: x,y
-Integer(iknd), Intent(in) :: npoly
-Real(rknd), Dimension(npoly), Intent(in) :: px,py
+Real(real64), Intent(in) :: x,y
+Integer(int32), Intent(in) :: npoly
+Real(real64), Dimension(npoly), Intent(in) :: px,py
 
-Integer(iknd) :: inside
+Integer(int32) :: inside
 
 ! Local variables
-Real(rknd), Dimension(npoly+1) :: tmp_px, tmp_py
-Real(rknd), Dimension(npoly) :: theta,dp,cp
+Real(real64), Dimension(npoly+1) :: tmp_px, tmp_py
+Real(real64), Dimension(npoly) :: theta,dp,cp
 
 !- End of header -------------------------------------------------------------
 

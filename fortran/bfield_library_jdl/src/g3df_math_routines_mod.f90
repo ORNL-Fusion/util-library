@@ -10,9 +10,6 @@ Module g3df_math_routines_mod
 ! -------   ----      -------
 !  1.0     04/19/2011  Ported from PENTA.  JL
 ! Author(s): J. Lore 07/2009 - 4/19/2011
-!
-! Modules used:
-Use kind_mod                ! Import rknd, iknd specifications       
 
 Implicit None
 
@@ -25,14 +22,14 @@ Contains
 !!$Result(p)
 !!$!
 !!$! JDL 5/24/2013
-!!$Use kind_mod
+!!$Use kind_mod, Only: int32, real64
 !!$Implicit None
-!!$Real(rknd), Intent(in), Dimension(n) :: x,y
-!!$Integer(iknd), Intent(in) :: n,degree
-!!$Real(rknd), Dimension(degree+1) :: p
+!!$Real(real64), Intent(in), Dimension(n) :: x,y
+!!$Integer(int32), Intent(in) :: n,degree
+!!$Real(real64), Dimension(degree+1) :: p
 !!$
-!!$Real(rknd), Dimension(n,degree+1) :: Vander, Vander_inv
-!!$Integer(iknd) :: i, inv_err
+!!$Real(real64), Dimension(n,degree+1) :: Vander, Vander_inv
+!!$Integer(int32) :: i, inv_err
 !!$
 !!$!- End of header -------------------------------------------------------------
 !!$
@@ -71,20 +68,20 @@ Subroutine FINDInv(matrix, inverse, n, errorflag)
 !   modified by JL 7/2009 for kind precision
 !   "            " 8/31/10 to for free form and match PENTA formatting
 
-Use kind_mod
+Use kind_mod, Only: int32, real64
 
 Implicit None
   
 !Declarations
-Integer(iknd), Intent(In) :: n
-Integer(iknd), Intent(Out) :: errorflag  !Return error status. -1 for error, 0 for normal
-Real(rknd), Intent(In), Dimension(n,n) :: matrix  !Input matrix
-Real(rknd), Intent(Out), Dimension(n,n) :: inverse !Inverted matrix
+Integer(int32), Intent(In) :: n
+Integer(int32), Intent(Out) :: errorflag  !Return error status. -1 for error, 0 for normal
+Real(real64), Intent(In), Dimension(n,n) :: matrix  !Input matrix
+Real(real64), Intent(Out), Dimension(n,n) :: inverse !Inverted matrix
     
 Logical :: FLAG = .TRUE.
-Integer(iknd) :: i, j, k
-Real(rknd) :: m
-Real(rknd), Dimension(n,2*n) :: augmatrix !augmented matrix
+Integer(int32) :: i, j, k
+Real(real64) :: m
+Real(real64), Dimension(n,2*n) :: augmatrix !augmented matrix
 !- End of header -------------------------------------------------------------
 
 ! Augment input matrix with an identity matrix
@@ -93,19 +90,19 @@ Do i = 1, n
   If (j <= n ) Then
     augmatrix(i,j) = matrix(i,j)
   ElseIf ((i+n) == j) Then
-    augmatrix(i,j) = 1._rknd
+    augmatrix(i,j) = 1._real64
   Else
-    augmatrix(i,j) = 0._rknd
+    augmatrix(i,j) = 0._real64
   Endif
   EndDo
 EndDo
     
 ! Reduce augmented matrix to upper traingular form
 Do k =1, n-1
-  If (augmatrix(k,k) == 0._rknd) Then
+  If (augmatrix(k,k) == 0._real64) Then
     FLAG = .FALSE.
     Do i = k+1, n
-      If (augmatrix(i,k) /= 0._rknd) Then
+      If (augmatrix(i,k) /= 0._real64) Then
         Do j = 1,2*n
           augmatrix(k,j) = augmatrix(k,j)+augmatrix(i,j)
         EndDo
@@ -114,8 +111,8 @@ Do k =1, n-1
       Endif
       If (FLAG .EQV. .FALSE.) Then
         Write(*,*) "Matrix is non - invertible"
-        inverse = 0._rknd
-        errorflag = -1_iknd
+        inverse = 0._real64
+        errorflag = -1_int32
         Return
       EndIf
     EndDo
@@ -132,8 +129,8 @@ EndDo
 Do i = 1, n
   If (augmatrix(i,i) == 0) Then
     Write(*,*) "Matrix is non - invertible"
-    inverse = 0._rknd
-    errorflag = -1_iknd
+    inverse = 0._real64
+    errorflag = -1_int32
     Return
   EndIf
 EndDo
@@ -162,7 +159,7 @@ Do i =1, n
     inverse(i,j) = augmatrix(i,j+n)
   EndDo
 EndDo
-errorflag = 0_iknd
+errorflag = 0_int32
 End Subroutine FINDinv
 
 
@@ -178,17 +175,17 @@ Subroutine Inversion_LU(A,Y,n,err)
 ! no implicit variables
 ! QQ add error flag
 
-Use kind_mod
+Use kind_mod, Only: int32, real64
 
 Implicit None
 
-Integer(iknd), Intent(in) :: n
+Integer(int32), Intent(in) :: n
 
-Real(rknd) ::  A(n,n)   !real matrix (n x n)
-Real(rknd) ::  A1(n,n)  !copy of matrix A
-Real(rknd) ::  Y(n,n)   !real matrix (n x n)
-Integer(iknd) ::  INDX(n)  !integer vector (n)
-Integer(iknd) ::  d, rc, i, j, err
+Real(real64) ::  A(n,n)   !real matrix (n x n)
+Real(real64) ::  A1(n,n)  !copy of matrix A
+Real(real64) ::  Y(n,n)   !real matrix (n x n)
+Integer(int32) ::  INDX(n)  !integer vector (n)
+Integer(int32) ::  d, rc, i, j, err
 !- End of header -------------------------------------------------------------
 
 ! Initialize Error flag
@@ -257,15 +254,15 @@ Subroutine LUDCMP(A,N,INDX,D,CODE)
 !
 ! Modifications by JL to conform to PENTA standards
 
-Use kind_mod
+Use kind_mod, Only: int32, real64
 
 Implicit None
 
-Integer(iknd), Parameter :: NMAX = 100_iknd
-Real(rknd), Parameter ::    TINY = 1.5e-18_rknd
+Integer(int32), Parameter :: NMAX = 100_int32
+Real(real64), Parameter ::    TINY = 1.5e-18_real64
 
-REAL(rknd) ::  AMAX,DUM, SUM, A(N,N),VV(NMAX)
-INTEGER(iknd) ::  CODE, D, INDX(N), N, imax, k, j, i
+REAL(real64) ::  AMAX,DUM, SUM, A(N,N),VV(NMAX)
+INTEGER(int32) ::  CODE, D, INDX(N), N, imax, k, j, i
 !- End of header -------------------------------------------------------------
 
 D = 1 
@@ -282,7 +279,7 @@ Do I=1,N
     CODE = 1
     Return
   EndIf
-  VV(I) = 1._rknd / AMAX
+  VV(I) = 1._real64 / AMAX
 EndDo ! i loop
 
 Do J = 1,N
@@ -293,7 +290,7 @@ Do J = 1,N
     EndDo ! k loop
     A(I,J) = SUM
   EndDo ! i loop
-  AMAX = 0._rknd
+  AMAX = 0._real64
   Do I = J,N
     SUM = A(I,J)
     Do K=1,J-1
@@ -323,7 +320,7 @@ Do J = 1,N
   EndIf
 
   If ( J /= N ) Then
-    DUM = 1._rknd / A(J,J)
+    DUM = 1._real64 / A(J,J)
     Do I = J+1,N
       A(I,J) = A(I,J)*DUM
     EndDo ! i loop
@@ -350,11 +347,11 @@ Subroutine LUBKSB(A,N,INDX,B)
 !
 ! Modifications by JL to conform to PENTA standards
 
-Use kind_mod
+Use kind_mod, Only: int32, real64
 
 Implicit None
-Real(rknd) ::  SUM, A(N,N),B(N)
-Integer(iknd) ::  INDX(N), ii, i, ll, j, n
+Real(real64) ::  SUM, A(N,N),B(N)
+Integer(int32) ::  INDX(N), ii, i, ll, j, n
 !- End of header -------------------------------------------------------------
 
 II = 0
@@ -367,7 +364,7 @@ Do I = 1,N
     Do J=II,I-1
       SUM = SUM - A(I,J)*B(J)
     EndDo ! j loop
-  ElseIf ( SUM /= 0._rknd ) Then
+  ElseIf ( SUM /= 0._real64 ) Then
     II = I
   EndIf
   B(I) = SUM

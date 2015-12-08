@@ -4,7 +4,6 @@
 !   
 !-----------------------------------------------------------------------------
 Module NSTX_routines_mod
-Use kind_mod
 Implicit None
 Contains
 
@@ -39,25 +38,18 @@ Subroutine build_nstx_rwmcoils_jl(taper,ntorpts,coil,current,ncoil_pts)
 !      are multiplied by -1 below to give the proper field orientation.
 ! 
 ! JDL
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Use phys_const, Only : pi
 Implicit None
 
-Real(rknd), Intent(in) :: taper(6)
-Integer(iknd), Intent(in) :: ntorpts
-Integer(iknd), Intent(out) :: ncoil_pts  
-Real(rknd),Intent(out) :: coil(6*(2*ntorpts+1),3),current(6*(2*ntorpts+1))
+Real(real64), Intent(in) :: taper(6)
+Integer(int32), Intent(in) :: ntorpts
+Integer(int32), Intent(out) :: ncoil_pts  
+Real(real64),Intent(out) :: coil(6*(2*ntorpts+1),3),current(6*(2*ntorpts+1))
 
-Integer(iknd) :: npts,nturn,i,j
-Real(rknd) :: phicens(6),phiext,R(2),Z(2),phi(ntorpts),taper2(6)
+Integer(int32) :: npts,nturn,i,j
+Real(real64) :: phicens(6),phiext,R(2),Z(2),phi(ntorpts),taper2(6)
 
-
-!if (size(taper) .eq. 1)
-!    taper = taper*[1,-1,1,-1,1,-1];
-!end
-!if nargin < 2 
-!    ntorpts = 5;
-!end
 npts = 2*ntorpts + 1
 ncoil_pts = 6*npts
 
@@ -72,13 +64,13 @@ nturn = 2
 coil = 0.d0
 current = 0.d0
 
-taper2 = -Real(nturn,rknd)*taper;  ! Minus sign accounts for the handedness of the coils as I have 
+taper2 = -Real(nturn,real64)*taper;  ! Minus sign accounts for the handedness of the coils as I have 
                        ! defined them relative to the 'real' orientation described above.
 		       ! I.e., the returned coils are CW as viewed from outside NSTX.
 
 Do i = 0,5
   Do j = 1,ntorpts
-    phi(j) = phiext*real(j-1,rknd)/real(ntorpts-1,rknd) + phicens(i+1) - phiext/2.d0
+    phi(j) = phiext*real(j-1,real64)/real(ntorpts-1,real64) + phicens(i+1) - phiext/2.d0
   Enddo
 
     coil(i*npts+1:i*npts+ntorpts,1) = R(1)*cos(phi)

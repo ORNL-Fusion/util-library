@@ -28,16 +28,16 @@ Subroutine build_d3d_ccoils_jl(taper,ntorpts,coil,current,ncoil_pts)
 !    of machine geographical toroidal angle.  <-- Following M. Schaffer routines
 !
 ! Input:
-!  taper : rknd(6) : The coil currents in Amps.  Number of turns (4) is applied in the routine
-!  ntorpts : iknd : number of toroidal points used to generate the coils.  (4 was used in Shaffer's routine)
+!  taper : real64(6) : The coil currents in Amps.  Number of turns (4) is applied in the routine
+!  ntorpts : int32 : number of toroidal points used to generate the coils.  (4 was used in Shaffer's routine)
 !
 ! Output:
-!  coil : rknd(ncoil_pts,3) : Array of coil filament beginning and end points,
+!  coil : real64(ncoil_pts,3) : Array of coil filament beginning and end points,
 !                             in Cartesian coordinates (m), second index is (1,2,3) = x,y,z
-!  current : rknd(ncoil_pts) : The current (in Amp-turns) corresponding to the current filaments. 
+!  current : real64(ncoil_pts) : The current (in Amp-turns) corresponding to the current filaments. 
 !                              The filament defined from coil(i,:) to coil(i+1,:) has a current
 !                              set by current(i). The last value of array current is not used.  
-!  ncoil_pts : iknd : number of coil points
+!  ncoil_pts : int32 : number of coil points
 !
 ! Calls:
 !
@@ -47,17 +47,17 @@ Subroutine build_d3d_ccoils_jl(taper,ntorpts,coil,current,ncoil_pts)
 !   
 ! Author(s): J.D. Lore
 !  -- Built on code by J.M. Canik and M. Schaffer
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Use phys_const, Only: pi  
 Implicit None
 
-Real(rknd), Intent(in) :: taper(6)
-Integer(iknd), Intent(in) :: ntorpts
-Integer(iknd), Intent(out) :: ncoil_pts  
-Real(rknd),Intent(out) :: coil(6*(2*ntorpts+1),3),current(6*(2*ntorpts+1))
+Real(real64), Intent(in) :: taper(6)
+Integer(int32), Intent(in) :: ntorpts
+Integer(int32), Intent(out) :: ncoil_pts  
+Real(real64),Intent(out) :: coil(6*(2*ntorpts+1),3),current(6*(2*ntorpts+1))
 
-Integer(iknd) :: npts,nturn,i,j
-Real(rknd) :: phicens(6),phiext,R(2),Z(2),phi(ntorpts),taper2(6)
+Integer(int32) :: npts,nturn,i,j
+Real(real64) :: phicens(6),phiext,R(2),Z(2),phi(ntorpts),taper2(6)
 
 !- End of header -------------------------------------------------------------
 
@@ -75,11 +75,11 @@ nturn = 4
 coil = 0.d0
 current = 0.d0
 
-taper2 = real(nturn,rknd)*taper
+taper2 = real(nturn,real64)*taper
 
 Do i = 0,5
   Do j = 1,ntorpts
-    phi(j) = phiext*real(j-1,rknd)/real(ntorpts-1,rknd) + phicens(i+1) - phiext/2.d0
+    phi(j) = phiext*real(j-1,real64)/real(ntorpts-1,real64) + phicens(i+1) - phiext/2.d0
   Enddo
     coil(i*npts+1:i*npts+ntorpts,1) = R(1)*cos(phi)
     coil(i*npts+1:i*npts+ntorpts,2) = R(1)*sin(phi)
@@ -112,16 +112,16 @@ Subroutine build_d3d_icoils_jl(taper,ntorpts,coil,current,ncoil_pts)
 !    of machine geographical toroidal angle.  <-- Following M. Shaffer routines
 !
 ! Input:
-!  taper : rknd(12) : The coil currents in Amps.  Number of turns (1) is applied in the routine
-!  ntorpts : iknd : number of toroidal points used to generate the coils.  (6 was used in Schaffer's routine)
+!  taper : real64(12) : The coil currents in Amps.  Number of turns (1) is applied in the routine
+!  ntorpts : int32 : number of toroidal points used to generate the coils.  (6 was used in Schaffer's routine)
 !
 ! Output:
-!  coil : rknd(ncoil_pts,3) : Array of coil filament beginning and end points,
+!  coil : real64(ncoil_pts,3) : Array of coil filament beginning and end points,
 !                             in Cartesian coordinates (m), second index is (1,2,3) = x,y,z
-!  current : rknd(ncoil_pts) : The current (in Amp-turns) corresponding to the current filaments. 
+!  current : real64(ncoil_pts) : The current (in Amp-turns) corresponding to the current filaments. 
 !                              The filament defined from coil(i,:) to coil(i+1,:) has a current
 !                              set by current(i). The last value of array current is not used.  
-!  ncoil_pts : iknd : number of coil points
+!  ncoil_pts : int32 : number of coil points
 !
 ! Calls:
 !
@@ -131,17 +131,17 @@ Subroutine build_d3d_icoils_jl(taper,ntorpts,coil,current,ncoil_pts)
 !   
 ! Author(s): J.D. Lore
 !  -- Built on code by J.M. Canik and M. Schaffer
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Use phys_const, Only: pi  
 Implicit None
 Integer, Parameter :: nc = 12
-Real(rknd), Intent(in) :: taper(nc)
-Integer(iknd), Intent(in) :: ntorpts
-Integer(iknd), Intent(out) :: ncoil_pts  
-Real(rknd),Intent(out) :: coil(nc*(2*ntorpts+1),3),current(nc*(2*ntorpts+1))
+Real(real64), Intent(in) :: taper(nc)
+Integer(int32), Intent(in) :: ntorpts
+Integer(int32), Intent(out) :: ncoil_pts  
+Real(real64),Intent(out) :: coil(nc*(2*ntorpts+1),3),current(nc*(2*ntorpts+1))
 
-Integer(iknd) :: npts,nturn,i,j
-Real(rknd) :: phicens(nc),phiext,R(2),Z(2),phi(ntorpts),taper2(nc)
+Integer(int32) :: npts,nturn,i,j
+Real(real64) :: phicens(nc),phiext,R(2),Z(2),phi(ntorpts),taper2(nc)
 !- End of header -------------------------------------------------------------
 
 npts = 2*ntorpts + 1
@@ -153,22 +153,22 @@ phicens = (/-32.7d0,-87.3d0,-152.7d0,-207.3d0,-272.7d0,-327.3d0, &
 phicens = phicens*pi/180.d0
 phiext = 51.72d0*pi/180.d0               ! Toroidal extent of each coil
 ! 2003
-R = (/2.184d0,2.394d0/)                  ! Major radius of coil  --- Upper coil, lower just invert and flip Z
-Z = (/1.012d0,0.504d0/)                 ! Vertical extent of coil.
+!R = (/2.184d0,2.394d0/)                  ! Major radius of coil  --- Upper coil, lower just invert and flip Z
+!Z = (/1.012d0,0.504d0/)                 ! Vertical extent of coil.
 ! 2006 'revised'
-!R = (/2.164d0,2.373d0/)                  ! Major radius of coil  --- Upper coil, lower just invert and flip Z
-!Z = (/1.016d0,0.504d0/)                 ! Vertical extent of coil.
+R = (/2.164d0,2.373d0/)                  ! Major radius of coil  --- Upper coil, lower just invert and flip Z
+Z = (/1.016d0,0.504d0/)                 ! Vertical extent of coil.
 nturn = 1
 
 coil = 0.d0
 current = 0.d0
 
-taper2 = -1.d0*Real(nturn,rknd)*taper   ! -1 accounts for DIII-D convention
+taper2 = -1.d0*Real(nturn,real64)*taper   ! -1 accounts for DIII-D convention
 
 ! UPPER COILS
 Do i = 0,5
   Do j = 1,ntorpts
-    phi(j) = phiext*real(j-1,rknd)/real(ntorpts-1,rknd) + phicens(i+1) - phiext/2.d0
+    phi(j) = phiext*real(j-1,real64)/real(ntorpts-1,real64) + phicens(i+1) - phiext/2.d0
   Enddo
     coil(i*npts+1:i*npts+ntorpts,1) = R(1)*cos(phi)
     coil(i*npts+1:i*npts+ntorpts,2) = R(1)*sin(phi)
@@ -183,7 +183,7 @@ Enddo
 ! LOWER COILS
 Do i = 6,11
   Do j = 1,ntorpts
-    phi(j) = phiext*real(j-1,rknd)/real(ntorpts-1,rknd) + phicens(i+1) - phiext/2.d0
+    phi(j) = phiext*real(j-1,real64)/real(ntorpts-1,real64) + phicens(i+1) - phiext/2.d0
   Enddo
     coil(i*npts+1:i*npts+ntorpts,1) = R(2)*cos(phi)
     coil(i*npts+1:i*npts+ntorpts,2) = R(2)*sin(phi)

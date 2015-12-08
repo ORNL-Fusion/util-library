@@ -2,30 +2,23 @@
 !+ Module for physical constants used in several routines
 !-----------------------------------------------------------------------------
 Module phys_const
-
 !
 ! Description:
 !   This module contains physical constant parameters.
-!
-! History:
-! Version   Date      Comment
-! -------   ----      -------
-!  1.0     01/7/2009   Original Code.  JL
-!  1.1     5/24/2010   Updated for PENTA3. JL 
 ! 
-! Author(s): J. Lore 7/2009 - 5/24/2010 
+! Author(s): J. Lore 7/2009 - 12/7/2015
 !     
   ! Modules used:
-  Use kind_mod         ! Import rknd, iknd specifications
+  Use kind_mod, Only : real64
 
   Implicit none
 
   ! Scalar parameters
-  Real(rknd),parameter :: p_mass = 1.672621637e-27_rknd      !proton mass
-  Real(rknd),parameter :: e_mass = 9.10938215e-31_rknd       !electron mass
-  Real(rknd),parameter :: elem_charge = 1.602176487e-19_rknd !elem. charge 
-  Real(rknd),parameter :: eps0 = 8.854187817e-12_rknd        !electric const
-  Real(rknd),parameter :: pi = 3.14159265358979323846_rknd   !pi
+  Real(real64),parameter :: p_mass = 1.672621637e-27_real64      !proton mass
+  Real(real64),parameter :: e_mass = 9.10938215e-31_real64       !electron mass
+  Real(real64),parameter :: elem_charge = 1.602176487e-19_real64 !elem. charge 
+  Real(real64),parameter :: eps0 = 8.854187817e-12_real64        !electric const
+  Real(real64),parameter :: pi = 3.14159265358979323846_real64   !pi
 End module phys_const
 
 !- End of header -------------------------------------------------------------

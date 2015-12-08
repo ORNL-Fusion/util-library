@@ -52,15 +52,6 @@
 !
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-module numeric
-
-  integer, parameter :: sgl = kind(1.0)
-  integer, parameter :: dbl = kind(1.0d0)
-
-end module numeric
-
-
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -120,16 +111,16 @@ contains
 !            sequence.  (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in) :: nx, kxord
 
-    real(kind=dbl), dimension(nx), intent(in)        :: xvec
-    real(kind=dbl), dimension(nx+kxord), intent(out) :: xknot
+    real(kind=real64), dimension(nx), intent(in)        :: xvec
+    real(kind=real64), dimension(nx+kxord), intent(out) :: xknot
 
-    real(kind=dbl) :: eps
+    real(kind=real64) :: eps
     integer        :: ix
     logical        :: first = .true.
 
@@ -138,7 +129,7 @@ contains
 
     if (first) then
        first=.false.
-       eps = epsilon(1.0_dbl)
+       eps = epsilon(1.0_real64)
 !       write(6,*) "subroutine dbsnak: "
 !       write(6,*) "eps = ",eps
     endif
@@ -160,12 +151,12 @@ contains
        end do
     else
        do ix = kxord+1, nx
-          xknot(ix) = 0.5_dbl * (xvec(ix-kxord/2) + xvec(ix-kxord/2-1))
+          xknot(ix) = 0.5_real64 * (xvec(ix-kxord/2) + xvec(ix-kxord/2-1))
        end do
     endif
 
     do ix = nx+1, nx+kxord
-       xknot(ix) = xvec(nx) * (1.0_dbl + eps)
+       xknot(ix) = xvec(nx) * (1.0_real64 + eps)
     end do
 
   end subroutine dbsnak
@@ -194,19 +185,19 @@ contains
 !            coefficients.  (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                          :: nx, kx
-    real(kind=dbl), dimension(nx), intent(in)    :: xdata, xvec
-    real(kind=dbl), dimension(nx+kx), intent(in) :: xknot
-    real(kind=dbl), dimension(nx), intent(out)   :: bcoef
+    real(kind=real64), dimension(nx), intent(in)    :: xdata, xvec
+    real(kind=real64), dimension(nx+kx), intent(in) :: xknot
+    real(kind=real64), dimension(nx), intent(out)   :: bcoef
 
     integer                                :: nxp1, kxm1, kpkm2, leftx, lenq
     integer                                :: ix, ik,ilp1mx, jj, iflag
-    real(kind=dbl)                         :: xveci
-    real(kind=dbl), dimension((2*kx-1)*nx) :: work
+    real(kind=real64)                         :: xveci
+    real(kind=real64), dimension((2*kx-1)*nx) :: work
 
 
     nxp1  = nx + 1
@@ -216,7 +207,7 @@ contains
     lenq  = nx * (kx + kxm1)
 
     do ix = 1, lenq
-       work(ix) = 0.0_dbl
+       work(ix) = 0.0_real64
     end do
 
     do  ix = 1, nx
@@ -281,19 +272,19 @@ contains
 !   dbsval - value of the spline at x.  (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                          :: nx, kx
-    real(kind=dbl)                               :: dbsval
-    real(kind=dbl)                               :: x
-    real(kind=dbl), dimension(nx+kx), intent(in) :: xknot
-    real(kind=dbl), dimension(nx), intent(in)    :: bcoef
+    real(kind=real64)                               :: dbsval
+    real(kind=real64)                               :: x
+    real(kind=real64), dimension(nx+kx), intent(in) :: xknot
+    real(kind=real64), dimension(nx), intent(in)    :: bcoef
 
     integer                       :: il, ik, ix, leftx
-    real(kind=dbl)                :: save1, save2
-    real(kind=dbl), dimension(kx) :: work, dl, dr
+    real(kind=real64)                :: save1, save2
+    real(kind=real64), dimension(kx) :: work, dl, dr
 
 !
 !     check if xknot(i) <= xknot(i+1) and calculation of i so that
@@ -367,19 +358,19 @@ contains
 !            (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                          :: iderx, kx, nx
-    real(kind=dbl)                               :: dbsder
-    real(kind=dbl), intent(in)                   :: x
-    real(kind=dbl), dimension(nx+kx), intent(in) :: xknot
-    real(kind=dbl), dimension(nx), intent(in)    :: bcoef
+    real(kind=real64)                               :: dbsder
+    real(kind=real64), intent(in)                   :: x
+    real(kind=real64), dimension(nx+kx), intent(in) :: xknot
+    real(kind=real64), dimension(nx), intent(in)    :: bcoef
 
     integer                       :: ix, ik, il, leftx
-    real(kind=dbl)                :: save, save1, save2, y, sum, dik
-    real(kind=dbl), dimension(kx) :: work, dl, dr,bsp
+    real(kind=real64)                :: save, save1, save2, y, sum, dik
+    real(kind=real64), dimension(kx) :: work, dl, dr,bsp
 
 !
 !     check if xknot(i) <= xknot(i+1) and calculation of i so that
@@ -430,12 +421,12 @@ contains
 
     elseif ((iderx .ge. 1) .and. (iderx .lt. kx)) then
 
-       bsp(1) = 1.0_dbl
+       bsp(1) = 1.0_real64
        do ik = 1,kx-iderx-1
           dr(ik) = xknot(leftx+ik) - x
           dl(ik) = x - xknot(leftx+1-ik)
           save   = bsp(1)
-          bsp(1) = 0.0_dbl
+          bsp(1) = 0.0_real64
           do il = 1, ik
              y         = save / (dr(il) + dl(ik+1-il))
              bsp(il)   = bsp(il) + dr(il) * y
@@ -451,7 +442,7 @@ contains
        end do
 
        do ik = 1, iderx
-          dik   = dble(kx - ik)
+          dik   = Real(kx - ik,real64)
           save2 = work(ik)
           do il = ik+1, kx
              save1    = work(il)
@@ -460,7 +451,7 @@ contains
           end do
        end do
 
-       sum = 0.0_dbl
+       sum = 0.0_real64
 
        do ix = 1, kx-iderx
           sum = sum + bsp(ix) * work(iderx+ix)
@@ -469,7 +460,7 @@ contains
        dbsder = sum
 
     else
-       dbsder = 0.0_dbl
+       dbsder = 0.0_real64
     endif
 
   end function dbsder
@@ -503,21 +494,21 @@ contains
 !            xvec.  (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                           :: iderx, nxvec, kx, nx
-    real(kind=dbl), dimension(nxvec), intent(in)  :: xvec
-    real(kind=dbl), dimension(nx), intent(in)     :: bcoef
-    real(kind=dbl), dimension(nx+kx), intent(in)  :: xknot
-    real(kind=dbl), dimension(nxvec), intent(out) :: val
+    real(kind=real64), dimension(nxvec), intent(in)  :: xvec
+    real(kind=real64), dimension(nx), intent(in)     :: bcoef
+    real(kind=real64), dimension(nx+kx), intent(in)  :: xknot
+    real(kind=real64), dimension(nxvec), intent(out) :: val
 
     integer                             :: i, il, ik, ix
     integer, dimension(nxvec)           :: leftx
-    real(kind=dbl)                      :: dik
-    real(kind=dbl), dimension(nxvec,kx) :: dl, dr, biatx, work
-    real(kind=dbl), dimension(nxvec)    :: save1, save2, term
+    real(kind=real64)                      :: dik
+    real(kind=real64), dimension(nxvec,kx) :: dl, dr, biatx, work
+    real(kind=real64), dimension(nxvec)    :: save1, save2, term
 
     logical :: same, next
 
@@ -562,15 +553,15 @@ contains
     if (iderx .eq. 0) then
 
        do ix = 1,nxvec
-          biatx(ix,1) = 1._dbl
-          val(ix)     = 0._dbl
+          biatx(ix,1) = 1._real64
+          val(ix)     = 0._real64
        end do
 
        do ik = 1, kx-1
           do ix = 1, nxvec
              dr(ix,ik) = xknot(leftx(ix)+ik) - xvec(ix)
              dl(ix,ik) = xvec(ix) - xknot(leftx(ix)+1-ik)
-             save1(ix) = 0._dbl
+             save1(ix) = 0._real64
           end do
 
           do il = 1, ik
@@ -596,8 +587,8 @@ contains
     elseif ((iderx .ge. 1) .and. (iderx .lt. kx)) then
 
        do ix = 1, nxvec
-          biatx(ix,1) = 1._dbl
-          val(ix)     = 0._dbl
+          biatx(ix,1) = 1._real64
+          val(ix)     = 0._real64
        end do
 
        do ik = 1, kx-iderx-1
@@ -605,7 +596,7 @@ contains
              dr(ix,ik)   = xknot(leftx(ix)+ik) - xvec(ix)
              dl(ix,ik)   = xvec(ix) - xknot(leftx(ix)+1-ik)
              save1(ix)    = biatx(ix,1)
-             biatx(ix,1) = 0.0_dbl
+             biatx(ix,1) = 0.0_real64
              do il = 1, ik
                 term(ix)       = save1(ix)                                    &
                      &                 / (dr(ix,il) + dl(ix,ik+1-il))
@@ -625,7 +616,7 @@ contains
        end do
 
        do ik = 1, iderx
-          dik   = dble(kx - ik)
+          dik   = Real(kx - ik,real64)
           do ix = 1, nxvec
              save2(ix) = work(ix,ik)
              do il = ik+1, kx
@@ -646,7 +637,7 @@ contains
     else
 
        do ix = 1, nxvec
-          val(ix) = 0.0_dbl
+          val(ix) = 0.0_real64
        end do
 
     endif
@@ -682,19 +673,19 @@ contains
 !            (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                          :: iderx, kx, nx
-    real(kind=dbl)                               :: dbsdca
-    real(kind=dbl), intent(in)                   :: x
-    real(kind=dbl), dimension(nx+kx), intent(in) :: xknot
-    real(kind=dbl), dimension(nx), intent(in)    :: bcoef
+    real(kind=real64)                               :: dbsdca
+    real(kind=real64), intent(in)                   :: x
+    real(kind=real64), dimension(nx+kx), intent(in) :: xknot
+    real(kind=real64), dimension(nx), intent(in)    :: bcoef
 
     integer                       :: i, ik, il, leftx
-    real(kind=dbl)                :: save, save1, save2, y, sum, dik
-    real(kind=dbl), dimension(kx) :: work, dl, dr,bsp
+    real(kind=real64)                :: save, save1, save2, y, sum, dik
+    real(kind=real64), dimension(kx) :: work, dl, dr,bsp
 
 
     if (iderx .eq. 0) then
@@ -721,12 +712,12 @@ contains
        dbsdca = work(kx)
 
     elseif ((iderx .ge. 1) .and. (iderx .lt. kx)) then
-       bsp(1) = 1.0_dbl
+       bsp(1) = 1.0_real64
        do ik = 1,kx-iderx-1
           dr(ik) = xknot(leftx+ik) - x
           dl(ik) = x - xknot(leftx+1-ik)
           save   = bsp(1)
-          bsp(1) = 0.0_dbl
+          bsp(1) = 0.0_real64
           do il = 1, ik
              y         = save / (dr(il) + dl(ik+1-il))
              bsp(il)   = bsp(il) + dr(il) * y
@@ -742,7 +733,7 @@ contains
        end do
 
        do ik = 1, iderx
-          dik   = dble(kx - ik)
+          dik   = Real(kx - ik,real64)
           save2 = work(ik)
           do il = ik+1, kx
              save1    = work(il)
@@ -751,7 +742,7 @@ contains
           end do
        end do
 
-       sum = 0.0_dbl
+       sum = 0.0_real64
 
        do i = 1, kx-iderx
           sum = sum + bsp(i) * work(iderx+i)
@@ -760,7 +751,7 @@ contains
        dbsdca = sum
 
     else
-       dbsdca = 0.0_dbl
+       dbsdca = 0.0_real64
     endif
 
   end function dbsdca
@@ -805,22 +796,22 @@ contains
 !             by nydata.
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                           :: nx, ny, kx, ky, ldf
 
-    real(kind=dbl), dimension(nx), intent(in)     :: xvec
-    real(kind=dbl), dimension(ny), intent(in)     :: yvec
-    real(kind=dbl), dimension(nx+kx), intent(in)  :: xknot
-    real(kind=dbl), dimension(ny+ky), intent(in)  :: yknot
-    real(kind=dbl), dimension(ldf,*), intent(in)  :: xydata
-    real(kind=dbl), dimension(nx,ny), intent(out) :: bcoef
+    real(kind=real64), dimension(nx), intent(in)     :: xvec
+    real(kind=real64), dimension(ny), intent(in)     :: yvec
+    real(kind=real64), dimension(nx+kx), intent(in)  :: xknot
+    real(kind=real64), dimension(ny+ky), intent(in)  :: yknot
+    real(kind=real64), dimension(ldf,*), intent(in)  :: xydata
+    real(kind=real64), dimension(nx,ny), intent(out) :: bcoef
 
-    real(kind=dbl), dimension(max(nx,ny),max(nx,ny))        :: work1
-    real(kind=dbl), dimension(max(nx,ny))                   :: work2
-    real(kind=dbl), dimension(max((2*kx-1)*nx,(2*ky-1)*ny)) :: work3
+    real(kind=real64), dimension(max(nx,ny),max(nx,ny))        :: work1
+    real(kind=real64), dimension(max(nx,ny))                   :: work2
+    real(kind=real64), dimension(max((2*kx-1)*nx,(2*ky-1)*ny)) :: work3
 
 
     call spli2d(xvec,ldf,xydata,xknot,nx,kx,ny,work2,work3,work1)
@@ -834,23 +825,23 @@ contains
 
   subroutine spli2d(xyvec,ld,xydata,xyknot,n,k,m,work2,work3,bcoef)
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
 
     integer, intent(in)                         :: ld, n, k, m
-    real(kind=dbl), dimension(n), intent(in)    :: xyvec
-    real(kind=dbl), dimension(n+k), intent(in)  :: xyknot
-    real(kind=dbl), dimension(ld,m), intent(in) :: xydata
-    real(kind=dbl), dimension(m,n), intent(out) :: bcoef
+    real(kind=real64), dimension(n), intent(in)    :: xyvec
+    real(kind=real64), dimension(n+k), intent(in)  :: xyknot
+    real(kind=real64), dimension(ld,m), intent(in) :: xydata
+    real(kind=real64), dimension(m,n), intent(out) :: bcoef
 
-    real(kind=dbl), dimension(n), intent(out)         :: work2
-    real(kind=dbl), dimension((2*k-1)*n), intent(out) :: work3
+    real(kind=real64), dimension(n), intent(out)         :: work2
+    real(kind=real64), dimension((2*k-1)*n), intent(out) :: work3
 
 
     integer        :: np1, km1, kpkm2, left, lenq, i, iflag, ilp1mx, j, jj
-    real(kind=dbl) :: xyveci
+    real(kind=real64) :: xyveci
 
     np1   = n + 1
     km1   = k - 1
@@ -859,7 +850,7 @@ contains
     lenq  = n * (k + km1)
 
     do i = 1,lenq
-       work3(i) = 0.0_dbl
+       work3(i) = 0.0_real64
     end do
 
     do i = 1, n
@@ -945,19 +936,19 @@ contains
 !   dbs2vl - value of the spline at (x,y).  (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                          :: nx, ny, kx, ky
-    real(kind=dbl), intent(in)                   :: x, y
-    real(kind=dbl), dimension(nx+kx), intent(in) :: xknot
-    real(kind=dbl), dimension(ny+ky), intent(in) :: yknot
-    real(kind=dbl), dimension(nx,ny), intent(in) :: bcoef
-    real(kind=dbl)                               :: dbs2vl
+    real(kind=real64), intent(in)                   :: x, y
+    real(kind=real64), dimension(nx+kx), intent(in) :: xknot
+    real(kind=real64), dimension(ny+ky), intent(in) :: yknot
+    real(kind=real64), dimension(nx,ny), intent(in) :: bcoef
+    real(kind=real64)                               :: dbs2vl
 
     integer                       :: ix, iy, iky, leftx, lefty
-    real(kind=dbl), dimension(ky) :: work
+    real(kind=real64), dimension(ky) :: work
 
 !
 !     check if knot(i) <= knot(i+1) and calculation of i so that
@@ -1052,20 +1043,20 @@ contains
 !            (x,y).  (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                          :: iderx, idery
     integer, intent(in)                          :: kx, nx, ky, ny
-    real(kind=dbl)                               :: dbs2dr
-    real(kind=dbl), intent(in)                   :: x, y
-    real(kind=dbl), dimension(nx+kx), intent(in) :: xknot
-    real(kind=dbl), dimension(ny+ky), intent(in) :: yknot
-    real(kind=dbl), dimension(nx,ny), intent(in) :: bcoef
+    real(kind=real64)                               :: dbs2dr
+    real(kind=real64), intent(in)                   :: x, y
+    real(kind=real64), dimension(nx+kx), intent(in) :: xknot
+    real(kind=real64), dimension(ny+ky), intent(in) :: yknot
+    real(kind=real64), dimension(nx,ny), intent(in) :: bcoef
 
     integer                       :: ix, iy, iky, nintx, ninty
-    real(kind=dbl), dimension(ky) :: work
+    real(kind=real64), dimension(ky) :: work
 
 !
 !     check if knot(i) <= knot(i+1) and calculation of i so that
@@ -1163,7 +1154,7 @@ contains
 !             dimension statement of the calling program.  (input)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
@@ -1172,22 +1163,22 @@ contains
     integer, intent(in)                           :: kx, nx, ky, ny
     integer, intent(in)                           :: ldf
 
-    real(kind=dbl), dimension(nxvec), intent(in)  :: xvec
-    real(kind=dbl), dimension(nyvec), intent(in)  :: yvec
-    real(kind=dbl), dimension(nx+kx), intent(in)  :: xknot
-    real(kind=dbl), dimension(ny+ky), intent(in)  :: yknot
-    real(kind=dbl), dimension(nx,ny), intent(in)  :: bcoef
-    real(kind=dbl), dimension(ldf,*), intent(out) :: val
+    real(kind=real64), dimension(nxvec), intent(in)  :: xvec
+    real(kind=real64), dimension(nyvec), intent(in)  :: yvec
+    real(kind=real64), dimension(nx+kx), intent(in)  :: xknot
+    real(kind=real64), dimension(ny+ky), intent(in)  :: yknot
+    real(kind=real64), dimension(nx,ny), intent(in)  :: bcoef
+    real(kind=real64), dimension(ldf,*), intent(out) :: val
 
     integer                                     :: i, ik, il, ix, iy, ikx, iky
     integer, dimension(nxvec)                   :: leftx
     integer, dimension(nyvec)                   :: lefty
-    real(kind=dbl), dimension(nxvec,kx)         :: dl, dr
-    real(kind=dbl), dimension(max(nxvec,nyvec)) :: save1
-    real(kind=dbl), dimension(nxvec,kx)         :: biatx
-    real(kind=dbl), dimension(nyvec,ky)         :: biaty
-    real(kind=dbl), dimension(max(nxvec,nyvec)) :: term
-    real(kind=dbl), dimension(ky)               :: work
+    real(kind=real64), dimension(nxvec,kx)         :: dl, dr
+    real(kind=real64), dimension(max(nxvec,nyvec)) :: save1
+    real(kind=real64), dimension(nxvec,kx)         :: biatx
+    real(kind=real64), dimension(nyvec,ky)         :: biaty
+    real(kind=real64), dimension(max(nxvec,nyvec)) :: term
+    real(kind=real64), dimension(ky)               :: work
 
     logical :: same,next
 
@@ -1268,14 +1259,14 @@ contains
     if ((iderx .eq. 0) .and. (idery .eq. 0)) then
 
        do ix = 1,nxvec
-          biatx(ix,1) = 1._dbl
+          biatx(ix,1) = 1._real64
        end do
 
        do ik = 1, kx-1
           do ix = 1,nxvec
              dr(ix,ik) = xknot(leftx(ix)+ik) - xvec(ix)
              dl(ix,ik) = xvec(ix) - xknot(leftx(ix)+1-ik)
-             save1(ix) = 0._dbl
+             save1(ix) = 0._real64
           end do
 
           do il = 1,ik
@@ -1293,14 +1284,14 @@ contains
        end do
 
        do iy = 1, nyvec
-          biaty(iy,1) = 1._dbl
+          biaty(iy,1) = 1._real64
        end do
 
        do ik = 1, ky-1
           do iy = 1, nyvec
              dr(iy,ik) = yknot(lefty(iy)+ik) - yvec(iy)
              dl(iy,ik) = yvec(iy) - yknot(lefty(iy)+1-ik)
-             save1(iy) = 0._dbl
+             save1(iy) = 0._real64
           end do
 
           do il = 1, ik
@@ -1319,7 +1310,7 @@ contains
 
        do iy = 1, nyvec
           do ix = 1, nxvec
-             val(ix,iy) = 0.0_dbl
+             val(ix,iy) = 0.0_real64
           end do
        end do
 
@@ -1353,7 +1344,7 @@ contains
 
        do iy = 1, nyvec
           do ix = 1, nxvec
-             val(ix,iy) = 0.0_dbl
+             val(ix,iy) = 0.0_real64
           end do
        end do
 
@@ -1413,26 +1404,26 @@ contains
 !             by ny by nz.
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in) :: nx, ny, nz, kx, ky, kz
     integer, intent(in) :: ldf, mdf
 
-    real(kind=dbl), dimension(nx), intent(in)         :: xvec
-    real(kind=dbl), dimension(ny), intent(in)         :: yvec
-    real(kind=dbl), dimension(nz), intent(in)         :: zvec
-    real(kind=dbl), dimension(nx+kx), intent(in)      :: xknot
-    real(kind=dbl), dimension(ny+ky), intent(in)      :: yknot
-    real(kind=dbl), dimension(nz+kz), intent(in)      :: zknot
-    real(kind=dbl), dimension(ldf,mdf,nz), intent(in) :: xyzdata
-    real(kind=dbl), dimension(nx,ny,nz), intent(out)  :: bcoef
+    real(kind=real64), dimension(nx), intent(in)         :: xvec
+    real(kind=real64), dimension(ny), intent(in)         :: yvec
+    real(kind=real64), dimension(nz), intent(in)         :: zvec
+    real(kind=real64), dimension(nx+kx), intent(in)      :: xknot
+    real(kind=real64), dimension(ny+ky), intent(in)      :: yknot
+    real(kind=real64), dimension(nz+kz), intent(in)      :: zknot
+    real(kind=real64), dimension(ldf,mdf,nz), intent(in) :: xyzdata
+    real(kind=real64), dimension(nx,ny,nz), intent(out)  :: bcoef
 
     integer                                :: iz
-    real(kind=dbl), dimension(nx,ny,nz)    :: work1
-    real(kind=dbl), dimension(nz)          :: work2
-    real(kind=dbl), dimension((2*kz-1)*nz) :: work3
+    real(kind=real64), dimension(nx,ny,nz)    :: work1
+    real(kind=real64), dimension(nz)          :: work2
+    real(kind=real64), dimension((2*kz-1)*nz) :: work3
 
 
     call spli3d(zvec,ldf,mdf,xyzdata,zknot,nz,kz,nx,ny,work2,work3,work1,     &
@@ -1452,21 +1443,21 @@ contains
   subroutine spli3d(xyzvec,ldf,mdf,xyzdata,xyzknot,n,k,m,l,work2,work3,       &
        & bcoef,nx,ny,nz)
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                               :: ldf, mdf, n, k, m, l
     integer, intent(in)                               :: nx, ny, nz
-    real(kind=dbl), dimension(n), intent(in)          :: xyzvec
-    real(kind=dbl), dimension(n+k), intent(in)        :: xyzknot
-    real(kind=dbl), dimension(ldf,mdf,*), intent(in)  :: xyzdata
-    real(kind=dbl), dimension(nx,ny,nz), intent(out)  :: bcoef
-    real(kind=dbl), dimension(n), intent(out)         :: work2
-    real(kind=dbl), dimension((2*k-1)*n), intent(out) :: work3
+    real(kind=real64), dimension(n), intent(in)          :: xyzvec
+    real(kind=real64), dimension(n+k), intent(in)        :: xyzknot
+    real(kind=real64), dimension(ldf,mdf,*), intent(in)  :: xyzdata
+    real(kind=real64), dimension(nx,ny,nz), intent(out)  :: bcoef
+    real(kind=real64), dimension(n), intent(out)         :: work2
+    real(kind=real64), dimension((2*k-1)*n), intent(out) :: work3
 
     integer        :: np1, km1, kpkm2, left, lenq, i, ilp1mx, j, jj, iflag, in
-    real(kind=dbl) :: xyzveci
+    real(kind=real64) :: xyzveci
 
 
     np1   = n + 1
@@ -1476,7 +1467,7 @@ contains
     lenq  = n * (k + km1)
 
     do i = 1, lenq
-       work3(i) = 0._dbl
+       work3(i) = 0._real64
     end do
 
     do i = 1, n
@@ -1573,20 +1564,20 @@ contains
 !   dbs3vl - value of the spline at (x,y,z).  (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                             :: nx, ny, nz, kx, ky, kz
-    real(kind=dbl), intent(in)                      :: x, y, z
-    real(kind=dbl), dimension(nx+kx), intent(in)    :: xknot
-    real(kind=dbl), dimension(ny+ky), intent(in)    :: yknot
-    real(kind=dbl), dimension(nz+kz), intent(in)    :: zknot
-    real(kind=dbl), dimension(nx,ny,nz), intent(in) :: bcoef
-    real(kind=dbl)                                  :: dbs3vl
+    real(kind=real64), intent(in)                      :: x, y, z
+    real(kind=real64), dimension(nx+kx), intent(in)    :: xknot
+    real(kind=real64), dimension(ny+ky), intent(in)    :: yknot
+    real(kind=real64), dimension(nz+kz), intent(in)    :: zknot
+    real(kind=real64), dimension(nx,ny,nz), intent(in) :: bcoef
+    real(kind=real64)                                  :: dbs3vl
 
     integer                       :: iz, nintz
-    real(kind=dbl), dimension(kz) :: work
+    real(kind=real64), dimension(kz) :: work
 
 !
 !     check if knot(i) <= knot(i+1) and calculation of i so that
@@ -1668,21 +1659,21 @@ contains
 !            spline at (x,y,z).  (output)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                              :: iderx, idery, iderz
     integer, intent(in)                              :: nx, ny, nz, kx, ky, kz
-    real(kind=dbl), intent(in)                       :: x, y, z
-    real(kind=dbl), dimension(nx+kx), intent(in)     :: xknot
-    real(kind=dbl), dimension(ny+ky), intent(in)     :: yknot
-    real(kind=dbl), dimension(nz+kz), intent(in)     :: zknot
-    real(kind=dbl), dimension(nx,ny,nz), intent(in)  :: bcoef
-    real(kind=dbl)                                   :: dbs3dr
+    real(kind=real64), intent(in)                       :: x, y, z
+    real(kind=real64), dimension(nx+kx), intent(in)     :: xknot
+    real(kind=real64), dimension(ny+ky), intent(in)     :: yknot
+    real(kind=real64), dimension(nz+kz), intent(in)     :: zknot
+    real(kind=real64), dimension(nx,ny,nz), intent(in)  :: bcoef
+    real(kind=real64)                                   :: dbs3dr
 
     integer                       :: iz, nintz
-    real(kind=dbl), dimension(kz) :: work
+    real(kind=real64), dimension(kz) :: work
 
 !
 !     check if knot(i) <= knot(i+1) and calculation of i so that
@@ -1778,7 +1769,7 @@ contains
 !            dimension statement of the calling program.  (input)
 !
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
@@ -1787,26 +1778,26 @@ contains
     integer, intent(in)                               :: kx, nx, ky, ny, kz, nz
     integer, intent(in)                               :: ldf,mdf
 
-    real(kind=dbl), dimension(nxvec), intent(in)      :: xvec
-    real(kind=dbl), dimension(nyvec), intent(in)      :: yvec
-    real(kind=dbl), dimension(nzvec), intent(in)      :: zvec
-    real(kind=dbl), dimension(nx+kx), intent(in)      :: xknot
-    real(kind=dbl), dimension(ny+ky), intent(in)      :: yknot
-    real(kind=dbl), dimension(nz+kz), intent(in)      :: zknot
-    real(kind=dbl), dimension(nx,ny,nz), intent(in)   :: bcoef
-    real(kind=dbl), dimension(ldf,mdf,*), intent(out) :: val
+    real(kind=real64), dimension(nxvec), intent(in)      :: xvec
+    real(kind=real64), dimension(nyvec), intent(in)      :: yvec
+    real(kind=real64), dimension(nzvec), intent(in)      :: zvec
+    real(kind=real64), dimension(nx+kx), intent(in)      :: xknot
+    real(kind=real64), dimension(ny+ky), intent(in)      :: yknot
+    real(kind=real64), dimension(nz+kz), intent(in)      :: zknot
+    real(kind=real64), dimension(nx,ny,nz), intent(in)   :: bcoef
+    real(kind=real64), dimension(ldf,mdf,*), intent(out) :: val
 
     integer                                           :: i, ik, il, ix, iy, iz
     integer                                           :: ikx, iky, ikz
     integer, dimension(nxvec)                         :: leftx
     integer, dimension(nyvec)                         :: lefty
     integer, dimension(nzvec)                         :: leftz
-    real(kind=dbl), dimension(nxvec,kx)               :: biatx
-    real(kind=dbl), dimension(nyvec,ky)               :: biaty
-    real(kind=dbl), dimension(nzvec,kz)               :: biatz
-    real(kind=dbl), dimension(max(nxvec,nyvec,nzvec)) :: term, save1
+    real(kind=real64), dimension(nxvec,kx)               :: biatx
+    real(kind=real64), dimension(nyvec,ky)               :: biaty
+    real(kind=real64), dimension(nzvec,kz)               :: biatz
+    real(kind=real64), dimension(max(nxvec,nyvec,nzvec)) :: term, save1
 
-    real(kind=dbl), dimension(max(nxvec,nyvec,nzvec), max(kx,ky,kz)) :: dl, dr
+    real(kind=real64), dimension(max(nxvec,nyvec,nzvec), max(kx,ky,kz)) :: dl, dr
 
     logical :: same,next
 
@@ -1922,14 +1913,14 @@ contains
     if ((iderx .eq. 0) .and. (idery .eq. 0) .and. (iderz .eq.0)) then
 
        do ix = 1, nxvec
-          biatx(ix,1) = 1.0_dbl
+          biatx(ix,1) = 1.0_real64
        end do
 
        do ik = 1, kx-1
           do ix = 1, nxvec
              dr(ix,ik) = xknot(leftx(ix)+ik) - xvec(ix)
              dl(ix,ik) = xvec(ix) - xknot(leftx(ix)+1-ik)
-             save1(ix) = 0._dbl
+             save1(ix) = 0._real64
           end do
 
           do il = 1, ik
@@ -1946,14 +1937,14 @@ contains
        end do
 
        do iy = 1, nyvec
-          biaty(iy,1) = 1.0_dbl
+          biaty(iy,1) = 1.0_real64
        end do
 
        do ik = 1, ky-1
           do iy = 1, nyvec
              dr(iy,ik) = yknot(lefty(iy)+ik) - yvec(iy)
              dl(iy,ik) = yvec(iy) - yknot(lefty(iy)+1-ik)
-             save1(iy) = 0._dbl
+             save1(iy) = 0._real64
           end do
 
           do il = 1,ik
@@ -1970,14 +1961,14 @@ contains
        end do
 
        do iz = 1,nzvec
-          biatz(iz,1) = 1.0_dbl
+          biatz(iz,1) = 1.0_real64
        end do
 
        do ik = 1, kz-1
           do iz = 1, nzvec
              dr(iz,ik) = zknot(leftz(iz)+ik) - zvec(iz)
              dl(iz,ik) = zvec(iz) - zknot(leftz(iz)+1-ik)
-             save1(iz) = 0._dbl
+             save1(iz) = 0._real64
           end do
 
           do il = 1, ik
@@ -1996,7 +1987,7 @@ contains
        do iz = 1,nzvec
           do iy = 1,nyvec
              do ix = 1,nxvec
-                val(ix,iy,iz) = 0.0_dbl
+                val(ix,iy,iz) = 0.0_real64
              end do
           end do
        end do
@@ -2041,25 +2032,25 @@ contains
 
   subroutine bsplvb(t,n,jhigh,index,x,left,biatx)
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in) :: n, jhigh, index, left
 
-    real(kind=dbl), intent(in)                    :: x
-    real(kind=dbl), dimension(n), intent(in)      :: t
-    real(kind=dbl), dimension(jhigh), intent(out) :: biatx
+    real(kind=real64), intent(in)                    :: x
+    real(kind=real64), dimension(n), intent(in)      :: t
+    real(kind=real64), dimension(jhigh), intent(out) :: biatx
 
     integer                          :: j = 1
     integer                          :: i, jp1
-    real(kind=dbl)                   :: saved, term
-    real(kind=dbl), dimension(jhigh) :: dl, dr
+    real(kind=real64)                   :: saved, term
+    real(kind=real64), dimension(jhigh) :: dl, dr
 
 
     if (index .eq. 1) then
        j = 1
-       biatx(1) = 1.0_dbl
+       biatx(1) = 1.0_real64
        if (j .ge. jhigh) return
     end if
 
@@ -2067,7 +2058,7 @@ contains
 
     dr(j) = t(left+j) - x
     dl(j) = x - t(left+1-j)
-    saved = 0._dbl
+    saved = 0._real64
 
     do i = 1, j
        term     = biatx(i) / (dr(i) + dl(jp1-i))
@@ -2088,16 +2079,16 @@ contains
 
   subroutine banfac(w,nroww,nrow,nbandl,nbandu,iflag)
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                                  :: nroww,nrow
     integer, intent(in)                                  :: nbandl,nbandu
     integer, intent(out)                                 :: iflag
-    real(kind=dbl), dimension(nroww,nrow), intent(inout) :: w
+    real(kind=real64), dimension(nroww,nrow), intent(inout) :: w
 
-    real(kind=dbl) :: pivot, factor
+    real(kind=real64) :: pivot, factor
     integer        :: middle, nrowm1, jmax, kmax, ipk, midmk, i, j, k
 
 
@@ -2112,7 +2103,7 @@ contains
 10  if (nbandl .gt. 0) go to 30
 
     do i = 1, nrowm1
-       if (w(middle,i) .eq. 0._dbl) go to 999
+       if (w(middle,i) .eq. 0._real64) go to 999
     end do
 
     go to 900
@@ -2121,7 +2112,7 @@ contains
 
     do i = 1, nrowm1
        pivot = w(middle,i)
-       if(pivot .eq. 0._dbl) go to 999
+       if(pivot .eq. 0._real64) go to 999
        jmax = min0(nbandl, nrow - i)
        do j = 1, jmax
           w(middle+j,i) = w(middle+j,i) / pivot
@@ -2132,7 +2123,7 @@ contains
 
 60  do i = 1, nrowm1
        pivot = w(middle,i)
-       if (pivot .eq. 0._dbl) go to 999
+       if (pivot .eq. 0._real64) go to 999
        jmax = min0(nbandl,nrow - i)
        do j = 1,jmax
           w(middle+j,i) = w(middle+j,i) / pivot
@@ -2151,7 +2142,7 @@ contains
        end do
     end do
 
-900 if (w(middle,nrow) .ne. 0._dbl) return
+900 if (w(middle,nrow) .ne. 0._real64) return
 999 iflag = 2
 
   end subroutine banfac
@@ -2162,14 +2153,14 @@ contains
 
   subroutine banslv(w,nroww,nrow,nbandl,nbandu,b)
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                               :: nroww,nrow
     integer, intent(in)                               :: nbandl,nbandu
-    real(kind=dbl), dimension(nroww,nrow), intent(in) :: w
-    real(kind=dbl), dimension(nrow), intent(inout)    :: b
+    real(kind=real64), dimension(nroww,nrow), intent(in) :: w
+    real(kind=real64), dimension(nrow), intent(inout)    :: b
 
     integer :: middle, nrowm1, jmax, i, j
 
@@ -2211,13 +2202,13 @@ contains
 
   subroutine huntn(xx,n,kord,x,jlo)
 
-    use numeric
+    use kind_mod, Only: real64
 
     implicit none
 
     integer, intent(in)                      :: n, kord
-    real(kind=dbl), intent(in)               :: x
-    real(kind=dbl), dimension(n), intent(in) :: xx
+    real(kind=real64), intent(in)               :: x
+    real(kind=real64), dimension(n), intent(in) :: xx
 
     integer, intent(out)                     :: jlo
 

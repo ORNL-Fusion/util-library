@@ -22,8 +22,9 @@
 ! 
 !-----------------------------------------------------------------------------
 Module fieldline_follow_mod
+Use kind_mod, Only: int32
 Implicit None
-Integer, Save :: bfield_method = 0 ! Used to select fl derivs
+Integer(int32), Save :: bfield_method = 0 ! Used to select fl derivs
 Contains
 
 !-----------------------------------------------------------------------------
@@ -39,14 +40,14 @@ Subroutine follow_fieldlines_rzphi_AS(rstart,zstart,phistart,Npts,dphi,nsteps,r,
 !  Integration method is hard-coded fixed-step size RK4.
 !
 ! Input:
-!  rstart, zstart, phistart : rknd(Npts) : Launching points for fieldlines (m,m,radians)
-!  Npts : iknd : Number of starting points
-!  dphi : rknd : Integration step size (radians)
-!  nsteps : iknd : Number of integration steps to take
+!  rstart, zstart, phistart : real64(Npts) : Launching points for fieldlines (m,m,radians)
+!  Npts : int32 : Number of starting points
+!  dphi : real64 : Integration step size (radians)
+!  nsteps : int32 : Number of integration steps to take
 ! Output:
-!  r,z,phi : rknd(Npts,nsteps+1) : Field line trajectories (m,m,radians)
-!  ierr : iknd(Npts) : Error flag for each fl. 0 indicates no error, 1 indicates an error from bfield_geq_bicub
-!  i_last_good : iknd(Npts) : If an error occured for the fl, this array gives the last 'good' index, i.e., before the 
+!  r,z,phi : real64(Npts,nsteps+1) : Field line trajectories (m,m,radians)
+!  ierr : int32(Npts) : Error flag for each fl. 0 indicates no error, 1 indicates an error from bfield_geq_bicub
+!  i_last_good : int32(Npts) : If an error occured for the fl, this array gives the last 'good' index, i.e., before the 
 !                             error occured
 !
 ! Calls:
@@ -60,24 +61,24 @@ Subroutine follow_fieldlines_rzphi_AS(rstart,zstart,phistart,Npts,dphi,nsteps,r,
 ! Author(s): J.D Lore - 04/20/2011
 !
 ! Modules used:
-Use kind_mod                ! Import rknd, iknd specifications
+Use kind_mod, Only: int32, real64
 Use g3d_module, Only : bfield_geq_bicub
 Implicit None
 
 ! Input/output                !See above for descriptions
-Integer(iknd),Intent(in) :: Npts, nsteps
-Real(rknd),Intent(in),Dimension(Npts) :: & 
+Integer(int32),Intent(in) :: Npts, nsteps
+Real(real64),Intent(in),Dimension(Npts) :: & 
   rstart(Npts),zstart(Npts),phistart(Npts)
-Real(rknd),Intent(in) :: dphi
-Real(rknd),Intent(out),Dimension(Npts,nsteps+1) :: &
+Real(real64),Intent(in) :: dphi
+Real(real64),Intent(out),Dimension(Npts,nsteps+1) :: &
   r,z,phi
-Integer(iknd),Intent(out) :: ierr(Npts), i_last_good(Npts)
+Integer(int32),Intent(out) :: ierr(Npts), i_last_good(Npts)
 
 ! Local variables
-Real(rknd) :: br,bz,bphi
-Real(Rknd) :: k1r,k2r,k3r,k4r,k1z,k2z,k3z,k4z
-Integer(iknd) :: ii,ipt,ierr_b
-Real(rknd) :: Bval(1,3),R1(1), Z1(1)
+Real(real64) :: br,bz,bphi
+Real(Real64) :: k1r,k2r,k3r,k4r,k1z,k2z,k3z,k4z
+Integer(int32) :: ii,ipt,ierr_b
+Real(real64) :: Bval(1,3),R1(1), Z1(1)
 !- End of header -------------------------------------------------------------
 
 r(:,1)   = rstart(:)
@@ -105,8 +106,8 @@ Do ipt = 1,Npts
     k1r = dphi*r(ipt,ii-1)*br/bphi
     k1z = dphi*r(ipt,ii-1)*bz/bphi
     
-    R1 = r(ipt,ii-1) + 0.5_rknd*k1r
-    Z1 = z(ipt,ii-1) + 0.5_rknd*k1z
+    R1 = r(ipt,ii-1) + 0.5_real64*k1r
+    Z1 = z(ipt,ii-1) + 0.5_real64*k1z
     Call bfield_geq_bicub(R1,Z1,1,Bval,ierr_b)     
     br = Bval(1,1)
     bz = Bval(1,2)
@@ -117,11 +118,11 @@ Do ipt = 1,Npts
       Exit
     Endif
 
-    k2r = dphi*(r(ipt,ii-1)+0.5_rknd*k1r)*br/bphi
-    k2z = dphi*(r(ipt,ii-1)+0.5_rknd*k1r)*bz/bphi
+    k2r = dphi*(r(ipt,ii-1)+0.5_real64*k1r)*br/bphi
+    k2z = dphi*(r(ipt,ii-1)+0.5_real64*k1r)*bz/bphi
 
-    R1 = r(ipt,ii-1) + 0.5_rknd*k2r
-    Z1 = z(ipt,ii-1) + 0.5_rknd*k2z
+    R1 = r(ipt,ii-1) + 0.5_real64*k2r
+    Z1 = z(ipt,ii-1) + 0.5_real64*k2z
     Call bfield_geq_bicub(R1,Z1,1,Bval,ierr_b)     
     br = Bval(1,1)
     bz = Bval(1,2)
@@ -132,8 +133,8 @@ Do ipt = 1,Npts
       Exit
     Endif
 
-    k3r = dphi*(r(ipt,ii-1)+0.5_rknd*k2r)*br/bphi
-    k3z = dphi*(r(ipt,ii-1)+0.5_rknd*k2r)*bz/bphi
+    k3r = dphi*(r(ipt,ii-1)+0.5_real64*k2r)*br/bphi
+    k3z = dphi*(r(ipt,ii-1)+0.5_real64*k2r)*bz/bphi
 
 
     R1 = r(ipt,ii-1) + k3r
@@ -150,8 +151,8 @@ Do ipt = 1,Npts
     k4r = dphi*(r(ipt,ii-1)+k3r)*br/bphi
     k4z = dphi*(r(ipt,ii-1)+k3r)*bz/bphi
 
-    r(ipt,ii) = r(ipt,ii-1) + k1r/6._rknd + k2r/3._rknd + k3r/3._rknd + k4r/6._rknd
-    z(ipt,ii) = z(ipt,ii-1) + k1z/6._rknd + k2z/3._rknd + k3z/3._rknd + k4z/6._rknd
+    r(ipt,ii) = r(ipt,ii-1) + k1r/6._real64 + k2r/3._real64 + k3r/3._real64 + k4r/6._real64
+    z(ipt,ii) = z(ipt,ii-1) + k1z/6._real64 + k2z/3._real64 + k3z/3._real64 + k4z/6._real64
 
   Enddo
 Enddo
@@ -170,15 +171,15 @@ Subroutine follow_fieldlines_rzphi_diffuse(rstart,zstart,phistart,Npts,dphi,nste
 !  Integration method is RK45 with fixed step size
 !
 ! Input:
-!  rstart, zstart, phistart : rknd(Npts) : Launching points for fieldlines (m,m,radians)
-!  Npts : iknd : Number of starting points
-!  dphi : rknd : Integration step size (radians)
-!  nsteps : iknd : Number of integration steps to take
+!  rstart, zstart, phistart : real64(Npts) : Launching points for fieldlines (m,m,radians)
+!  Npts : int32 : Number of starting points
+!  dphi : real64 : Integration step size (radians)
+!  nsteps : int32 : Number of integration steps to take
 !  dmag : magnetic diffusivity (m^2/m)
 ! Output:
-!  r,z,phi : rknd(Npts,nsteps+1) : Field line trajectories (m,m,radians)
-!  ierr : iknd(Npts) : Error flag for each fl. 0 indicates no error, 1 indicates an error from bfield_geq_bicub
-!  i_last_good : iknd(Npts) : If an error occured for the fl, this array gives the last 'good' index, i.e., before the 
+!  r,z,phi : real64(Npts,nsteps+1) : Field line trajectories (m,m,radians)
+!  ierr : int32(Npts) : Error flag for each fl. 0 indicates no error, 1 indicates an error from bfield_geq_bicub
+!  i_last_good : int32(Npts) : If an error occured for the fl, this array gives the last 'good' index, i.e., before the 
 !                             error occured
 !
 ! Calls:
@@ -192,24 +193,24 @@ Subroutine follow_fieldlines_rzphi_diffuse(rstart,zstart,phistart,Npts,dphi,nste
 ! Author(s): J.D Lore - 04/20/2011
 !
 ! Modules used:
-Use kind_mod                ! Import rknd, iknd specifications
+Use kind_mod, Only: real64, int32
 Implicit None
 ! Input/output                      !See above for descriptions
-Integer(iknd),Intent(in) :: Npts, nsteps
-Real(rknd),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
-Real(rknd),Intent(in) :: dphi, dmag
+Integer(int32),Intent(in) :: Npts, nsteps
+Real(real64),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
+Real(real64),Intent(in) :: dphi, dmag
 
-Real(rknd),Intent(out),Dimension(Npts,nsteps+1) :: r,z,phi
-Integer(iknd),Intent(out) :: ierr(Npts), i_last_good(Npts)
+Real(real64),Intent(out),Dimension(Npts,nsteps+1) :: r,z,phi
+Integer(int32),Intent(out) :: ierr(Npts), i_last_good(Npts)
 ! Local variables
-Integer(iknd), Parameter :: n = 2
-Real(rknd) :: y(n),x,dx,xout(nsteps+1),yout(n,nsteps+1)
-Integer(iknd) :: ierr_rk45, i_last_good_rk45, ipt
+Integer(int32), Parameter :: n = 2
+Real(real64) :: y(n),x,dx,xout(nsteps+1),yout(n,nsteps+1)
+Integer(int32) :: ierr_rk45, i_last_good_rk45, ipt
 !- End of header -------------------------------------------------------------
 
-r = 0._rknd
-z = 0._rknd
-phi = 0._rknd
+r = 0._real64
+z = 0._real64
+phi = 0._real64
 dx = dphi
 Do ipt = 1,Npts 
   y(1) = rstart(ipt)
@@ -237,14 +238,14 @@ Subroutine follow_fieldlines_rzphi(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,p
 !  Integration method is RK45 with fixed step size
 !
 ! Input:
-!  rstart, zstart, phistart : rknd(Npts) : Launching points for fieldlines (m,m,radians)
-!  Npts : iknd : Number of starting points
-!  dphi : rknd : Integration step size (radians)
-!  nsteps : iknd : Number of integration steps to take
+!  rstart, zstart, phistart : real64(Npts) : Launching points for fieldlines (m,m,radians)
+!  Npts : int32 : Number of starting points
+!  dphi : real64 : Integration step size (radians)
+!  nsteps : int32 : Number of integration steps to take
 ! Output:
-!  r,z,phi : rknd(Npts,nsteps+1) : Field line trajectories (m,m,radians)
-!  ierr : iknd(Npts) : Error flag for each fl. 0 indicates no error, 1 indicates an error from bfield_geq_bicub
-!  i_last_good : iknd(Npts) : If an error occured for the fl, this array gives the last 'good' index, i.e., before the 
+!  r,z,phi : real64(Npts,nsteps+1) : Field line trajectories (m,m,radians)
+!  ierr : int32(Npts) : Error flag for each fl. 0 indicates no error, 1 indicates an error from bfield_geq_bicub
+!  i_last_good : int32(Npts) : If an error occured for the fl, this array gives the last 'good' index, i.e., before the 
 !                             error occured
 !
 ! Calls:
@@ -258,24 +259,24 @@ Subroutine follow_fieldlines_rzphi(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,p
 ! Author(s): J.D Lore - 04/20/2011
 !
 ! Modules used:
-Use kind_mod                ! Import rknd, iknd specifications
+Use kind_mod, Only: real64, int32
 Implicit None
 ! Input/output                      !See above for descriptions
-Integer(iknd),Intent(in) :: Npts, nsteps
-Real(rknd),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
-Real(rknd),Intent(in) :: dphi
+Integer(int32),Intent(in) :: Npts, nsteps
+Real(real64),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
+Real(real64),Intent(in) :: dphi
 
-Real(rknd),Intent(out),Dimension(Npts,nsteps+1) :: r,z,phi
-Integer(iknd),Intent(out) :: ierr(Npts), i_last_good(Npts)
+Real(real64),Intent(out),Dimension(Npts,nsteps+1) :: r,z,phi
+Integer(int32),Intent(out) :: ierr(Npts), i_last_good(Npts)
 ! Local variables
-Integer(iknd), Parameter :: n = 2
-Real(rknd) :: y(n),x,dx,xout(nsteps+1),yout(n,nsteps+1)
-Integer(iknd) :: ierr_rk45, i_last_good_rk45, ipt
+Integer(int32), Parameter :: n = 2
+Real(real64) :: y(n),x,dx,xout(nsteps+1),yout(n,nsteps+1)
+Integer(int32) :: ierr_rk45, i_last_good_rk45, ipt
 !- End of header -------------------------------------------------------------
 
-r = 0._rknd
-z = 0._rknd
-phi = 0._rknd
+r = 0._real64
+z = 0._real64
+phi = 0._real64
 dx = dphi
 Do ipt = 1,Npts 
   y(1) = rstart(ipt)
@@ -301,13 +302,13 @@ Subroutine fl_derivs_fun(n,phi,RZ,df,ierr)
 !  integration methods, but right now it is hard-coded to assume two simultaneous equations evaluated at 1 pt.
 !
 ! Input:
-!  n : iknd : Number of equations
-!  phi : rknd : Integration variable (radians)
-!  RZ : rknd(n) : Evaluation points (solution vector)  RZ(1) = R, RZ(2) = Z in meters
+!  n : int32 : Number of equations
+!  phi : real64 : Integration variable (radians)
+!  RZ : real64(n) : Evaluation points (solution vector)  RZ(1) = R, RZ(2) = Z in meters
 ! 
 ! Output:
-!  df : rknd(n) : derivative evaluation
-!  ierr : iknd : Error flag (0 = no error)
+!  df : real64(n) : derivative evaluation
+!  ierr : int32 : Error flag (0 = no error)
 !
 ! Calls:
 !  Subroutine bfield_geq_bicub
@@ -321,7 +322,7 @@ Subroutine fl_derivs_fun(n,phi,RZ,df,ierr)
 ! Author(s): J.D Lore - 04/20/2011
 !
 ! Modules used:
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Use g3d_module, Only : bfield_geq_bicub
 Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
@@ -330,19 +331,19 @@ Use bfield_module, Only : bfield_bs_cyl
 Use m3dc1_routines_mod, Only : bfield_m3dc1
 #endif
 Implicit None
-Real(rknd), Intent(In) :: phi
-Integer(iknd), Intent(In) :: n
-Integer(iknd), Intent(Out) :: ierr
-Real(rknd), Intent(In), Dimension(n) :: RZ
-Real(rknd), Intent(Out), Dimension(n) :: df
+Real(real64), Intent(In) :: phi
+Integer(int32), Intent(In) :: n
+Integer(int32), Intent(Out) :: ierr
+Real(real64), Intent(In), Dimension(n) :: RZ
+Real(real64), Intent(Out), Dimension(n) :: df
 
-Integer(iknd),Parameter :: Npts = 1
-Real(rknd) :: bval(Npts,3), phi_tmp(Npts), bval_screened(Npts,3), bval_tmp(Npts,3)
-Integer(iknd) :: ierr_b, ierr_rmp
-Real(rknd) :: Bz, Br, Bphi, Br_rmp(Npts), Bphi_rmp(Npts), Bz_rmp(Npts)
+Integer(int32),Parameter :: Npts = 1
+Real(real64) :: bval(Npts,3), phi_tmp(Npts), bval_screened(Npts,3), bval_tmp(Npts,3)
+Integer(int32) :: ierr_b, ierr_rmp
+Real(real64) :: Bz, Br, Bphi, Br_rmp(Npts), Bphi_rmp(Npts), Bz_rmp(Npts)
 !- End of header -------------------------------------------------------------
 
-bval = 0._rknd
+bval = 0._real64
 ierr_b = 0
 ierr_rmp = 0
 If (bfield_method == 0) Then     ! gfile field only
@@ -395,7 +396,7 @@ Endif
 
 If ((ierr_b .ne. 0) .or. (ierr_rmp .ne. 0)) Then
   ierr = 1
-  df = 0._rknd
+  df = 0._real64
   Return
 Else
   ierr = 0
@@ -415,18 +416,18 @@ Subroutine rk45_fixed_step_integrate(y0,n,x0,dx,nsteps,odefun,yout,xout,ierr,i_l
 !  Should be a general implementation of RK45 fixed step integration
 !
 ! Input:
-!  y0     : rknd(n) : initial values
-!  n      : iknd    : number of initial values
-!  x0     : rknd    : Location of initial values
-!  dx     : rknd    : Step size
-!  nsteps : iknd    : Number of integration steps
+!  y0     : real64(n) : initial values
+!  n      : int32    : number of initial values
+!  x0     : real64    : Location of initial values
+!  dx     : real64    : Step size
+!  nsteps : int32    : Number of integration steps
 !  odefun : External function that evaluates derivatives
 ! 
 ! Output:
-!  yout : rknd(n,nsteps+1) : Solution
-!  xout : rknd(nsteps+1)   : Solution evaluation locations
-!  ierr : iknd             : Error flag (0 = no error)
-!  i_last_good : iknd      : Index of last good evaluation before error
+!  yout : real64(n,nsteps+1) : Solution
+!  xout : real64(nsteps+1)   : Solution evaluation locations
+!  ierr : int32             : Error flag (0 = no error)
+!  i_last_good : int32      : Index of last good evaluation before error
 !
 ! Calls:
 !  Subroutine odefun
@@ -440,24 +441,34 @@ Subroutine rk45_fixed_step_integrate(y0,n,x0,dx,nsteps,odefun,yout,xout,ierr,i_l
 ! Author(s): J.D Lore - 04/20/2011
 !
 ! Modules used:
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Implicit None
-Real(rknd), Intent(In), Dimension(n) :: y0
-Integer(iknd), Intent(In) :: n, nsteps
-Real(rknd), Intent(In) :: x0, dx
-Real(rknd), Intent(Out), Dimension(n,nsteps+1) :: yout
-Real(rknd), Intent(Out), Dimension(nsteps+1) :: xout
-Integer(iknd), Intent(Out) :: ierr, i_last_good
+Real(real64), Intent(In), Dimension(n) :: y0
+Integer(int32), Intent(In) :: n, nsteps
+Real(real64), Intent(In) :: x0, dx
+Real(real64), Intent(Out), Dimension(n,nsteps+1) :: yout
+Real(real64), Intent(Out), Dimension(nsteps+1) :: xout
+Integer(int32), Intent(Out) :: ierr, i_last_good
 
-Integer(iknd) :: i, ierr_odefun, ierr_rk4core
-Real(rknd), Dimension(n) :: y, dydx, ytmp
-Real(rknd) :: x
-External odefun
+Integer(int32) :: i, ierr_odefun, ierr_rk4core
+Real(real64), Dimension(n) :: y, dydx, ytmp
+Real(real64) :: x
+
+Interface
+  Subroutine odefun(n,x,y,dydx,ierr)
+    Use kind_mod, Only: int32, real64
+    Real(real64), Intent(In) :: x
+    Integer(int32), Intent(In) :: n
+    Integer(int32), Intent(Out) :: ierr
+    Real(real64), Intent(In), Dimension(n) :: y
+    Real(real64), Intent(Out), Dimension(n) :: dydx
+  End Subroutine odefun
+End Interface
 !- End of header -------------------------------------------------------------
 
 ! Store initial point
-yout(:,:) = 0._rknd
-xout(:) = 0._rknd
+yout(:,:) = 0._real64
+xout(:) = 0._real64
 yout(:,1) = y0
 xout(1) = x0
 
@@ -497,19 +508,19 @@ Subroutine rk45_fixed_step_integrate_diffuse(y0,n,x0,dx,nsteps,odefun,yout,xout,
 !  Should be a general implementation of RK45 fixed step integration
 !
 ! Input:
-!  y0     : rknd(n) : initial values
-!  n      : iknd    : number of initial values
-!  x0     : rknd    : Location of initial value
-!  dx     : rknd    : Step size
-!  dmag   : rknd    : Magnetic diffusivity (m^2/m)
-!  nsteps : iknd    : Number of integration steps
+!  y0     : real64(n) : initial values
+!  n      : int32    : number of initial values
+!  x0     : real64    : Location of initial value
+!  dx     : real64    : Step size
+!  dmag   : real64    : Magnetic diffusivity (m^2/m)
+!  nsteps : int32    : Number of integration steps
 !  odefun : External function that evaluates derivatives
 ! 
 ! Output:
-!  yout : rknd(n,nsteps+1) : Solution
-!  xout : rknd(nsteps+1)   : Solution evaluation locations
-!  ierr : iknd             : Error flag (0 = no error)
-!  i_last_good : iknd      : Index of last good evaluation before error
+!  yout : real64(n,nsteps+1) : Solution
+!  xout : real64(nsteps+1)   : Solution evaluation locations
+!  ierr : int32             : Error flag (0 = no error)
+!  i_last_good : int32      : Index of last good evaluation before error
 !
 ! Calls:
 !  Subroutine odefun
@@ -523,7 +534,7 @@ Subroutine rk45_fixed_step_integrate_diffuse(y0,n,x0,dx,nsteps,odefun,yout,xout,
 ! Author(s): J.D Lore - 04/20/2011
 !
 ! Modules used:
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Use g3d_module, Only : bfield_geq_bicub
 Use gfile_var_pass, Only : g_rmaxis, g_zmaxis
 Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
@@ -536,31 +547,41 @@ Use phys_const, Only : pi
 Implicit None
 
 
-Real(rknd), Parameter :: diff_mag = 0.4d0
-Real(rknd), Parameter :: nfac_diff = 3.d0
-!Real(rknd), Parameter :: sigtheta = 20.d0
-Real(rknd), Parameter :: sigtheta = 20.d0*3.1415d0/180.d0
-Real(rknd)  :: theta, phi_factor, pol_factor
+Real(real64), Parameter :: diff_mag = 0.4d0
+Real(real64), Parameter :: nfac_diff = 3.d0
+!Real(real64), Parameter :: sigtheta = 20.d0
+Real(real64), Parameter :: sigtheta = 20.d0*3.1415d0/180.d0
+Real(real64)  :: theta, phi_factor, pol_factor
 
-Real(rknd), Intent(In), Dimension(n) :: y0
-Integer(iknd), Intent(In) :: n, nsteps
-Real(rknd), Intent(In) :: x0, dx, dmag
-Real(rknd), Intent(Out), Dimension(n,nsteps+1) :: yout
-Real(rknd), Intent(Out), Dimension(nsteps+1) :: xout
-Integer(iknd), Intent(Out) :: ierr, i_last_good
+Real(real64), Intent(In), Dimension(n) :: y0
+Integer(int32), Intent(In) :: n, nsteps
+Real(real64), Intent(In) :: x0, dx, dmag
+Real(real64), Intent(Out), Dimension(n,nsteps+1) :: yout
+Real(real64), Intent(Out), Dimension(nsteps+1) :: xout
+Integer(int32), Intent(Out) :: ierr, i_last_good
 Logical, parameter :: verbose = .false.
-Integer(iknd) :: i, ierr_odefun, ierr_rk4core
-Real(rknd), Dimension(n) :: y, dydx, ytmp
-Real(rknd) :: x, RZ(2), perpdir1(3), perpdir2(3), alpha, dca, dsa, delta_x, dL
-Real(rknd) :: bval(1,3), phi_tmp(1), bval_screened(1,3), bval_tmp(1,3), phi, rnum
-Integer(iknd) :: ierr_b, ierr_rmp
-Real(rknd) :: Bz, Br, Bphi, Br_rmp(1), Bphi_rmp(1), Bz_rmp(1)
-External odefun
+Integer(int32) :: i, ierr_odefun, ierr_rk4core
+Real(real64), Dimension(n) :: y, dydx, ytmp
+Real(real64) :: x, RZ(2), perpdir1(3), perpdir2(3), alpha, dca, dsa, delta_x, dL
+Real(real64) :: bval(1,3), phi_tmp(1), bval_screened(1,3), bval_tmp(1,3), phi, rnum
+Integer(int32) :: ierr_b, ierr_rmp
+Real(real64) :: Bz, Br, Bphi, Br_rmp(1), Bphi_rmp(1), Bz_rmp(1)
+
+Interface
+  Subroutine odefun(n,x,y,dydx,ierr)
+    Use kind_mod, Only: int32, real64
+    Real(real64), Intent(In) :: x
+    Integer(int32), Intent(In) :: n
+    Integer(int32), Intent(Out) :: ierr
+    Real(real64), Intent(In), Dimension(n) :: y
+    Real(real64), Intent(Out), Dimension(n) :: dydx
+  End Subroutine odefun
+End Interface
 !- End of header -------------------------------------------------------------
 
 ! Store initial point
-yout(:,:) = 0._rknd
-xout(:) = 0._rknd
+yout(:,:) = 0._real64
+xout(:) = 0._real64
 yout(:,1) = y0
 xout(1) = x0
 
@@ -592,7 +613,7 @@ Do i=1,nsteps
   RZ(1) = ytmp(1)
   RZ(2) = ytmp(2)
   phi = x
-  bval = 0._rknd
+  bval = 0._real64
   ierr_b = 0
   ierr_rmp = 0
   If (bfield_method == 0) Then     ! gfile field only
@@ -643,8 +664,8 @@ Do i=1,nsteps
     Return
   Endif
   
-  dL = sqrt(ytmp(1)*ytmp(1) + y(1)*y(1) - 2._rknd*ytmp(1)*y(1)*cos(dx) & 
-       + ytmp(2)*ytmp(2) + y(2)*y(2) - 2._rknd*ytmp(2)*y(2))
+  dL = sqrt(ytmp(1)*ytmp(1) + y(1)*y(1) - 2._real64*ytmp(1)*y(1)*cos(dx) & 
+       + ytmp(2)*ytmp(2) + y(2)*y(2) - 2._real64*ytmp(2)*y(2))
   
   ! B cross z^hat
   perpdir1(1) = Bphi   !r 
@@ -700,27 +721,37 @@ End Subroutine rk45_fixed_step_integrate_diffuse
 !-----------------------------------------------------------------------------
 !+ RK4 stepper
 !-----------------------------------------------------------------------------
-Subroutine rk4_core(y,dydx,n,x,dx,odefun,yout,ierr)
+Subroutine rk4_core(y,dydx_in,n,x,dx,odefun,yout,ierr)
 ! Advance y(x) to yout=y(x+dx) given dydx(x) using 
-! the RK4 method. y, dydx are vectors of length n, 
+! the RK4 method. y, dydx_in are vectors of length n, 
 ! function odefun(n,x,y,dxdy) returns dydx. 
-! JDL 5/2012
-Use kind_mod
+! JDL 5/2012 
+Use kind_mod, Only: real64, int32
 Implicit None
-Real(rknd), Intent(In), Dimension(n) :: y, dydx
-Real(rknd), Intent(Out), Dimension(n) :: yout
-Real(rknd), Intent(In) :: x, dx
-Integer(iknd), Intent(In) :: n
-Integer(iknd), Intent(Out) :: ierr
+Real(real64), Intent(In), Dimension(n) :: y, dydx_in
+Real(real64), Intent(Out), Dimension(n) :: yout
+Real(real64), Intent(In) :: x, dx
+Integer(int32), Intent(In) :: n
+Integer(int32), Intent(Out) :: ierr
 
-Real(rknd), Parameter :: TWO = 2._rknd
-Real(rknd), Parameter :: SIX = 6._rknd
-Integer(iknd) :: ierr_odefun
-Real(rknd), Dimension(n) :: d1,d2,d3,d4
+Real(real64), Parameter :: TWO = 2._real64
+Real(real64), Parameter :: SIX = 6._real64
+Integer(int32) :: ierr_odefun
+Real(real64), Dimension(n) :: d1,d2,d3,d4,dydx
 
-External odefun
+Interface
+  Subroutine odefun(n,x,y,dydx,ierr)
+    Use kind_mod, Only: int32, real64
+    Real(real64), Intent(In) :: x
+    Integer(int32), Intent(In) :: n
+    Integer(int32), Intent(Out) :: ierr
+    Real(real64), Intent(In), Dimension(n) :: y
+    Real(real64), Intent(Out), Dimension(n) :: dydx
+  End Subroutine odefun
+End Interface
 !- End of header -------------------------------------------------------------
 
+dydx = dydx_in ! Do not want to overwrite input
 ! First step (uses supplied derivatives)
 d1 = dx*dydx
 ierr = 0
@@ -728,7 +759,7 @@ ierr = 0
 Call odefun(n,x+dx/TWO,y+d1/TWO,dydx,ierr_odefun)
 If (ierr_odefun == 1) Then
   ierr = 1
-  yout = 0._rknd
+  yout = 0._real64
   Return
 Endif
 d2 = dx*dydx
@@ -737,7 +768,7 @@ d2 = dx*dydx
 Call odefun(n,x+dx/TWO,y+d2/TWO,dydx,ierr_odefun)
 If (ierr_odefun == 1) Then
   ierr = 1
-  yout = 0._rknd
+  yout = 0._real64
   Return
 Endif
 d3 = dx*dydx
@@ -746,7 +777,7 @@ d3 = dx*dydx
 Call odefun(n,x+dx,y+d3,dydx,ierr_odefun)
 If (ierr_odefun == 1) Then
   ierr = 1
-  yout = 0._rknd
+  yout = 0._real64
   Return
 Endif
 d4 = dx*dydx

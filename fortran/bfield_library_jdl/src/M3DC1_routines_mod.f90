@@ -14,14 +14,14 @@
 !    m3dc1_field_type : return total field (0) or perturbed part only (1)
 !-----------------------------------------------------------------------------
 Module M3DC1_routines_mod
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Implicit None
-Integer(iknd), Save :: m3dc1_itime = -1
-Integer(iknd), Save :: m3dc1_field_type = -1
-Real(rknd), Save    :: m3dc1_factor = 0.d0
+Integer(int32), Save :: m3dc1_itime = -1
+Integer(int32), Save :: m3dc1_field_type = -1
+Real(real64), Save    :: m3dc1_factor = 0.d0
 Logical :: m3dc1_toroidal_on_err = .false.
 
-Integer(iknd), Private, Save :: isrc, imag
+Integer(int32), Private, Save :: isrc, imag
 
 Contains
 
@@ -42,11 +42,11 @@ Subroutine prepare_m3dc1_fields(filename)
 !  -------   ----      -------
 !   
 ! Author(s): J.D. Lore 1/27/2014
-Use kind_mod
+Use kind_mod, Only: int32
 Use fusion_io
 Implicit None
 Character(len=120), Intent(In) :: filename
-Integer(iknd) :: ierr
+Integer(int32) :: ierr
 !- End of header -------------------------------------------------------------
 
 ! Open M3D-C1 source
@@ -113,15 +113,15 @@ Subroutine bfield_m3dc1(r,phi,z,Npts,Bout,ierr)
 ! Output:
 !   Bout = (:,[Br,Bz,Bt])
 Use fusion_io
-Use kind_mod
+Use kind_mod, Only: int32, real64
 Implicit None
-Real(Rknd), Intent(In), Dimension(Npts) :: r, z, phi
-Integer(iknd), Intent(In) :: Npts
-Real(rknd), Intent(Out), Dimension(Npts,3) :: Bout
-Integer(iknd), Intent(Out) :: ierr
+Real(Real64), Intent(In), Dimension(Npts) :: r, z, phi
+Integer(int32), Intent(In) :: Npts
+Real(real64), Intent(Out), Dimension(Npts,3) :: Bout
+Integer(int32), Intent(Out) :: ierr
 ! Local variables
-Real(rknd) :: x(3), b_tmp(3)
-Integer(iknd) :: ierr_b, i
+Real(real64) :: x(3), b_tmp(3)
+Integer(int32) :: ierr_b, i
 ierr = 0
 Do i=1,Npts
   x(1) = r(i)
@@ -132,8 +132,8 @@ Do i=1,Npts
 
   If (ierr_b .ne. 0) Then
     If (m3dc1_toroidal_on_err) Then
-      b_tmp = 0._rknd
-      b_tmp(2) = 1._rknd 
+      b_tmp = 0._real64
+      b_tmp(2) = 1._real64 
     Else
       ierr = 1
     Endif
@@ -161,10 +161,10 @@ Subroutine close_m3dc1_fields
 !  -------   ----      -------
 !   
 ! Author(s): J.D. Lore 1/27/2014
-Use kind_mod
+Use kind_mod, Only: int32
 Use fusion_io
 Implicit None
-Integer(iknd) :: ierr
+Integer(int32) :: ierr
 !- End of header -------------------------------------------------------------
 
 ! Close fields and source

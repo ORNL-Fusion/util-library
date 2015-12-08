@@ -33,17 +33,17 @@ Module gfile_var_pass
 ! Author(s): J.D. Lore 4/14/2011
 !
 ! Modules used:
-Use kind_mod                ! Import rknd, iknd specifications
+Use kind_mod, Only: real64, int32
 
 Implicit none
 Integer, Parameter :: g_bspl_ord = 3
-Integer(iknd):: &
+Integer(int32):: &
   g_mw,g_mh,g_nbdry,g_limitr
 Character(len=6) :: g_ecase
-Real(rknd) :: g_xdim,g_zdim,g_rzero,g_rgrid1,g_zmid, &
+Real(real64) :: g_xdim,g_zdim,g_rzero,g_rgrid1,g_zmid, &
   g_rmaxis,g_zmaxis,g_ssimag,g_ssibry,g_bcentr,g_cpasma, &
   g_dr,g_dz,g_ip_sign
-Real(rknd), Allocatable :: g_fpol(:), &
+Real(real64), Allocatable :: g_fpol(:), &
   g_pres(:), g_ffprim(:), g_pprime(:), g_psirz(:,:), &
   g_qpsi(:), g_bdry(:,:),g_lim(:,:),g_r(:),g_z(:),g_pn(:), &
   g_bicub_coeffs(:,:,:),g_pnknot(:),g_fpol_bscoef(:)    
@@ -79,25 +79,22 @@ Subroutine bfield_geq_bicub(R1,Z1,Npts,Bout,ierr,verbose)
 ! Author(s): J.D. Lore 04/14/2011 
 !
 ! Modules used:
-Use kind_mod, Only : iknd, rknd
+Use kind_mod, Only : int32, real64
 Use gfile_var_pass
 Use bspline, Only : dbsval
 Implicit None
 
 ! Input/output                      !See above for descriptions
-Integer(iknd),Intent(in) :: Npts
-Real(rknd),Dimension(Npts),Intent(in)  :: R1,Z1
-Real(rknd),Dimension(Npts,3),Intent(out) :: Bout(Npts,3)
-Integer(iknd),Intent(out) :: ierr
+Integer(int32),Intent(in) :: Npts
+Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
+Real(real64),Dimension(Npts,3),Intent(out) :: Bout(Npts,3)
+Integer(int32),Intent(out) :: ierr
 Logical, Optional :: verbose
 ! Local Scalars
-Integer(iknd) :: ir,iz,index,ii
-Real(rknd) :: dir,diz
-Real(rknd) :: psi1,dsdr1,dsdz1,br1,bz1,psiN
-! Local parameters               
-Real(rknd), Parameter :: TWO = 2._rknd, THREE = 3._rknd  
-
-Real(rknd) :: fpol,bt1
+Integer(int32) :: ir,iz,index,ii
+Real(real64) :: dir,diz
+Real(real64) :: psi1,dsdr1,dsdz1,br1,bz1,psiN
+Real(real64) :: fpol,bt1
 Logical :: myverbose 
 !- End of header -------------------------------------------------------------
 myverbose = .true.
@@ -149,7 +146,7 @@ Do ii = 1,Npts
   psiN = (psi1*g_ip_sign - g_ssimag)/(g_ssibry-g_ssimag)
     
   ! Toroidal field
-  If (psiN .ge. 0._rknd .AND. psiN .le. 1._rknd) Then 
+  If (psiN .ge. 0._real64 .AND. psiN .le. 1._real64) Then 
     fpol = dbsval(psiN,g_bspl_ord,g_pnknot,g_mw,g_fpol_bscoef)
     bt1 = fpol/R1(ii)
   Else
@@ -179,7 +176,7 @@ Subroutine readg_g3d(filename)
 ! Author(s): J.D. Lore - 04/12/2011
 !
 ! Modules used:
-Use kind_mod                ! Import rknd, iknd specifications
+Use kind_mod, Only: real64, int32
 Use gfile_var_pass
 Use bspline
 Implicit None
@@ -188,8 +185,8 @@ Implicit None
 Character(len=100) :: filename
 
 ! Local scalars
-Integer(iknd) :: iocheck,idum,i,j
-Real(rknd) :: xdum
+Integer(int32) :: iocheck,idum,i,j
+Real(real64) :: xdum
 Logical,Parameter :: DIAGNO = .false.  ! screen output of read variables
 
 ! Local arrays (1D)
@@ -312,11 +309,11 @@ Allocate(g_r(g_mw),g_z(g_mh),g_pn(g_mw))
 
 Do i=0,g_mw-1
   g_r(i+1) = g_rgrid1 + g_dR*i
-  g_pn(i+1) = Real(i,rknd)/(g_mw-1)
+  g_pn(i+1) = Real(i,real64)/(g_mw-1)
 Enddo
 
 Do i=0,g_mh-1
-  g_z(i+1) = g_zmid - 0.5_rknd*g_zdim + g_dZ*i
+  g_z(i+1) = g_zmid - 0.5_real64*g_zdim + g_dZ*i
 Enddo
 
 g_ip_sign = -g_cpasma/dabs(g_cpasma)
@@ -353,7 +350,7 @@ Result(psi_bicub_coeffs)
 ! Author(s): J.D. Lore 04/15/2011 
 !
 ! Modules used:
-Use kind_mod                  ! Import rknd, iknd specifications
+Use kind_mod, Only: real64, int32
 Use gfile_var_pass, Only : &
  g_dr,g_dz,g_mw,g_mh,g_ip_sign,g_psirz
 Use g3df_math_routines_mod, Only : &
@@ -363,14 +360,14 @@ inversion_lu
 Implicit None
 
 ! Input/output                      !See above for descriptions
-Real(rknd),dimension(g_mw*g_mh,4,4)   :: psi_bicub_coeffs
+Real(real64),dimension(g_mw*g_mh,4,4)   :: psi_bicub_coeffs
 
 ! Local Scalars
-Integer(iknd) :: nr,nz,ir,iz,index,inv_err
+Integer(int32) :: nr,nz,ir,iz,index,inv_err
 ! Local arrays 
-Real(rknd),dimension(g_mw,g_mh) :: psi2d,dsdr,dsdz,d2sdrdz
-Real(rknd),dimension(16,16) :: bicub_mat,bicub_mat_inv
-Real(rknd),dimension(16) :: b,coeff
+Real(real64),dimension(g_mw,g_mh) :: psi2d,dsdr,dsdz,d2sdrdz
+Real(real64),dimension(16,16) :: bicub_mat,bicub_mat_inv
+Real(real64),dimension(16) :: b,coeff
 ! Local parameters                 
 
 
@@ -381,19 +378,19 @@ nz = g_mh
 
 psi2d = g_ip_sign * g_psirz
 
-dsdr = (cshift(psi2d,shift=1,dim=1) - cshift(psi2d,shift=-1,dim=1))/(2._rknd*g_dr)
-dsdz = (cshift(psi2d,shift=1,dim=2) - cshift(psi2d,shift=-1,dim=2))/(2._rknd*g_dz)
+dsdr = (cshift(psi2d,shift=1,dim=1) - cshift(psi2d,shift=-1,dim=1))/(2._real64*g_dr)
+dsdz = (cshift(psi2d,shift=1,dim=2) - cshift(psi2d,shift=-1,dim=2))/(2._real64*g_dz)
 d2sdrdz = (cshift(cshift(psi2d,shift=1,dim=1),shift=1,dim=2) & 
   - cshift(cshift(psi2d,shift=-1,dim=1),shift=1,dim=2) &
   - cshift(cshift(psi2d,shift=1,dim=1),shift=-1,dim=2) &
-  + cshift(cshift(psi2d,shift=-1,dim=1),shift=-1,dim=2))/(4._rknd*g_dr*g_dz)
+  + cshift(cshift(psi2d,shift=-1,dim=1),shift=-1,dim=2))/(4._real64*g_dr*g_dz)
 
 bicub_mat = get_bicub_mat()
 
 Call Inversion_LU(bicub_mat,bicub_mat_inv,Size(bicub_mat,1),inv_err)
 bicub_mat_inv = Transpose(bicub_mat_inv)
 
-psi_bicub_coeffs = 0._rknd
+psi_bicub_coeffs = 0._real64
 Do ir = 1,nr-1
   Do iz = 1,nz-1
     index = iz + nz*(ir-1)
@@ -431,24 +428,24 @@ Result(bicub_mat)
 ! Author(s): J.D. Lore 04/19/2011 
 !
 ! Modules used:
-Use kind_mod                  ! Import rknd, iknd specifications
+Use kind_mod, Only: real64
 
 Implicit None
 
 ! Input/output                      !See above for descriptions
-Real(rknd),dimension(16,16)        :: bicub_mat
+Real(real64),dimension(16,16)        :: bicub_mat
 
 ! Local Parameters
-Real(rknd), Parameter :: One   = 1._rknd, &
-                         Two   = 2._rknd, &
-                         Three = 3._rknd, &
-                         Four  = 4._rknd, &
-                         Six   = 6._rknd, &
-                         Nine  = 9._rknd
+Real(real64), Parameter :: One   = 1._real64, &
+                         Two   = 2._real64, &
+                         Three = 3._real64, &
+                         Four  = 4._real64, &
+                         Six   = 6._real64, &
+                         Nine  = 9._real64
 
 !- End of header -------------------------------------------------------------
 
-bicub_mat(:,:) = 0._rknd
+bicub_mat(:,:) = 0._real64
 
 ! Function values at corners
 bicub_mat(1,1) = One
@@ -503,20 +500,20 @@ Subroutine get_psi_bicub(R1,Z1,Npts,psiout,psiNout,ierr)
 ! Author(s): J.D. Lore 04/14/2011 
 !
 ! Modules used:
-Use kind_mod                  ! Import rknd, iknd specifications
+Use kind_mod, Only: real64, int32
 Use gfile_var_pass, Only : g_ip_sign, g_ssimag, g_ssibry, g_ssimag, g_r, g_z, g_dr, g_dz, g_mw, g_mh
 Use bspline
 Implicit None
 
 ! Input/output                      !See above for descriptions
-Integer(iknd),Intent(in) :: Npts
-Real(rknd),Dimension(Npts),Intent(in)  :: R1,Z1
-Real(rknd),Dimension(Npts),Intent(out) :: psiout, psiNout
-Integer(iknd),Intent(out) :: ierr
+Integer(int32),Intent(in) :: Npts
+Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
+Real(real64),Dimension(Npts),Intent(out) :: psiout, psiNout
+Integer(int32),Intent(out) :: ierr
 
 ! Local Scalars
-Integer(iknd) :: ir,iz,ii
-Real(rknd) :: dir,diz
+Integer(int32) :: ir,iz,ii
+Real(real64) :: dir,diz
 
 !- End of header -------------------------------------------------------------
 
@@ -575,21 +572,19 @@ Subroutine get_psi_derivs_bicub(R1,Z1,Npts,psiout,dpsidr,dpsidz,ierr)
 ! Author(s): J.D. Lore 04/14/2011 
 !
 ! Modules used:
-Use kind_mod                  ! Import rknd, iknd specifications
+Use kind_mod, Only: real64, int32
 Use gfile_var_pass
 Implicit None
 
 ! Input/output                      !See above for descriptions
-Integer(iknd),Intent(in) :: Npts
-Real(rknd),Dimension(Npts),Intent(in)  :: R1,Z1
-Real(rknd),Dimension(Npts),Intent(out) :: psiout, dpsidr, dpsidz
-Integer(iknd),Intent(out) :: ierr
+Integer(int32),Intent(in) :: Npts
+Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
+Real(real64),Dimension(Npts),Intent(out) :: psiout, dpsidr, dpsidz
+Integer(int32),Intent(out) :: ierr
 
 ! Local Scalars
-Integer(iknd) :: ir,iz,index,ii
-Real(rknd) :: dir,diz
-! Local parameters               
-Real(rknd), Parameter :: TWO = 2._rknd, THREE = 3._rknd  
+Integer(int32) :: ir,iz,index,ii
+Real(real64) :: dir,diz
 
 !- End of header -------------------------------------------------------------
 
@@ -637,12 +632,12 @@ End Subroutine get_psi_derivs_bicub
 !+ 
 !-----------------------------------------------------------------------------
 Function psi_bi(index,dir,diz)
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Use gfile_var_pass, Only : g_bicub_coeffs
 Implicit None
-Integer(iknd), Intent(In) :: index
-Real(rknd), Intent(In) :: dir, diz
-Real(rknd) :: psi_bi
+Integer(int32), Intent(In) :: index
+Real(real64), Intent(In) :: dir, diz
+Real(real64) :: psi_bi
 psi_bi = g_bicub_coeffs(index,1,1)   + g_bicub_coeffs(index,2,1)*dir       + &
      g_bicub_coeffs(index,3,1)*dir*dir       + g_bicub_coeffs(index,4,1)*dir*dir*dir      + &
      g_bicub_coeffs(index,1,2)*diz   + g_bicub_coeffs(index,2,2)*dir*diz   + &
@@ -658,13 +653,13 @@ End Function psi_bi
 !+ 
 !-----------------------------------------------------------------------------
 Function dsdr_bi(index,dir,diz)
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Use gfile_var_pass, Only : g_bicub_coeffs, g_dr
 Implicit None
-Integer(iknd), Intent(In) :: index
-Real(rknd), Intent(In) :: dir, diz
-Real(rknd) :: dsdr_bi
-Real(rknd), Parameter :: TWO = 2._rknd, THREE = 3._rknd  
+Integer(int32), Intent(In) :: index
+Real(real64), Intent(In) :: dir, diz
+Real(real64) :: dsdr_bi
+Real(real64), Parameter :: TWO = 2._real64, THREE = 3._real64  
 dsdr_bi = (g_bicub_coeffs(index,2,1)       + TWO*g_bicub_coeffs(index,3,1)*dir +    &
      THREE*g_bicub_coeffs(index,4,1)*dir*dir      + &
      g_bicub_coeffs(index,2,2)*diz   + TWO*g_bicub_coeffs(index,3,2)*dir*diz   + &
@@ -680,13 +675,13 @@ End Function dsdr_bi
 !+ 
 !-----------------------------------------------------------------------------
 Function dsdz_bi(index,dir,diz)
-Use kind_mod, Only : iknd, rknd
+Use kind_mod, Only : int32, real64
 Use gfile_var_pass, Only : g_bicub_coeffs, g_dz
 Implicit None
-Integer(iknd), Intent(In) :: index
-Real(rknd), Intent(In) :: dir, diz
-Real(rknd) :: dsdz_bi
-Real(rknd), Parameter :: TWO = 2._rknd, THREE = 3._rknd  
+Integer(int32), Intent(In) :: index
+Real(real64), Intent(In) :: dir, diz
+Real(real64) :: dsdz_bi
+Real(real64), Parameter :: TWO = 2._real64, THREE = 3._real64  
 dsdz_bi = (g_bicub_coeffs(index,1,2)                 + g_bicub_coeffs(index,2,2)*dir       + &
                 g_bicub_coeffs(index,3,2)*dir*dir            + g_bicub_coeffs(index,4,2)*dir*dir*dir      + &
             TWO*g_bicub_coeffs(index,1,3)*diz         + TWO*g_bicub_coeffs(index,2,3)*dir*diz   + &

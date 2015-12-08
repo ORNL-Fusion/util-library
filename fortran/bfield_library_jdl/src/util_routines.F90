@@ -7,11 +7,40 @@
 !     Module util_routines
 !       Subroutine calc_sep
 !       Subroutine find_xpt_jdl
+!       Function num_lines_file
 !-----------------------------------------------------------------------------
 Module util_routines
 Implicit None
 Contains
 
+!-----------------------------------------------------------------------------
+!+ Returns the number of lines in a file
+!-----------------------------------------------------------------------------
+Function num_lines_file(fname) &
+Result(numl)
+Use kind_mod, Only :int32
+Implicit None
+Character(Len=240), Intent(In) :: fname
+Integer(int32) :: numl, iocheck
+Integer(int32), Parameter :: max_numl = 1000000
+!- End of header -------------------------------------------------------------
+Open(99,file = fname,IOSTAT=iocheck)
+If (iocheck /= 0) Then
+  Write(*,*) 'Error opening file: ', fname
+  Stop 'Exiting: I/O error in function num_lines_file'
+Endif
+numl = 0
+Do
+  Read(99,*,IOSTAT=iocheck)
+  If (iocheck /= 0) Exit
+  numl = numl + 1
+  If ((numl .GE. Huge(numl) - 1) .OR. (numl .GE. max_numl)) Then
+    Stop 'Error: Exceeded maximum numl in num_lines_file'
+  Endif
+Enddo
+Close(99)
+End Function num_lines_file
+  
 !-----------------------------------------------------------------------------
 !+ Calculates approximate curve(s) for the sepatrix
 !-----------------------------------------------------------------------------
@@ -32,7 +61,7 @@ Subroutine calc_sep(second_sep,fname_out)
 !  -------   ----      -------
 !            6/4/15    Port from matlab
 ! Author(s): J.D. Lore 
-Use kind_mod
+Use kind_mod, Only: int32, real64
 Use fieldline_follow_mod, Only: follow_fieldlines_rzphi
 Use gfile_var_pass, Only: g_ip_sign,g_lim,g_limitr,g_r,g_z,g_mw,g_mh
 Use math_geo_module, Only : inside_poly
@@ -42,20 +71,20 @@ Implicit None
 Logical, Intent(In) :: second_sep
 Character(Len=120),Intent(In) :: fname_out
 ! Local Variables
-Real(rknd) :: rx,zx,rx2,zx2
-Integer(iknd) :: idir,maxtries,ii,i,nlim,nbox,in1,in2,nsep1,nsep0,nseps,isep,icount
-Real(rknd), Allocatable, Dimension(:) :: rsep0,zsep0,rsep0_tmp,zsep0_tmp,lim_r,lim_z
-Real(rknd), Allocatable, Dimension(:) :: rsep1,zsep1
-Real(rknd), Allocatable, Dimension(:) ::  box_r,box_z
+Real(real64) :: rx,zx,rx2,zx2
+Integer(int32) :: idir,maxtries,ii,i,nlim,nbox,in1,in2,nsep1,nsep0,nseps,isep
+Real(real64), Allocatable, Dimension(:) :: rsep0,zsep0,rsep0_tmp,zsep0_tmp,lim_r,lim_z
+Real(real64), Allocatable, Dimension(:) :: rsep1,zsep1
+Real(real64), Allocatable, Dimension(:) ::  box_r,box_z
 ! Fl folllowing vars
-Real(rknd), Dimension(1) :: rstart,zstart,phistart
-Integer(iknd), Dimension(1) :: fl_ierr,ilg
-Real(rknd), Allocatable, Dimension(:,:) :: fl_r,fl_z,fl_p
-Real(rknd) :: dphi_fl
-Integer(iknd) :: nsteps_fl
+Real(real64), Dimension(1) :: rstart,zstart,phistart
+Integer(int32), Dimension(1) :: fl_ierr,ilg
+Real(real64), Allocatable, Dimension(:,:) :: fl_r,fl_z,fl_p
+Real(real64) :: dphi_fl
+Integer(int32) :: nsteps_fl
 ! Local Parameters
-Real(rknd), Parameter :: dx = 1.d-3
-Integer(rknd), Parameter :: nsep_div = 1000  ! total number of sep points from fl follow divided by this to output
+Real(real64), Parameter :: dx = 1.d-3
+Integer(real64), Parameter :: nsep_div = 1000  ! total number of sep points from fl follow divided by this to output
 !- End of header -------------------------------------------------------------
 
 Open(99,file=fname_out)
@@ -159,10 +188,10 @@ Do isep=1,nseps
 
   ! drop last point
   Write(99,*) (nsep0-1)/((nsep0+nsep1)/nsep_div)+nsep1/((nsep0+nsep1)/nsep_div)+2
-  Do i = 1,nsep0-1,(nsep0+nsep1)/nsep_div
+  Do i = 1,nsep0-1,Int((nsep0+nsep1)/nsep_div,int32)
     Write(99,*) rsep0(i),zsep0(i)
   Enddo
-  Do i = 1,nsep1,(nsep0+nsep1)/nsep_div
+  Do i = 1,nsep1,Int((nsep0+nsep1)/nsep_div,int32)
     Write(99,*) rsep1(i),zsep1(i)    
   Enddo
   Deallocate(rsep1,zsep1)
@@ -188,7 +217,7 @@ Subroutine find_xpt_jdl(second,refine,tol,quiet,rx,zx,rx2,zx2,phi_eval_deg,dx)
   ! tol is magnitude of bp at xpt
   ! phi_eval_deg only used for m3dc1 fields
   ! Both cases require a gfile field for initial guess!!!
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Use gfile_var_pass, Only: g_bdry, g_r, g_z, g_mh, g_mw
 Use math_geo_module, Only: rlinspace
 Use fieldline_follow_mod, Only: bfield_method
@@ -199,17 +228,17 @@ Use g3d_module, Only: bfield_geq_bicub
 Use phys_const, Only: pi
 Implicit None
 Logical, Intent(in) :: second, refine, quiet
-Real(rknd), Intent(in) :: tol
-Real(rknd), Intent(in), Optional :: phi_eval_deg, dx
-Real(rknd), Intent(out) :: rx, zx, rx2, zx2
+Real(real64), Intent(in) :: tol
+Real(real64), Intent(in), Optional :: phi_eval_deg, dx
+Real(real64), Intent(out) :: rx, zx, rx2, zx2
 
-Integer(iknd), Parameter :: niter_max = 15
-Integer(iknd), Parameter :: n1 = 100  ! grid dimension (square)
+Integer(int32), Parameter :: niter_max = 15
+Integer(int32), Parameter :: n1 = 100  ! grid dimension (square)
 
-Real(rknd), Allocatable :: rtmp(:), ztmp(:),Bout(:,:), Bout_tmp(:,:), phi_tmp(:)
-Real(rknd) :: bp(n1,n1), rg(n1,n1), zg(n1,n1), rt(n1), zt(n1)
-Real(rknd) :: bpx, err, de, bpx2, dx1_grid, dx2_grid, my_phi_eval
-Integer(iknd) :: icount, i, npts_bdry, ierr, ix,ixjx(2), niter
+Real(real64), Allocatable :: rtmp(:), ztmp(:),Bout(:,:), Bout_tmp(:,:), phi_tmp(:)
+Real(real64) :: bp(n1,n1), rg(n1,n1), zg(n1,n1), rt(n1), zt(n1)
+Real(real64) :: bpx, err, de, bpx2, dx1_grid, dx2_grid, my_phi_eval
+Integer(int32) :: icount, i, npts_bdry, ierr, ix,ixjx(2), niter
 ! Local parameters               
 !- End of header -------------------------------------------------------------
 my_phi_eval = 0.d0
@@ -288,6 +317,7 @@ If (refine) Then
 #endif        
       Else
         Write(*,*) 'Bad value for bfield_method in find_xpt_jdl'
+        Write(*,*) 'bfield_method is',bfield_method
         Stop
       Endif
       

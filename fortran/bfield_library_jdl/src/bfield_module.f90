@@ -22,37 +22,33 @@ Subroutine bfield_bs_cyl(P_r,P_phi,P_z,npts,coil,current,ncoil_pts,Br,Bphi,Bz)
 !  output in Tesla.
 !
 ! Input:
-!  P_r, P_phi, P_z : rknd(1:npts) : Evaluation points (m, radians, m)
-!  npts : iknd : number of evaluation points
-!  coil : rknd(ncoil_pts,3) : Array of coil filament beginning and end points,
+!  P_r, P_phi, P_z : real64(1:npts) : Evaluation points (m, radians, m)
+!  npts : int32 : number of evaluation points
+!  coil : real64(ncoil_pts,3) : Array of coil filament beginning and end points,
 !                             in Cartesian coordinates (m), second index is (1,2,3) = x,y,z
-!  current : rknd(ncoil_pts) : The current (in Amp-turns) corresponding to the current filaments. 
+!  current : real64(ncoil_pts) : The current (in Amp-turns) corresponding to the current filaments. 
 !                              The filament defined from coil(i,:) to coil(i+1,:) has a current
 !                              set by current(i). The last value of array current is not used.  
-!  ncoil_pts : iknd : number of coil points
+!  ncoil_pts : int32 : number of coil points
 !
 ! Output:
-!  Br,Bphi,Bz : rknd(npts) : Field components (Tesla)
+!  Br,Bphi,Bz : real64(npts) : Field components (Tesla)
 !
 ! Calls:
 !  bfield_bs_jdl
 !
-! History:
-!  Version   Date      Comment
-!  -------   ----      -------
-!
-! Author(s): J.D. Lore 
-Use kind_mod
+! Author(s): J.D. Lore
+Use kind_mod, Only: real64, int32
 Implicit None
 !Input/output
-Real(rknd), Intent(in), Dimension(npts) :: P_r, P_phi, P_z
-Real(rknd), Intent(in), Dimension(ncoil_pts) :: current
-Real(rknd), Intent(in), Dimension(ncoil_pts,3) :: coil
-Integer(iknd), Intent(in) :: npts, ncoil_pts
-Real(rknd), Intent(out),Dimension(npts) :: Br, Bphi, Bz
+Real(real64), Intent(in), Dimension(npts) :: P_r, P_phi, P_z
+Real(real64), Intent(in), Dimension(ncoil_pts) :: current
+Real(real64), Intent(in), Dimension(ncoil_pts,3) :: coil
+Integer(int32), Intent(in) :: npts, ncoil_pts
+Real(real64), Intent(out),Dimension(npts) :: Br, Bphi, Bz
 ! Local Variables
-Real(rknd), Dimension(npts) :: Bx, By, cp, sp 
-Real(rknd), Dimension(npts) :: P_x, P_y
+Real(real64), Dimension(npts) :: Bx, By, cp, sp 
+Real(real64), Dimension(npts) :: P_x, P_y
 !- End of header -------------------------------------------------------------
 
 cp = cos(P_phi)
@@ -79,17 +75,17 @@ Subroutine bfield_bs_jdl(P_x,P_y,P_z,npts,coil,current,ncoil_pts,Bx,By,Bz)
 !  output in Tesla.
 !
 ! Input:
-!  P_r, P_y, P_z : rknd(1:npts) : Evaluation points (m)
-!  npts : iknd : number of evaluation points
-!  coil : rknd(ncoil_pts,3) : Array of coil filament beginning and end points,
+!  P_r, P_y, P_z : real64(1:npts) : Evaluation points (m)
+!  npts : int32 : number of evaluation points
+!  coil : real64(ncoil_pts,3) : Array of coil filament beginning and end points,
 !                             in Cartesian coordinates (m), second index is (1,2,3) = x,y,z
-!  current : rknd(ncoil_pts) : The current (in Amp-turns) corresponding to the current filaments. 
+!  current : real64(ncoil_pts) : The current (in Amp-turns) corresponding to the current filaments. 
 !                              The filament defined from coil(i,:) to coil(i+1,:) has a current
 !                              set by current(i). The last value of array current is not used.  
-!  ncoil_pts : iknd : number of coil points
+!  ncoil_pts : int32 : number of coil points
 !
 ! Output:
-!  Bx,By,Bz : rknd(npts) : Field components (Tesla)
+!  Bx,By,Bz : real64(npts) : Field components (Tesla)
 !
 ! Calls:
 !
@@ -98,23 +94,23 @@ Subroutine bfield_bs_jdl(P_x,P_y,P_z,npts,coil,current,ncoil_pts,Bx,By,Bz)
 !  -------   ----      -------
 !
 ! Author(s): J.D. Lore 
-Use kind_mod
+Use kind_mod, Only: real64, int32
 Implicit None
-Real(rknd), Intent(in), Dimension(npts) :: P_x, P_y, P_z
-Real(rknd), Intent(in), Dimension(ncoil_pts) :: current
-Real(rknd), Intent(in), Dimension(ncoil_pts,3) :: coil
-Integer(iknd), Intent(in) :: npts, ncoil_pts
-Real(rknd), Intent(out),Dimension(npts) :: Bx, By, Bz
+Real(real64), Intent(in), Dimension(npts) :: P_x, P_y, P_z
+Real(real64), Intent(in), Dimension(ncoil_pts) :: current
+Real(real64), Intent(in), Dimension(ncoil_pts,3) :: coil
+Integer(int32), Intent(in) :: npts, ncoil_pts
+Real(real64), Intent(out),Dimension(npts) :: Bx, By, Bz
 
-Real(rknd), Dimension(ncoil_pts-1) :: Ri_x, Ri_y, Ri_z, Ri_mag
-Real(rknd), Dimension(ncoil_pts-1) :: Rf_x, Rf_y, Rf_z, Rf_mag
-Real(rknd), Dimension(ncoil_pts-1) :: RicrRf_x, RicrRf_y, RicrRf_z
-Real(rknd), Dimension(ncoil_pts-1) :: RidotRf, back, Ival
-Integer(iknd) :: i, nfil
+Real(real64), Dimension(ncoil_pts-1) :: Ri_x, Ri_y, Ri_z, Ri_mag
+Real(real64), Dimension(ncoil_pts-1) :: Rf_x, Rf_y, Rf_z, Rf_mag
+Real(real64), Dimension(ncoil_pts-1) :: RicrRf_x, RicrRf_y, RicrRf_z
+Real(real64), Dimension(ncoil_pts-1) :: RidotRf, back, Ival
+Integer(int32) :: i, nfil
 !- End of header -------------------------------------------------------------
 
 nfil = ncoil_pts - 1
-Ival=current(1:nfil)*1.d-7 ! this is mu0*I/4pi
+Ival=current(1:nfil)*1.e-7_real64 ! this is mu0*I/4pi
 Do i = 1,npts
 
     Ri_x = P_x(i) - coil(1:nfil,1)     !R_i is from beg of filament to point x
