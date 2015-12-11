@@ -1,4 +1,5 @@
 function xpt_info = find_xpt_jl(g,second,refine,tol,quiet,rguess,zguess,de)
+%xpt_info = find_xpt_jl(g,second,refine,tol,quiet,rguess,zguess,de)
 % tol is magnitude of bp at xpt
 if nargin < 5 
     quiet = 0;
