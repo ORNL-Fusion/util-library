@@ -1,4 +1,6 @@
 function data = read_c2_data(run_path,ndomain,time_str)
+% time_str indicates the "000001" of files like 2d.000001.003.dat,
+% and can also be "final".
 
 for idomain = 1:ndomain
     istr_app = '';

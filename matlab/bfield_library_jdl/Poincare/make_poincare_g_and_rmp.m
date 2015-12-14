@@ -18,7 +18,8 @@ g.toroidal_off_grid = 1;
 % rmp.isaxisym = 0;
 % nsym = 1;
 % RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP %
-taper_i = [   -3740.   3863.  -3720.   3855.  -3718.   3858. 3862.  -3791.   3884.  -3854.   3923.  -3847.];
+% taper_i = [   -3740.   3863.  -3720.   3855.  -3718.   3858. 3862.  -3791.   3884.  -3854.   3923.  -3847.];
+taper_i = 3826*[-1 1 -1 1 -1 1 1 -1 1 -1 1 -1];
 rmp = build_d3d_icoils_jl(taper_i); 
 rmp.type = 'g3d';
 rmp.isaxisym = 0;
@@ -29,7 +30,7 @@ nsym = 3;
 
 % Rstart = 1.7;    % if [] this is set to g.rmaxis
 Rend   = 2.25;    % if [] this is set to max radius of g.bdry
-Rstart = 1.95;    % if [] this is set to g.rmaxis
+Rstart = 2.05;    % if [] this is set to g.rmaxis
 % Rend   = 1.7;    % if [] this is set to max radius of g.bdry
 
 Zstart = 0;
@@ -37,7 +38,7 @@ Zend = 0;
 num_surfs = 10;
 
 dphi_deg = 0.5;
-num_transits = 50; % fieldlines are followed in phi each direction 
+num_transits = 40; % fieldlines are followed in phi each direction 
 
 phistart_deg = 0;
 %--------------------------------------------------------------------------

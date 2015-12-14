@@ -1,4 +1,6 @@
 function grid = read_c2_grid(grid_dir,ndomain)
+% Can generalize this into case statement later
+% grid.x2d{idomain}(iy,ix) (y=rad,x=pol)
 
 for idomain = 1:ndomain
     istr_app = '';
@@ -19,8 +21,8 @@ for idomain = 1:ndomain
     if isempty(strfind((lower(data)),'nodenum')); error('output not in assumed order (nodenum)'); end
     node_num = fscanf(fid,'%d',2);
     num_pts = prod(node_num);
-    nx = node_num(1);
-    ny = node_num(2);
+    nx = node_num(1);  % ni
+    ny = node_num(2);  % nj
     
     data = fscanf(fid,'%s',1);
     if isempty(strfind((lower(data)),'connect')); error('output not in assumed order (connect)'); end
@@ -32,11 +34,21 @@ for idomain = 1:ndomain
     grid_data = reshape(grid_data,5,num_pts);
     x1d = grid_data(1,:);
     y1d = grid_data(2,:);
+    Br1d = grid_data(3,:);
+    Bz1d = grid_data(4,:);
+    Bphi1d = grid_data(5,:);
     x2d = reshape(x1d,ny,nx);
     y2d = reshape(y1d,ny,nx);
+    Br2d = reshape(Br1d,ny,nx);
+    Bz2d = reshape(Bz1d,ny,nx);
+    Bphi2d = reshape(Bphi1d,ny,nx);
+        
     
     grid.x2d{idomain} = x2d;
     grid.y2d{idomain} = y2d;
+    grid.Br2d{idomain} = Br2d;
+    grid.Bz2d{idomain} = Bz2d;
+    grid.Bphi2d{idomain} = Bphi2d;
     fclose(fid);
     
     grid.nx(idomain) = nx;

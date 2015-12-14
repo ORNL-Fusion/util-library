@@ -58,8 +58,9 @@ fname_psimin = []; fname_psimin2 = [];
 % run_path = 'C:\Work\fortran\Poincare\160884\03014\m3dc1_g+pert\'; suffix = '0deg_n250';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
 
 % run_path = 'C:\Work\fortran\Poincare\160884\5009\m3dc1_full\'; suffix = 'test';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\5000\g160884.05009_537';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-run_path = 'C:\Work\fortran\Poincare\160884\5009\m3dc1_g+pert\'; suffix = 'test';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\5000\g160884.05009_537';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-
+run_path = 'C:\Work\fortran\Poincare\160884\5009\m3dc1_g+pert\'; suffix = 'test';
+fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\5000\g160884.05009_537';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
+run_path ='C:\Work\'; suffix = 'test';
 psiN_max_eval = 0.98;
 
 g=readg_g3d(gfile_name);
@@ -249,7 +250,6 @@ iend = min([iend,iend2,length(psi1d)]);
 m1 = min1d(1:iend);
 p1 = psi1d(1:iend);
 
-asdfsadfsdaff
 
 if 0  % -- should be obsolete compared to version below
     %------------------------------------------------------------------------------------------------------------------------------------

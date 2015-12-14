@@ -1,10 +1,11 @@
 function cf = colorflipper(num_colors,cmap)
 % Available options for cmap: ['jet','hsv','cw','rb','blues']  Default is hsv
+% cf = colorflipper(num_colors,cmap)
     if nargin < 1
         num_colors = [];
     end
     if nargin < 2
-        cmap = 'hsv';
+        cmap = 'jet';
     end
     
     switch cmap               
@@ -18,6 +19,8 @@ function cf = colorflipper(num_colors,cmap)
             cmap = cmap_rb;
         case {'blues'}
             cmap = cmap_blues;
+        case {'morgan'}
+            cmap = cmap_morgan;
         otherwise
             cmap = cmap_hsv;
     end
@@ -33,6 +36,31 @@ function cf = colorflipper(num_colors,cmap)
     cf(:,2) = interp1(1:size(cmap,1),cmap(:,2),index);
     cf(:,3) = interp1(1:size(cmap,1),cmap(:,3),index);   
     
+end
+
+function cmap = cmap_morgan() %r,g,b
+	ns=128;
+	rb_pct = 0.3;
+	g_pct = 0.6;  
+	
+	rb_pt = floor(rb_pct*ns);
+	g_pt = floor(g_pct*ns);
+	
+	rb_side = zeros(1,ns);
+    rb_side(rb_pt:ns) = linspace(0,255,length(rb_pt:ns));
+    
+	g_side = 255*ones(1,ns);
+    g_side(1:g_pt) = linspace(0,255,length(1:g_pt));
+
+    cmap = zeros(ns*2,3);
+    cmap(:,1) = [rb_side,repmat(255,1,ns)];  %R
+    cmap(:,2) = [g_side,g_side(end:-1:1)];  %G
+    cmap(:,3) = [repmat(255,1,ns),rb_side(end:-1:1)];  %B
+    
+%     cmap(end,1) = 0;
+%     cmap(1,3) = 0;
+    cmap = cmap./256;
+
 end
 
 function cmap = cmap_blues()
