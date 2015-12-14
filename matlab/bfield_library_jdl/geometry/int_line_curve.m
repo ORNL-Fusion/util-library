@@ -25,9 +25,9 @@ for ii = 1:nn
     end
     
     if ii == nn 
-        test = u1 >= 0 && u1 <= 1 && u2 >= 0 && u2 < 1;
-    else
         test = u1 >= 0 && u1 <= 1 && u2 >= 0 && u2 <= 1;
+    else
+        test = u1 >= 0 && u1 <= 1 && u2 >= 0 && u2 < 1;
     end
     
     if test
