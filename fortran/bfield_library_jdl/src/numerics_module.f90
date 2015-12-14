@@ -144,10 +144,10 @@ Do ii = 1,nline-1
 
   If (ii == nline -1) Then
     test = ((u1 .ge. 0._real64) .AND. (u1 .le. 1._real64) .AND. &
-         (u2 .ge. 0._real64) .AND. (u2 .lt. 1._real64))
+         (u2 .ge. 0._real64) .AND. (u2 .le. 1._real64))
   Else
     test = ((u1 .ge. 0._real64) .AND. (u1 .le. 1._real64) .AND. &
-         (u2 .ge. 0._real64) .AND. (u2 .le. 1._real64))
+         (u2 .ge. 0._real64) .AND. (u2 .lt. 1._real64))
   Endif
 
   If (test) Then
