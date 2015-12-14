@@ -22,7 +22,7 @@ Integer(int32) :: left, right, itemp, marker
 Real(real64) :: temp, pivot
 
 If (narray .le. 1) Return
-
+!! QQ check if order(1) = 1, (2)=2, else define it here
 left = 0
 right = narray + 1
 pivot = array((left+right)/2)  ! could replace by random number
@@ -71,9 +71,10 @@ Real(real64), Intent(in) :: rline1(nline1), zline1(nline1), rline2(nline2), zlin
 Real(real64), Intent(out) :: pint1(2)
 Integer(int32), Intent(out), Optional :: ierr, found_ind1, found_ind2, int_count
 
-Integer(int32) :: ii1, ii2
+Integer(int32) :: ii1, ierr_tmp, int_count_tmp
 Integer(int32) :: ierr_0, found_ind1_0, found_ind2_0, int_count_0
-Real(real64) :: p1(2), p2(2), p3(2), p4(2), dL1, dL2, dR1, dZ1, theta1, u1, u2
+Real(real64) :: p1(2), p2(2)
+Real(real64) :: pint1_tmp(2)
 
 int_count_0 = 0
 found_ind1_0 = 0
@@ -82,44 +83,34 @@ found_ind2_0 = 0
 Do ii1 = 1,nline1 - 1
   p1 = [rline1(ii1),zline1(ii1)]
   p2 = [rline1(ii1+1),zline1(ii1+1)]
-  Do ii2 = 1,nline2 - 1
-    p3 = [rline2(ii2),zline2(ii2)]
-    p4 = [rline2(ii2+1),zline2(ii2+1)]
-    Call int_two_lines(p1,p2,p3,p4,u1,u2)
-    dL1 = Sqrt(Sum((p2-p1)**2))
-    dL2 = Sqrt(Sum((p4-p3)**2))        
-    If ( (Sign(1.d0,dL1) .ne. Sign(1.d0,u1)) .OR. (Sign(1.d0,dL2) .ne. Sign(1.d0,u2)) &
-         .OR. (Abs(u1) .gt. 1.d0) .OR. (Abs(u2) .gt. 1.d0) ) Then
-    Else
-      dR1 = p2(1)-p1(1)
-      dZ1 = p2(2)-p1(2)
-      theta1 = Atan2(dZ1,dR1)
-      pint1 = [dL1*u1*Cos(theta1)+p1(1),dL1*u1*Sin(theta1)+p1(2)]
-      ierr_0 = 0
-      found_ind1_0 = ii1
-      found_ind2_0 = ii2
-      int_count_0 = int_count_0 + 1
-      If (first) Then
-        If (Present(ierr)) ierr = ierr_0
-        If (Present(found_ind1)) found_ind1 = found_ind1_0
-        If (Present(found_ind2)) found_ind2 = found_ind2_0
-        If (Present(int_count)) int_count = int_count_0
-        Return
-      Endif
+  Call int_line_curve(p1,p2,rline2,zline2,nline2,first,pint1_tmp,ierr_tmp,found_ind2_0,int_count_tmp)
+
+  If (ierr_tmp == 0) Then
+    ierr_0 = 0
+    pint1 = pint1_tmp
+    found_ind1_0 = ii1
+    int_count_0 = int_count_0 + int_count_tmp
+
+    If (first) Then
+      If (Present(ierr)) ierr = ierr_0
+      If (Present(found_ind1)) found_ind1 = found_ind1_0
+      If (Present(found_ind2)) found_ind2 = found_ind2_0
+      If (Present(int_count)) int_count = int_count_0
+      Return
     Endif
-  Enddo
+  Endif
 Enddo
 
 If (int_count_0 .eq. 0) Then
     pint1 = [0.d0,0.d0]
     ierr_0 = 1
     If (Present(ierr)) ierr = ierr_0
-    If (Present(found_ind1)) found_ind1 = found_ind1_0
-    If (Present(found_ind2)) found_ind2 = found_ind2_0
+    If (Present(found_ind1)) found_ind1 = 0
+    If (Present(found_ind2)) found_ind2 = 0
     If (Present(int_count)) int_count = int_count_0    
 Endif
 If (int_count_0 > 1) Then
-    Write(*,*) 'Warning: More than one intersection found in int_line_curve. Returning last point'
+    Write(*,*) 'Warning: More than one intersection found in int_curve_curve. Returning last point'
 Endif
 
 End Subroutine int_curve_curve
@@ -138,29 +129,32 @@ Integer(int32), Intent(in) :: nline
 Real(real64), Intent(in) :: p1(2), p2(2), rline(nline), zline(nline)
 Real(real64), Intent(out) :: pint1(2)
 Integer(int32), Intent(out) :: ierr, found_ind, int_count
-
-Integer(int32) :: ii
-Real(real64) :: p3(2), p4(2), dL1, dL2, dR1, dZ1, theta1, u1, u2
+Logical :: test
+Integer(int32) :: ii, ierr2
+Real(real64) :: p3(2), p4(2), u1, u2
 
 int_count = 0
 found_ind = 0
 Do ii = 1,nline-1
   p3 = [rline(ii),zline(ii)]
   p4 = [rline(ii+1),zline(ii+1)]
-  Call int_two_lines(p1,p2,p3,p4,u1,u2)
-  dL1 = Sqrt(Sum((p2-p1)**2))
-  dL2 = Sqrt(Sum((p4-p3)**2))
-        
-  If ( (Sign(1.d0,dL1) .ne. Sign(1.d0,u1)) .OR. (Sign(1.d0,dL2) .ne. Sign(1.d0,u2)) &
-       .OR. (Abs(u1) .gt. 1.d0) .OR. (Abs(u2) .gt. 1.d0) ) Then
+  Call int_two_lines(p1,p2,p3,p4,u1,u2,ierr2)
+
+  If (ierr2 .ne. 0) Cycle
+
+  If (ii == nline -1) Then
+    test = ((u1 .ge. 0._real64) .AND. (u1 .le. 1._real64) .AND. &
+         (u2 .ge. 0._real64) .AND. (u2 .lt. 1._real64))
   Else
-    dR1 = p2(1)-p1(1)
-    dZ1 = p2(2)-p1(2)
-    theta1 = Atan2(dZ1,dR1)
-    pint1 = [dL1*u1*Cos(theta1)+p1(1),dL1*u1*Sin(theta1)+p1(2)]
+    test = ((u1 .ge. 0._real64) .AND. (u1 .le. 1._real64) .AND. &
+         (u2 .ge. 0._real64) .AND. (u2 .le. 1._real64))
+  Endif
+
+  If (test) Then
+    int_count = int_count + 1
+    pint1 = p1 + u1*(p2-p1)
     ierr = 0
     found_ind = ii
-    int_count = int_count + 1
     If (first) Return      
   Endif  
 Enddo
@@ -179,28 +173,35 @@ End Subroutine int_line_curve
 !-----------------------------------------------------------------------------
 !+ Checks for the intersection of two line segments
 !-----------------------------------------------------------------------------
-Subroutine int_two_lines(p1,p2,p3,p4,u1,u2)
+Subroutine int_two_lines(p1,p2,p3,p4,u1,u2,ierr,pint)
 ! Calculates the intersection of lines p1 to p2, and p3 to p4.  Each
 ! point is an x-y pair.  Returns two values, which are the distance
 ! between p1 and p2 of the intersection, and between p3 and p4.  This
 ! distance is normalized to the length of the lines.
 
-Use kind_mod, Only: real64
+Use kind_mod, Only: real64, Int32
 implicit none
 
 Real(real64), Intent(in),Dimension(2) :: p1,p2,p3,p4
-Real(real64), intent(out) :: u1,u2
+Real(real64), Intent(out) :: u1,u2
+Real(real64), Intent(out), Optional :: pint(2)
 Real(real64) :: denom
+Real(real64), Parameter :: tol = 2.e-16_real64
+Integer(int32), Intent(out) :: ierr
 
 denom = (p4(2)-p3(2))*(p2(1)-p1(1)) - (p4(1)-p3(1))*(p2(2)-p1(2))
 
-if ( denom .eq. 0._real64 ) then 
-  u1 = 1.d30
-  u2 = 1.d30
-else
+If ( Abs(denom) .lt. tol ) then  ! parallel lines
+  u1=0._real64
+  u2=0._real64
+  If (Present(pint)) pint = 0._real64
+  ierr=1
+Else
   u1 = ((p4(1)-p3(1))*(p1(2)-p3(2)) - (p4(2)-p3(2))*(p1(1)-p3(1)))/denom
   u2 = ((p2(1)-p1(1))*(p1(2)-p3(2)) - (p2(2)-p1(2))*(p1(1)-p3(1)))/denom
-endif
+  ierr=0
+  If (Present(pint)) pint = p1 + u1*(p2-p1)
+Endif
 
 Endsubroutine int_two_lines
 

@@ -1,3 +1,7 @@
+*#
+*.#*
+*.x
+
 #Emacs old files
 *~
 
@@ -11,3 +15,4 @@ fortran/bfield_library_jdl/tests/*.out
 
 # matlab
 *.asv
+
