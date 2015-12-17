@@ -10,8 +10,8 @@ if nargin < 6
     verbose = 0;
 end
 
-int_count = 0;
-found_ind = 0;
+int_count(1) = 0;
+found_ind(1) = 0;
 
 
 nn = length(line_r)-1;
@@ -48,8 +48,9 @@ if int_count > 1 && verbose
     disp('Warning: More than one intersection found.')
 end
 
-if int_count == 0
-    pint1 = NaN;    
+if int_count(1) == 0
+    pint1(1,1:2) = NaN;    
+    found_ind(1) = NaN;
     ierr = 1;
 end
 
