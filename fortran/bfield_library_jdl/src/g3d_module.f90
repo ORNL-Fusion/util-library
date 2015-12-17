@@ -353,9 +353,6 @@ Result(psi_bicub_coeffs)
 Use kind_mod, Only: real64, int32
 Use gfile_var_pass, Only : &
  g_dr,g_dz,g_mw,g_mh,g_ip_sign,g_psirz
-Use g3df_math_routines_mod, Only : &
-! Imported routines
-inversion_lu  
   
 Implicit None
 
@@ -366,8 +363,9 @@ Real(real64),dimension(g_mw*g_mh,4,4)   :: psi_bicub_coeffs
 Integer(int32) :: nr,nz,ir,iz,index,inv_err
 ! Local arrays 
 Real(real64),dimension(g_mw,g_mh) :: psi2d,dsdr,dsdz,d2sdrdz
-Real(real64),dimension(16,16) :: bicub_mat,bicub_mat_inv
+Real(real64),dimension(16,16) :: bicub_mat,bicub_mat_fac
 Real(real64),dimension(16) :: b,coeff
+Integer(int32),dimension(16) :: ipiv
 ! Local parameters                 
 
 
@@ -387,8 +385,12 @@ d2sdrdz = (cshift(cshift(psi2d,shift=1,dim=1),shift=1,dim=2) &
 
 bicub_mat = get_bicub_mat()
 
-Call Inversion_LU(bicub_mat,bicub_mat_inv,Size(bicub_mat,1),inv_err)
-bicub_mat_inv = Transpose(bicub_mat_inv)
+! Perform LU factorization
+bicub_mat_fac = bicub_mat
+Call DGETRF(16,16,bicub_mat_fac,16,ipiv,inv_err)
+If (inv_err .ne. 0) Then
+  Stop "Error from DGETRF factorizing bicub_mat in get_psi_bicub_coeffs"
+Endif
 
 psi_bicub_coeffs = 0._real64
 Do ir = 1,nr-1
@@ -398,11 +400,15 @@ Do ir = 1,nr-1
           dsdr(ir,iz)*g_dr,        dsdr(ir+1,iz)*g_dr,        dsdr(ir,iz+1)*g_dr,        dsdr(ir+1,iz+1)*g_dr, &
           dsdz(ir,iz)*g_dz,        dsdz(ir+1,iz)*g_dz,        dsdz(ir,iz+1)*g_dz,        dsdz(ir+1,iz+1)*g_dz, &
           d2sdrdz(ir,iz)*g_dr*g_dz,d2sdrdz(ir+1,iz)*g_dr*g_dz,d2sdrdz(ir,iz+1)*g_dr*g_dz,d2sdrdz(ir+1,iz+1)*g_dr*g_dz/)
-    coeff = Matmul(b,bicub_mat_inv)
-    psi_bicub_coeffs(index,:,1) = coeff(1:4)
-    psi_bicub_coeffs(index,:,2) = coeff(5:8)
-    psi_bicub_coeffs(index,:,3) = coeff(9:12)
-    psi_bicub_coeffs(index,:,4) = coeff(13:16)
+    ! Solve Ax=B
+    Call DGETRS('N',16,16,bicub_mat_fac,16,ipiv,b,16,inv_err)
+    If (inv_err .ne. 0) Then
+      Stop "Error from DGETRS solving AX=B for X in get_psi_bicub_coeffs"
+    Endif
+    psi_bicub_coeffs(index,:,1) = b(1:4)
+    psi_bicub_coeffs(index,:,2) = b(5:8)
+    psi_bicub_coeffs(index,:,3) = b(9:12)
+    psi_bicub_coeffs(index,:,4) = b(13:16)
   Enddo
 Enddo
 

@@ -43,7 +43,6 @@ OBJS90 = \
 bfield_module.o \
 bspline90_22.o \
 DIIID_routines_mod.o \
-g3df_math_routines_mod.o \
 g3d_module.o \
 kind_mod.o \
 NSTX_routines_mod.o \
@@ -70,7 +69,6 @@ endif
 MODS90 = \
 g3d_module.mod \
 numerics_module.mod \
-g3df_math_routines_mod.mod  \
 bfield_module.mod \
 screening_module.mod \
 phys_const.mod \
@@ -116,8 +114,7 @@ M3DC1_routines_mod.o: %.o : $(SOURCEPATH)%.f90
 bfield_module.o bfield_module.mod:   kind_mod.mod
 DIIID_routines_mod.o:   kind_mod.mod phys_const.mod
 fieldline_follow_mod.o fieldline_follow_mod.mod: kind_mod.mod g3d_module.mod rmpcoil_module.mod screening_module.mod bfield_module.mod gfile_var_pass.mod phys_const.mod
-g3df_math_routines_mod.o g3df_math_routines_mod.mod:   kind_mod.mod
-g3d_module.o g3d_module.mod:   kind_mod.mod bspline.mod g3df_math_routines_mod.mod
+g3d_module.o g3d_module.mod:   kind_mod.mod bspline.mod
 NSTX_routines_mod.o: kind_mod.mod phys_const.mod
 numerics_module.o numerics_module.mod: kind_mod.mod phys_const.mod
 phys_const.o phys_const.mod : kind_mod.mod

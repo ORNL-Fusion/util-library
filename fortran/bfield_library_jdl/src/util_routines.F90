@@ -5,9 +5,10 @@
 !
 !   Contains:
 !     Module util_routines
+!       Function num_lines_file
 !       Subroutine calc_sep
 !       Subroutine find_xpt_jdl
-!       Function num_lines_file
+!
 !-----------------------------------------------------------------------------
 Module util_routines
 Implicit None
@@ -340,7 +341,7 @@ If (refine) Then
     Endif
   Enddo
   If ( .NOT. quiet ) Then
-    Write(*,'(a,e12.3,2f12.3)') ' 1st X-point. [Bp,R,Z] = ',bpx,rx,zx
+    Write(*,'(a,e12.3,2f12.5)') ' 1st X-point. [Bp,R,Z] = ',bpx,rx,zx
   Endif
 Endif
 Deallocate(Ztmp,Bout,Bout_tmp,phi_tmp)
@@ -408,7 +409,7 @@ If (second) Then
       Endif
     Enddo
     If ( .NOT. quiet ) Then
-      Write(*,'(a,e12.3,2f12.3)') ' 2nd X-point. [Bp,R,Z] = ',bpx2,rx2,zx2
+      Write(*,'(a,e12.3,2f12.5)') ' 2nd X-point. [Bp,R,Z] = ',bpx2,rx2,zx2
     Endif
   Endif
   Deallocate(Ztmp,Bout,Bout_tmp,phi_tmp)  
