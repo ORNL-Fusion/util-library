@@ -364,7 +364,7 @@ Integer(int32) :: nr,nz,ir,iz,index,inv_err
 ! Local arrays 
 Real(real64),dimension(g_mw,g_mh) :: psi2d,dsdr,dsdz,d2sdrdz
 Real(real64),dimension(16,16) :: bicub_mat,bicub_mat_fac
-Real(real64),dimension(16) :: b,coeff
+Real(real64),dimension(16) :: b
 Integer(int32),dimension(16) :: ipiv
 ! Local parameters                 
 

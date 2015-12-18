@@ -1,5 +1,16 @@
 !-----------------------------------------------------------------------------
 !+ Math/geometric routines
+! 
+!  Subroutine quicksort
+!  Subroutine int_curve_curve
+!  Subroutine int_line_curve
+!  Subroutine int_two_lines
+!  Subroutine move_L_on_C
+!  Subroutine linear_interp
+!  Subroutine locate_bisect
+!  Function rlinspace
+!  Function inside_poly
+!
 !-----------------------------------------------------------------------------
 Module math_geo_module
 Implicit None
@@ -208,7 +219,7 @@ Endsubroutine int_two_lines
 !------------------------------------------------------------------------------
 !+ Move a distance on a curve linear - piecewise
 !------------------------------------------------------------------------------
-Subroutine move_L_on_C(L,rline,zline,nline,ic_near_L,err_near_L,R_L,Z_L)
+Subroutine move_L_on_C(L,rline,zline,nline,ic_near_L,err_near_L,R_L,Z_L,ierr)
 ! Moves a distance L along the curve defined by
 ! arrays rline,zline.  dL is defined as the
 ! linear distance between curve points.
@@ -218,7 +229,7 @@ Implicit None
 Integer(int32), Intent(in) :: nline
 Real(real64), Intent(in) :: L, rline(nline), zline(nline)
 Real(real64), Intent(out) :: err_near_L, R_L, Z_L
-Integer(int32), Intent(out) :: ic_near_L
+Integer(int32), Intent(out) :: ic_near_L, ierr
 
 Real(real64) :: dL(nline), Ltot, SumL(nline), delt(nline), diff, theta, dL_step
 Integer(int32) :: ind_diff, ii, i
@@ -230,7 +241,8 @@ Ltot = Sum(dL)
 If ( Ltot .lt. L ) Then
     Write(*,*) 'Requested length, total length ',L,Ltot
     Write(*,*) 'Error: Ltot < L'
-    Stop
+    ierr = 1
+    Return
 Endif
 
 SumL(1) = 0.d0
@@ -247,7 +259,8 @@ If ( diff .gt. 0.d0 ) Then
     theta = Atan2(zline(ii+1)-zline(ii),rline(ii+1)-rline(ii))
     If ( dL_step .eq. 0.d0 ) Then
       Write(*,*) ' dL_step 1 cannot be zero in move_L_on_C',dL_step
-      Stop
+      ierr = 1
+      Return
     Endif
     R_L = rline(ii) + diff*Cos(theta)
     Z_L = zline(ii) + diff*Sin(theta)
@@ -257,7 +270,8 @@ Elseif ( diff .lt. 0.d0 ) Then
     theta = Atan2(zline(ii-1)-zline(ii),rline(ii-1)-rline(ii))
     If ( dL_step == 0.d0 ) Then
       Write(*,*) ' dL_step 2 cannot be zero in move_L_on_C',dL_step,ind_diff
-      Stop
+      ierr = 1
+      Return
     Endif
     R_L = rline(ii) - diff*Cos(theta)
     Z_L = zline(ii) - diff*Sin(theta)
@@ -268,6 +282,7 @@ Endif
 
 ic_near_L = ind_diff
 err_near_L = diff
+ierr = 0
 
 End Subroutine move_L_on_C
 
