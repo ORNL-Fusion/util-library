@@ -214,7 +214,7 @@ End Subroutine calc_sep
 !-----------------------------------------------------------------------------
 !+ Find x-point(s) from gfile or m3dc1 field
 !-----------------------------------------------------------------------------
-Subroutine find_xpt_jdl(second,refine,tol,quiet,rx,zx,rx2,zx2,phi_eval_deg,dx)
+Subroutine find_xpt_jdl(second,refine,tol,quiet,rx,zx,rx2,zx2,dx)
   ! tol is magnitude of bp at xpt
   ! phi_eval_deg only used for m3dc1 fields
   ! Both cases require a gfile field for initial guess!!!
@@ -223,29 +223,24 @@ Use gfile_var_pass, Only: g_bdry, g_r, g_z, g_mh, g_mw
 Use math_geo_module, Only: rlinspace
 Use fieldline_follow_mod, Only: bfield_method
 #ifdef HAVE_M3DC1
-Use m3dc1_routines_mod, Only: bfield_m3dc1
+Use m3dc1_routines_mod, Only: bfield_m3dc1, bfield_m3dc1_2d
 #endif
 Use g3d_module, Only: bfield_geq_bicub
-Use phys_const, Only: pi
 Implicit None
 Logical, Intent(in) :: second, refine, quiet
 Real(real64), Intent(in) :: tol
-Real(real64), Intent(in), Optional :: phi_eval_deg, dx
+Real(real64), Intent(in), Optional :: dx
 Real(real64), Intent(out) :: rx, zx, rx2, zx2
 
 Integer(int32), Parameter :: niter_max = 15
 Integer(int32), Parameter :: n1 = 100  ! grid dimension (square)
 
-Real(real64), Allocatable :: rtmp(:), ztmp(:),Bout(:,:), Bout_tmp(:,:), phi_tmp(:)
+Real(real64), Allocatable :: rtmp(:), ztmp(:),Bout(:,:)
 Real(real64) :: bp(n1,n1), rg(n1,n1), zg(n1,n1), rt(n1), zt(n1)
-Real(real64) :: bpx, err, de, bpx2, dx1_grid, dx2_grid, my_phi_eval
+Real(real64) :: bpx, err, de, bpx2, dx1_grid, dx2_grid
 Integer(int32) :: icount, i, npts_bdry, ierr, ix,ixjx(2), niter
 ! Local parameters               
 !- End of header -------------------------------------------------------------
-my_phi_eval = 0.d0
-If (present(phi_eval_deg)) Then
-  my_phi_eval = phi_eval_deg*pi/180.d0
-Endif
 
 ! Always start by guessing xpt from Bpmin in gfile bdry
 npts_bdry = Size(g_bdry,2)
@@ -290,7 +285,6 @@ Deallocate(rtmp,ztmp,Bout)
 
 ! Evaluate on grid around initial guess to find min Bp
 Allocate(ztmp(n1),Bout(n1,3))
-Allocate(Bout_tmp(n1,3),phi_tmp(n1))
 If (refine) Then
   err = bpx
   de = dx1_grid
@@ -303,25 +297,31 @@ If (refine) Then
     zt = rlinspace(zx-0.5d0*de,zx+0.5d0*de,n1)
 
     Do i = 1,n1 
-      ztmp(:) = zt(i)            
+      ztmp(:) = zt(i)
       If (bfield_method == 0 ) Then      ! g only
         Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
-#ifdef HAVE_M3DC1        
-      Elseif ( bfield_method ==  3) Then ! g + m3dc1 
-        phi_tmp(:) = my_phi_eval
-        Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)     
-        Call bfield_m3dc1(rt,phi_tmp,ztmp,n1,Bout_tmp,ierr)
-        Bout = Bout + Bout_tmp
+      Elseif (bfield_method == 1) Then ! g+rmp coils
+!        Write(*,*) ' Method is g+rmp, using g only to find xpoint'
+        Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
+      Elseif (bfield_method == 2) Then ! g+screening
+!        Write(*,*) ' Method is g+screening, using g only to find xpoint'
+        Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
+#ifdef HAVE_M3DC1
+      Elseif ( bfield_method ==  3) Then ! g + m3dc1
+!        Write(*,*) ' Method is g+m3dc1, using g only to find xpoint'
+        Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
       Elseif (bfield_method == 4) Then  ! m3dc1 total field
-        phi_tmp(:) = my_phi_eval
-        Call bfield_m3dc1(rt,phi_tmp,ztmp,n1,Bout,ierr)
-#endif        
+!        Write(*,*) ' Method is m3dc1 total field, using 2d only to find xpoint'
+        Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
+      Elseif (bfield_method == 5) Then  ! m3dc1 total field (AS only)
+        Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
+#endif          
       Else
         Write(*,*) 'Bad value for bfield_method in find_xpt_jdl'
         Write(*,*) 'bfield_method is',bfield_method
         Stop
       Endif
-      
+
       rg(i,:) = rt
       zg(i,:) = ztmp
       bp(i,:) = Sqrt(Bout(:,1)**2 + Bout(:,2)**2)
@@ -344,7 +344,7 @@ If (refine) Then
     Write(*,'(a,e12.3,2f12.5)') ' 1st X-point. [Bp,R,Z] = ',bpx,rx,zx
   Endif
 Endif
-Deallocate(Ztmp,Bout,Bout_tmp,phi_tmp)
+Deallocate(Ztmp,Bout)
 
 ! Find second xpoint
 rx2 = 0.d0
@@ -359,7 +359,6 @@ If (second) Then
   err = bpx2
   Deallocate(Bout)
   Allocate(ztmp(n1),Bout(n1,3))
-  Allocate(Bout_tmp(n1,3),phi_tmp(n1))  
   If (refine) Then
     de = dx2_grid
     bp = 0.d0
@@ -375,18 +374,25 @@ If (second) Then
         ztmp(:) = zt(i)
         If (bfield_method == 0 ) Then      ! g only
           Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
+        Elseif (bfield_method == 1) Then ! g+rmp coils
+!          Write(*,*) ' Method is g+rmp, using g only to find xpoint'
+          Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
+        Elseif (bfield_method == 2) Then ! g+screening
+!          Write(*,*) ' Method is g+screening, using g only to find xpoint'
+          Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
 #ifdef HAVE_M3DC1
-        Elseif ( bfield_method ==  3) Then ! g + m3dc1 
-          phi_tmp(:) = my_phi_eval
-          Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)     
-          Call bfield_m3dc1(rt,phi_tmp,ztmp,n1,Bout_tmp,ierr)
-          Bout = Bout + Bout_tmp
+        Elseif ( bfield_method ==  3) Then ! g + m3dc1
+!          Write(*,*) ' Method is g+m3dc1, using g only to find xpoint'
+          Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
         Elseif (bfield_method == 4) Then  ! m3dc1 total field
-          phi_tmp(:) = my_phi_eval
-          Call bfield_m3dc1(rt,phi_tmp,ztmp,n1,Bout,ierr)
+!          Write(*,*) ' Method is m3dc1 total field, using 2d only to find xpoint'
+          Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
+        Elseif (bfield_method == 5) Then  ! m3dc1 total field (AS only)
+          Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
 #endif          
         Else
           Write(*,*) 'Bad value for bfield_method in find_xpt_jdl'
+          Write(*,*) 'bfield_method is',bfield_method
           Stop
         Endif
         
@@ -412,7 +418,7 @@ If (second) Then
       Write(*,'(a,e12.3,2f12.5)') ' 2nd X-point. [Bp,R,Z] = ',bpx2,rx2,zx2
     Endif
   Endif
-  Deallocate(Ztmp,Bout,Bout_tmp,phi_tmp)  
+  Deallocate(Ztmp,Bout)  
 Endif
 
 End Subroutine find_xpt_jdl

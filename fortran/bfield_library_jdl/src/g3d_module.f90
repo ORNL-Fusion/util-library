@@ -373,7 +373,6 @@ Integer(int32),dimension(16) :: ipiv
 
 nr = g_mw
 nz = g_mh
-
 psi2d = g_ip_sign * g_psirz
 
 dsdr = (cshift(psi2d,shift=1,dim=1) - cshift(psi2d,shift=-1,dim=1))/(2._real64*g_dr)
@@ -395,20 +394,20 @@ Endif
 psi_bicub_coeffs = 0._real64
 Do ir = 1,nr-1
   Do iz = 1,nz-1
-    index = iz + nz*(ir-1)
     b = (/psi2d(ir,iz),            psi2d(ir+1,iz),            psi2d(ir,iz+1),            psi2d(ir+1,iz+1),     &
           dsdr(ir,iz)*g_dr,        dsdr(ir+1,iz)*g_dr,        dsdr(ir,iz+1)*g_dr,        dsdr(ir+1,iz+1)*g_dr, &
           dsdz(ir,iz)*g_dz,        dsdz(ir+1,iz)*g_dz,        dsdz(ir,iz+1)*g_dz,        dsdz(ir+1,iz+1)*g_dz, &
           d2sdrdz(ir,iz)*g_dr*g_dz,d2sdrdz(ir+1,iz)*g_dr*g_dz,d2sdrdz(ir,iz+1)*g_dr*g_dz,d2sdrdz(ir+1,iz+1)*g_dr*g_dz/)
     ! Solve Ax=B
-    Call DGETRS('N',16,16,bicub_mat_fac,16,ipiv,b,16,inv_err)
+    Call DGETRS('N',16,1,bicub_mat_fac,16,ipiv,b,16,inv_err)
     If (inv_err .ne. 0) Then
       Stop "Error from DGETRS solving AX=B for X in get_psi_bicub_coeffs"
     Endif
-    psi_bicub_coeffs(index,:,1) = b(1:4)
-    psi_bicub_coeffs(index,:,2) = b(5:8)
-    psi_bicub_coeffs(index,:,3) = b(9:12)
-    psi_bicub_coeffs(index,:,4) = b(13:16)
+    index = iz + nz*(ir-1)
+    psi_bicub_coeffs(index,1:4,1) = b(1:4)
+    psi_bicub_coeffs(index,1:4,2) = b(5:8)
+    psi_bicub_coeffs(index,1:4,3) = b(9:12)
+    psi_bicub_coeffs(index,1:4,4) = b(13:16)
   Enddo
 Enddo
 
@@ -696,6 +695,19 @@ dsdz_bi = (g_bicub_coeffs(index,1,2)                 + g_bicub_coeffs(index,2,2)
         THREE*g_bicub_coeffs(index,3,4)*dir*dir*diz*diz + THREE*g_bicub_coeffs(index,4,4)*dir*dir*dir*diz*diz)/g_dz
 End Function dsdz_bi
 
+Subroutine close_gfile
+Use gfile_var_pass
+Implicit None
+Write(*,*) 'Deallocating gfile variables'
+Deallocate(g_fpol,g_pres,g_ffprim)
+Deallocate(g_pprime,g_psirz,g_qpsi)
+Deallocate(g_bdry)
+Deallocate(g_lim)
+Deallocate(g_r,g_z,g_pn)
+Deallocate(g_bicub_coeffs)
+Deallocate(g_pnknot)
+Deallocate(g_fpol_bscoef)
+End Subroutine close_gfile
 
 End Module g3d_module
 

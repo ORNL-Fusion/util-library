@@ -19,6 +19,7 @@
 !                     2 -- gfile + Pavel's screened fields with bspline interpolation (not fully implemented!)
 !                     3 -- gfile + M3DC1 perturbed field
 !                     4 -- M3DC1 total field
+!                     5 -- M3DC1 2D field only
 ! 
 !-----------------------------------------------------------------------------
 Module fieldline_follow_mod
@@ -328,7 +329,7 @@ Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
 Use bfield_module, Only : bfield_bs_cyl
 #ifdef HAVE_M3DC1
-Use m3dc1_routines_mod, Only : bfield_m3dc1
+Use m3dc1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
 #endif
 Implicit None
 Real(real64), Intent(In) :: phi
@@ -385,6 +386,11 @@ Elseif (bfield_method == 3) Then  ! g + m3dc1
 Elseif (bfield_method == 4) Then  ! m3dc1 total field
   phi_tmp(1) = phi
   Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),Npts,bval,ierr_rmp)
+  Br   = bval(1,1)
+  Bz   = bval(1,2)
+  Bphi = bval(1,3)
+Elseif (bfield_method == 5) Then  ! m3dc1 2d field only
+  Call bfield_m3dc1_2d(RZ(1),RZ(2),Npts,bval,ierr_rmp)
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
@@ -541,7 +547,7 @@ Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
 Use bfield_module, Only : bfield_bs_cyl
 #ifdef HAVE_M3DC1
-Use m3dc1_routines_mod, Only : bfield_m3dc1
+Use m3dc1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
 #endif
 Use phys_const, Only : pi
 Implicit None
@@ -650,6 +656,11 @@ Do i=1,nsteps
   Elseif (bfield_method == 4) Then  ! m3dc1 total field
     phi_tmp(1) = phi
     Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),1,bval,ierr_rmp)
+    Br   = bval(1,1)
+    Bz   = bval(1,2)
+    Bphi = bval(1,3)
+  Elseif (bfield_method == 5) Then  ! m3dc1 2d field only
+    Call bfield_m3dc1_2d(RZ(1),RZ(2),1,bval,ierr_rmp)
     Br   = bval(1,1)
     Bz   = bval(1,2)
     Bphi = bval(1,3)

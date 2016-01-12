@@ -31,10 +31,10 @@ LIBFILE = libbjdl.a
 # External library paths and libraries for m3dc1
 ifeq ($(strip $(USE_M3DC1)),1)
   DEFINES = -DHAVE_M3DC1
-  LIBDIR_m3dc1 = $(M3DC1_INSTALL_DIR)/lib/_$(M3DC1_ARCH)
+  LIBDIR_m3dc1 = $(FIO_INSTALL_DIR)/lib
   LIBS_m3dc1 = -lfusionio -lm3dc1_fortran -lm3dc1
 #  LIBS_m3dc1_full = libfusionio.a libm3dc1_fortran.a libm3dc1.a
-  INCLUDE_m3dc1 = $(M3DC1_INSTALL_DIR)/include/_$(M3DC1_ARCH)
+  INCLUDE_m3dc1 = $(FIO_INSTALL_DIR)/include
 endif
 
 RANLIB = ranlib
