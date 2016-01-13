@@ -488,11 +488,33 @@ bicub_mat(16,(/8,12,16/)) =(/Three,Six,Nine/)
 EndFunction get_bicub_mat
 
 
+!-----------------------------------------------------------------------------
+!+ returns psiN from gfile bfield at R,Z
+!-----------------------------------------------------------------------------
+Subroutine get_psiN_bicub(R1,Z1,Npts,psiNout,ierr)
+Use kind_mod, Only: real64, int32
+Use gfile_var_pass, Only : g_ssimag, g_ssibry
+Use bspline
+Implicit None
+
+! Input/output                      !See above for descriptions
+Integer(int32),Intent(in) :: Npts
+Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
+Real(real64),Dimension(Npts),Intent(out) :: psiNout
+Integer(int32),Intent(out) :: ierr
+! Local variables
+Real(real64),Dimension(Npts) :: psi
+Integer(int32) :: ierr_tmp
+
+ierr = 0
+Call get_psi_bicub(R1,Z1,Npts,psi,ierr_tmp)
+psiNout = (psi - g_ssimag)/(g_ssibry-g_ssimag)
+End Subroutine get_psiN_bicub
 
 !-----------------------------------------------------------------------------
 !+ returns psi from gfile bfield at R,Z
 !-----------------------------------------------------------------------------
-Subroutine get_psi_bicub(R1,Z1,Npts,psiout,psiNout,ierr)
+Subroutine get_psi_bicub(R1,Z1,Npts,psiout,ierr)
 ! Description: 
 !  
 ! Output:
@@ -506,14 +528,14 @@ Subroutine get_psi_bicub(R1,Z1,Npts,psiout,psiNout,ierr)
 !
 ! Modules used:
 Use kind_mod, Only: real64, int32
-Use gfile_var_pass, Only : g_ip_sign, g_ssimag, g_ssibry, g_ssimag, g_r, g_z, g_dr, g_dz, g_mw, g_mh
+Use gfile_var_pass, Only : g_ip_sign, g_ssimag, g_ssibry, g_r, g_z, g_dr, g_dz, g_mw, g_mh
 Use bspline
 Implicit None
 
 ! Input/output                      !See above for descriptions
 Integer(int32),Intent(in) :: Npts
 Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
-Real(real64),Dimension(Npts),Intent(out) :: psiout, psiNout
+Real(real64),Dimension(Npts),Intent(out) :: psiout
 Integer(int32),Intent(out) :: ierr
 
 ! Local Scalars
@@ -540,7 +562,6 @@ Do ii = 1,Npts
          '. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
     ierr = 1
     psiout(ii:Npts) = 0.d0
-    psiNout(ii:Npts) = 0.d0
     return
   Endif
   If ( (iz .le. 1) .or. (iz .ge. g_mh - 1) ) Then
@@ -548,14 +569,13 @@ Do ii = 1,Npts
          '. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
     ierr = 1
     psiout(ii:Npts) = 0.d0
-    psiNout(ii:Npts) = 0.d0
     return
   Endif
 
   dir = (R1(ii) - g_r(ir))/g_dr
   diz = (Z1(ii) - g_z(iz))/g_dz
-  psiout(ii) = psi_bi(iz + g_mh*(ir-1),dir,diz)
-  psiNout(ii) = (psiout(ii)*g_ip_sign - g_ssimag)/(g_ssibry-g_ssimag)
+  psiout(ii) = g_ip_sign*psi_bi(iz + g_mh*(ir-1),dir,diz)
+
 
 Enddo
 

@@ -8,11 +8,77 @@
 !       Function num_lines_file
 !       Subroutine calc_sep
 !       Subroutine find_xpt_jdl
+!       Subroutine get_psi_2d
 !
 !-----------------------------------------------------------------------------
 Module util_routines
 Implicit None
 Contains
+
+Function get_psi_2d(r,z,Npts,ierr) &
+Result(psi)
+Use kind_mod, Only: int32, real64  
+Use fieldline_follow_mod, Only: bfield_method
+Use g3d_module, Only: get_psi_bicub
+Use m3dc1_routines_mod, Only: calc_psi_m3dc1_2d
+Implicit None
+Real(real64), Dimension(Npts), Intent(In) :: r,z
+Integer(int32), Intent(In) :: Npts
+Integer(int32), Intent(Out) :: ierr
+Real(real64), Dimension(Npts) :: psi
+Integer(int32) :: ierr_tmp
+
+If ( (bfield_method == 0) .OR. &    ! g only
+     (bfield_method == 1) .OR. &    ! g+rmp coils
+     (bfield_method == 2) .OR. &    ! g+screening
+     (bfield_method == 3) ) Then    ! g + m3dc1
+  Call get_psi_bicub(r,z,Npts,psi,ierr_tmp)
+#ifdef HAVE_M3DC1
+Elseif ( (bfield_method == 4) .OR. & ! m3dc1 total field
+         (bfield_method == 5) ) Then ! m3dc1 total field (AS only)  
+  Call calc_psi_m3dc1_2d(r,z,Npts,psi,ierr_tmp)
+#endif          
+Else
+  Write(*,*) 'Bad value for bfield_method in get_psi_2d'
+  Write(*,*) 'bfield_method is',bfield_method
+  Stop
+Endif
+ierr = 0
+If (ierr_tmp .ne. 0) ierr = 1
+End Function get_psi_2d
+
+Function get_psiN_2d(r,z,Npts,ierr) &
+Result(psiN)
+Use kind_mod, Only: int32, real64  
+Use fieldline_follow_mod, Only: bfield_method
+Use g3d_module, Only: get_psiN_bicub
+Use m3dc1_routines_mod, Only: calc_psiN_m3dc1_2d
+Implicit None
+Real(real64), Dimension(Npts), Intent(In) :: r,z
+Integer(int32), Intent(In) :: Npts
+Integer(int32), Intent(Out) :: ierr
+Real(real64), Dimension(Npts) :: psiN
+Integer(int32) :: ierr_tmp
+
+If ( (bfield_method == 0) .OR. &    ! g only
+     (bfield_method == 1) .OR. &    ! g+rmp coils
+     (bfield_method == 2) .OR. &    ! g+screening
+     (bfield_method == 3) ) Then    ! g + m3dc1
+  Call get_psiN_bicub(r,z,Npts,psiN,ierr_tmp)
+#ifdef HAVE_M3DC1
+Elseif ( (bfield_method == 4) .OR. & ! m3dc1 total field
+         (bfield_method == 5) ) Then ! m3dc1 total field (AS only)  
+  Call calc_psiN_m3dc1_2d(r,z,Npts,psiN,ierr_tmp)
+#endif          
+Else
+  Write(*,*) 'Bad value for bfield_method in get_psiN_2d'
+  Write(*,*) 'bfield_method is',bfield_method
+  Stop
+Endif
+ierr = 0
+If (ierr_tmp .ne. 0) ierr = 1
+End Function get_psiN_2d
+
 
 !-----------------------------------------------------------------------------
 !+ Returns the number of lines in a file

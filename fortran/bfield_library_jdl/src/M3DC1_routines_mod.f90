@@ -185,7 +185,7 @@ Enddo
 End Subroutine bfield_m3dc1_2d
 
 !-----------------------------------------------------------------------------
-!+ Evaluate B(r,z) using Equilibrium only M3DC1 fields
+!+ Evaluate psiN(r,z) using Equilibrium only M3DC1 fields
 !-----------------------------------------------------------------------------
 Subroutine calc_psiN_m3dc1_2d(r,z,Npts,PsiN,ierr)
 Use fusion_io
@@ -194,6 +194,26 @@ Implicit None
 Real(Real64), Intent(In), Dimension(Npts) :: r, z
 Integer(int32), Intent(In) :: Npts
 Real(real64), Intent(Out), Dimension(Npts) :: PsiN
+Integer(int32), Intent(Out) :: ierr
+! Local variables
+Real(real64) :: psi(Npts)
+Integer(int32) :: ierr_psi
+ierr = 0
+Call calc_psi_m3dc1_2d(r,z,Npts,psi,ierr_psi)
+If (ierr_psi .ne. 0) ierr = 1
+psiN = (psi - psi_axis)/(psi_lcfs - psi_axis)
+End Subroutine calc_psiN_m3dc1_2d
+
+!-----------------------------------------------------------------------------
+!+ Evaluate psi(r,z) using Equilibrium only M3DC1 fields
+!-----------------------------------------------------------------------------
+Subroutine calc_psi_m3dc1_2d(r,z,Npts,Psi,ierr)
+Use fusion_io
+Use kind_mod, Only: int32, real64
+Implicit None
+Real(Real64), Intent(In), Dimension(Npts) :: r, z
+Integer(int32), Intent(In) :: Npts
+Real(real64), Intent(Out), Dimension(Npts) :: Psi
 Integer(int32), Intent(Out) :: ierr
 ! Local variables
 Real(real64) :: x(3), a_tmp(3)
@@ -208,10 +228,10 @@ Do i=1,Npts
   If (ierr_a .ne. 0) Then
     ierr = 1
   Endif
-  psiN(i) = (a_tmp(2)*r(i) - psi_axis)/(psi_lcfs - psi_axis)
+  psi(i) = a_tmp(2)*r(i)
 Enddo
 
-End Subroutine calc_psiN_m3dc1_2d
+End Subroutine calc_psi_m3dc1_2d
 
 
 !-----------------------------------------------------------------------------
