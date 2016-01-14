@@ -52,7 +52,7 @@ Integer(int32) :: ierr, ipsi_axis, ipsi_lcfs
 
 ! Open M3D-C1 source
 ! ~~~~~~~~~~~~~~~~~~
-Write(*,'(a,a)') 'Reading ', Trim(filename)
+Write(*,'(a,a)') ' Reading ', Trim(filename)
 Call fio_open_source_f(FIO_M3DC1_SOURCE, Trim(filename), isrc, ierr)
 If (ierr .ne. 0) Then
   Write(*,*) 'Error opening m3dc1 source file, exiting from prepare_m3dc1_fields'
@@ -67,25 +67,6 @@ If ( m3dc1_itime == -1 ) Then
   Stop
 Endif
 Call fio_set_int_option_f(FIO_TIMESLICE, m3dc1_itime, ierr)
-If (m3dc1_field_type .eq. 0) Then
-  Write(*,*) 'm3dc1 returning total field'
-  Call fio_set_int_option_f(FIO_PART, FIO_TOTAL, ierr) 
-Elseif (m3dc1_field_type .eq. 1) Then
-  Write(*,*) 'm3dc1 returning perturbed field'
-  Call fio_set_int_option_f(FIO_PART, FIO_PERTURBED_ONLY, ierr)
-Else
-  Write(*,*) 'Bad value for m3dc1_field_type:',m3dc1_field_type
-  Stop
-Endif
-
-Write(*,*) 'M3DC1 factor:', m3dc1_factor
-Call fio_set_real_option_f(FIO_LINEAR_SCALE, m3dc1_factor, ierr)
-
-! read fields
-! ~~~~~~~~~~~
-! magnetic field
-Call fio_get_field_f(isrc, FIO_MAGNETIC_FIELD, imag, ierr)
-
 
 ! read 2D equilibrium field data
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,6 +83,24 @@ Write(*,*) 'Psi at lcfs: ', psi_lcfs
 
 Call fio_close_series_f(ipsi_axis, ierr)
 Call fio_close_series_f(ipsi_lcfs, ierr)
+
+
+! read 3D field data
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If (m3dc1_field_type .eq. 0) Then
+  Write(*,*) 'M3DC1 returning total field'
+  Call fio_set_int_option_f(FIO_PART, FIO_TOTAL, ierr) 
+Elseif (m3dc1_field_type .eq. 1) Then
+  Write(*,*) 'M3DC1 returning perturbed field'
+  Call fio_set_int_option_f(FIO_PART, FIO_PERTURBED_ONLY, ierr)
+Else
+  Write(*,*) 'Bad value for m3dc1_field_type:',m3dc1_field_type
+  Stop
+Endif
+Write(*,*) 'M3DC1 factor:', m3dc1_factor
+Call fio_set_real_option_f(FIO_LINEAR_SCALE, m3dc1_factor, ierr)
+Call fio_get_field_f(isrc, FIO_MAGNETIC_FIELD, imag, ierr)
+
 
 End Subroutine prepare_m3dc1_fields
 

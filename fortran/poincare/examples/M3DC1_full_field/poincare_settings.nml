@@ -1,0 +1,52 @@
+&settings_nml
+
+!**************************************************************************
+! 2) Magnetic equilibrium data
+!**************************************************************************
+
+;gfile_name = '/home/jjl/m3dc1/160884/3000/g160884.03014_251'
+
+rmp_type = 'm3dc1_full_field' ! options: 'g3d', 'g3d+rmpcoil', 'm3dc1_full_field', 'g3d+m3dc1'
+m3dc1_filename = '/home/jjl/m3dc1/160884/3000/n=3_2f_odd/C1.h5'
+!m3dc1_scale_factor = 5.09296d0
+m3dc1_scale_factor = 0.0
+m3dc1_time = 1
+
+!rmp_current  = -897.705d0  2362.30d0  3228.76d0  897.705d0  -2362.30d0 -3228.76d0   ! Amps!
+!rmp_type = 'g3d+rmpcoil'  ! options: 'g3d', 'g3d+rmpcoil'
+!rmp_coil_type = 'd3d_ccoils'
+
+Nsym = 3
+
+!**************************************************************************
+! 3) FL data
+!**************************************************************************
+rstart = 1.95d0
+rend = 2.3d0
+zstart = 0.d0
+zend = 0.d0
+
+! TS
+!rstart = 1.94d0
+!rend = 1.94d0
+!zstart = 0.d0
+!zend = 0.83d0
+
+! ECE
+!rstart = 1.8d0
+!rend = 2.31d0
+!zstart = 0.004d0
+!zend = 0.004d0
+
+
+num_pts = 100
+!phistart_deg = 60.d0  ! 60, 240 for TS
+!phistart_deg = 100.d0  ! 280, 100 for ECE
+phistart_deg = 0.d0
+ntransits = 100
+dphi_line_deg = 0.5d0
+
+follow_both_ways = .true.
+calc_psiN_min = .true.
+
+/

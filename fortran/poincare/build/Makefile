@@ -21,7 +21,7 @@ BIN_DIR = ../bin/
 LIBBJDL_DIR = $(HOME)/util-library/fortran/bfield_library_jdl/build
 
 # Location of m3dc1 libraries
-LIBM3DC1_DIR = $(M3DC1_INSTALL_DIR)/lib/_$(M3DC1_ARCH)
+LIBM3DC1_DIR = $(FIO_INSTALL_DIR)/lib
 
 # The following flags should work for the gfortran compiler
 FC = gfortran
@@ -34,7 +34,7 @@ EXEC = $(BIN_DIR)poincare_driver
 
 # Libraries needed to build the executable
 LIBDIR = -L$(LIBBJDL_DIR) -L$(LIBM3DC1_DIR)
-LIBS = -lbjdl -lfusionio -lm3dc1 -lz -lhdf5 -lstdc++ 
+LIBS = -lbjdl -lfusionio -lm3dc1 -lz -lhdf5 -lstdc++ -llapack
 
 # Objects needed to build the executable that use the default rule
 OBJS90 =  \

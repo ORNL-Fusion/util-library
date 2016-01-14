@@ -6,7 +6,7 @@ Program poincare_driver
 ! Author(s): J.D. Lore - 02/20/2014
 !
 ! Modules used:
-Use kind_mod
+Use kind_mod, Only: int32, real64
 Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts,bfield_bs_cyl,build_d3d_ccoils_jl,&
   build_d3d_icoils_jl
 Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factor, m3dc1_itime, m3dc1_toroidal_on_err,bfield_m3dc1, &
@@ -14,24 +14,25 @@ Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factor, m3dc1_itime, 
 Use g3d_module, Only : readg_g3d, bfield_geq_bicub, get_psi_bicub
 Use math_geo_module, Only : rlinspace
 Use fieldline_follow_mod, Only: bfield_method, follow_fieldlines_rzphi
+Use util_routines, Only: get_psin_2d
 Use phys_const, Only: pi
 Implicit none
 
 Logical, Parameter :: m3dc1_toroidal_off_grid = .true.
-Integer(iknd), parameter :: max_rmp_coils       = 12
+Integer(int32), parameter :: max_rmp_coils       = 12
 
-Integer(iknd) :: ntor_pts_coil, i, nstart_fl, nsteps
-Integer(iknd) :: iocheck, itest, ierr_b, ind_poin, ierr
-Real(rknd), Allocatable :: r1d(:), z1d(:),phistart_arr(:), fl_r(:,:), fl_z(:,:), fl_p(:,:), &
+Integer(int32) :: ntor_pts_coil, i, nstart_fl, nsteps
+Integer(int32) :: iocheck, itest, ierr_b, ind_poin, ierr
+Real(real64), Allocatable :: r1d(:), z1d(:),phistart_arr(:), fl_r(:,:), fl_z(:,:), fl_p(:,:), &
      psiout(:), psiNout(:), fl_r2(:,:), fl_z2(:,:), fl_p2(:,:)
-Integer(iknd), Allocatable :: ilg(:), fl_ierr(:), ilg2(:), fl_ierr2(:)
-Real(rknd) :: dphi_line, Adphirat
+Integer(int32), Allocatable :: ilg(:), fl_ierr(:), ilg2(:), fl_ierr2(:)
+Real(real64) :: dphi_line, Adphirat
 character(10) :: junk
 Real(Kind=4)  :: tarray(2),tres,tres0
 Logical :: calc_psiN_min = .false., follow_both_ways = .false.
 !---------------------------------------------------------------------------
 ! Namelist variables:
-Real(rknd) :: &
+Real(real64) :: &
  rmp_current(max_rmp_coils) = 0.d0, &
  m3dc1_scale_factor = 0.d0, &
  phistart_deg, rstart, rend, zstart, zend, dphi_line_deg
@@ -42,7 +43,7 @@ Character(Len=120) :: &
  rmp_coil_type = 'none', &
  m3dc1_filename = 'none.none'
 
-Integer(iknd) :: &
+Integer(int32) :: &
  m3dc1_time = -1, &
  num_pts = 2, &
  ntransits = 1, &
@@ -76,18 +77,16 @@ Close(99)
 !
 ! 2) Magnetic equilibrium data
 !
-Call readg_g3d(gfile_name)
-
 ! Setup rmp field
-! HERE I COULD CHECK FOR MINIMUM CURRENT, CHANGE to G3D...
 Select Case (rmp_type)
   Case ('g3d')
     Write(*,'(a)') '-----> BFIELD METHOD IS G3D'
     bfield_method = 0
+    Call readg_g3d(gfile_name)
   Case ('g3d+rmpcoil')
     Write(*,'(a)') '-----> BFIELD METHOD IS G3D+RMPCOIL'
     bfield_method = 1
-    
+    Call readg_g3d(gfile_name)
     ! load rmp coil    
     Select Case (rmp_coil_type)
       Case ('d3d_ccoils')
@@ -116,6 +115,7 @@ Select Case (rmp_type)
   Case ('g3d+m3dc1')
     Write(*,'(a)') '-----> BFIELD METHOD IS G3D+M3DC1'
     bfield_method = 3
+    Call readg_g3d(gfile_name)
     ! Setup field    
     If (m3dc1_time .eq. -1) Then
       Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
@@ -250,7 +250,8 @@ If (calc_psiN_min) Then
 
   Do i = 1,nstart_fl
     
-    Call get_psi_bicub(fl_r(i,:),fl_z(i,:),nsteps+1,psiout,psiNout,ierr)
+    !Call get_psi_bicub(fl_r(i,:),fl_z(i,:),nsteps+1,psiout,psiNout,ierr)
+    psiNout = get_psiN_2d(fl_r(i,:),fl_z(i,:),nsteps+1,ierr)
     
     Where (psiNout < 1.e-3) psiNout = 1000000.d0
     Write(99,*) Minval(psiNout)
@@ -274,7 +275,8 @@ If (follow_both_ways) Then
     Write(99,*) nstart_fl
     
     Do i = 1,nstart_fl
-      Call get_psi_bicub(fl_r2(i,:),fl_z2(i,:),nsteps+1,psiout,psiNout,ierr)      
+      psiNout = get_psiN_2d(fl_r2(i,:),fl_z2(i,:),nsteps+1,ierr)
+!      Call get_psi_bicub(fl_r2(i,:),fl_z2(i,:),nsteps+1,psiout,psiNout,ierr)      
       Where (psiNout < 1.e-3) psiNout = 1000000.d0
       Write(99,*) Minval(psiNout)
     Enddo
