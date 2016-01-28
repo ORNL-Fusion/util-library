@@ -145,6 +145,22 @@ Select Case (rmp_type)
     Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
     Write(*,'(a,f12.4)') '---------> M3DC1 scale factor: ',m3dc1_factor
     If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
+  Case ('m3dc1_as')
+    Write(*,'(a)') '-----> BFIELD METHOD IS m3dc1_as'
+    bfield_method = 5
+    ! Setup field    
+    If (m3dc1_time .eq. -1) Then
+      Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
+      Stop
+    Endif
+    m3dc1_itime = m3dc1_time           ! Variables in module
+    m3dc1_factor = m3dc1_scale_factor
+    m3dc1_toroidal_on_err = m3dc1_toroidal_off_grid
+    m3dc1_field_type = 0
+    Call prepare_m3dc1_fields(m3dc1_filename)
+    Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
+    Write(*,'(a,f12.4)') '---------> M3DC1 scale factor: ',m3dc1_factor
+    If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
   Case Default
     Write(*,*) 'Unknown rmp_type in poincare_driver!'
     Write(*,*) 'Current options are:'
@@ -152,6 +168,7 @@ Select Case (rmp_type)
     Write(*,*) '''g3d+rmpcoil'''
     Write(*,*) '''g3d+m3dc1'''
     Write(*,*) '''m3dc1_full_field'''
+    Write(*,*) '''m3dc1_as'''
     Stop      
 End Select
 

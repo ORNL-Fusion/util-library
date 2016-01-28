@@ -59,7 +59,7 @@ If (ierr .ne. 0) Then
   Stop
 Endif
 
-! Set options
+! Get and set options
 ! ~~~~~~~~~~~
 Call fio_get_options_f(isrc, ierr)
 If ( m3dc1_itime == -1 ) Then

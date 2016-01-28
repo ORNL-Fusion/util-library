@@ -6,11 +6,11 @@
 
 ;gfile_name = '/home/jjl/m3dc1/160884/3000/g160884.03014_251'
 
-rmp_type = 'm3dc1_full_field' ! options: 'g3d', 'g3d+rmpcoil', 'm3dc1_full_field', 'g3d+m3dc1'
+rmp_type = 'm3dc1_as' ! options: 'g3d', 'g3d+rmpcoil', 'm3dc1_full_field', 'g3d+m3dc1'
 m3dc1_filename = '/home/jjl/m3dc1/160884/3000/n=3_2f_odd/C1.h5'
 !m3dc1_scale_factor = 5.09296d0
 m3dc1_scale_factor = 0.0
-m3dc1_time = 1
+m3dc1_time = 0  ! 0 vacuum, 1 response
 
 !rmp_current  = -897.705d0  2362.30d0  3228.76d0  897.705d0  -2362.30d0 -3228.76d0   ! Amps!
 !rmp_type = 'g3d+rmpcoil'  ! options: 'g3d', 'g3d+rmpcoil'
@@ -39,7 +39,7 @@ zend = 0.d0
 !zend = 0.004d0
 
 
-num_pts = 100
+num_pts = 250
 !phistart_deg = 60.d0  ! 60, 240 for TS
 !phistart_deg = 100.d0  ! 280, 100 for ECE
 phistart_deg = 0.d0

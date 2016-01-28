@@ -28,7 +28,7 @@ FC = gfortran
 FF = -O3 
 FF_DEBUG = -g -Wall -frange-check -fbounds-check
 
-EXEC = $(BIN_DIR)poincare_driver
+EXEC = $(BIN_DIR)poincare_driver.x
 
 #-----------------------------------------------------------------------
 
