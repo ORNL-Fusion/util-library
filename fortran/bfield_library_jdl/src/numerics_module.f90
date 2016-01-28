@@ -14,6 +14,15 @@
 !-----------------------------------------------------------------------------
 Module math_geo_module
 Implicit None
+Private
+Public :: quicksort
+Public :: int_curve_curve
+Public :: int_line_curve
+Public :: int_two_lines
+Public :: move_L_on_C
+Public :: linear_interp
+Public :: rlinspace
+Public :: inside_poly
 Contains
 
 !------------------------------------------------------------------------------

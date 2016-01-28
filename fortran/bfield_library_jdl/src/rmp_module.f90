@@ -10,6 +10,8 @@ Use NSTX_routines_mod, Only : build_NSTX_rwmcoils_jl
 Use bfield_module, Only : bfield_bs_cyl, bfield_bs_jdl
 Implicit None
 
+Public
+
 Real(real64), Allocatable :: rmp_coil(:,:)  ! (ncoil_pts,3)
 Real(real64), Allocatable ::  rmp_coil_current(:)  ! ncoil_pts
 Integer(int32) :: rmp_ncoil_pts

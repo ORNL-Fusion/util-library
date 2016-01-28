@@ -7,7 +7,13 @@ Module screening_module
 Use kind_mod, Only: real64, int32
 Implicit None
 
-!QQ make private
+Private
+
+Public :: prepare_Afile_splinefits
+Public :: read_Afiles
+Public :: read_spline_data
+Public :: setup_screening_vars
+Public :: bfield_bspline
 
 Real(real64), Dimension(:,:,:), Allocatable :: Ar, Aphi, Az
 Real(real64), Dimension(:,:,:), Allocatable :: Arcoeff, Aphicoeff, Azcoeff

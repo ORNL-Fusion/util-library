@@ -10,9 +10,9 @@ Module phys_const
 !     
   ! Modules used:
   Use kind_mod, Only : real64
-
+  
   Implicit none
-
+  Public 
   ! Scalar parameters
   Real(real64),parameter :: p_mass = 1.672621637e-27_real64      !proton mass
   Real(real64),parameter :: e_mass = 9.10938215e-31_real64       !electron mass

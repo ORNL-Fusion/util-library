@@ -23,9 +23,17 @@
 ! 
 !-----------------------------------------------------------------------------
 Module fieldline_follow_mod
-Use kind_mod, Only: int32
-Implicit None
-Integer(int32), Save :: bfield_method = 0 ! Used to select fl derivs
+  Use kind_mod, Only: int32
+  Implicit None
+  Private
+  Save
+
+  Public :: follow_fieldlines_rzphi_AS
+  Public :: follow_fieldlines_rzphi
+  Public :: follow_fieldlines_rzphi_diffuse
+  Private :: fl_derivs_fun
+  
+  Integer(int32), Public :: bfield_method = 0 ! Used to select fl derivs
 Contains
 
 !-----------------------------------------------------------------------------
@@ -207,6 +215,7 @@ Integer(int32),Intent(out) :: ierr(Npts), i_last_good(Npts)
 Integer(int32), Parameter :: n = 2
 Real(real64) :: y(n),x,dx,xout(nsteps+1),yout(n,nsteps+1)
 Integer(int32) :: ierr_rk45, i_last_good_rk45, ipt
+
 !- End of header -------------------------------------------------------------
 
 r = 0._real64

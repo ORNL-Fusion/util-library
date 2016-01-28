@@ -8,7 +8,10 @@
 !   
 !-----------------------------------------------------------------------------
 Module bfield_module
-Implicit None
+  Implicit None
+  Private
+  Public :: bfield_bs_cyl
+  Public :: bfield_bs_jdl
 Contains
 
 !-----------------------------------------------------------------------------

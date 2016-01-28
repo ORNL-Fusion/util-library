@@ -4,7 +4,9 @@
 !   
 !-----------------------------------------------------------------------------
 Module NSTX_routines_mod
-Implicit None
+  Implicit None
+  Private
+  Public :: build_nstx_rwmcoils_jl
 Contains
 
 Subroutine build_nstx_rwmcoils_jl(taper,ntorpts,coil,current,ncoil_pts)

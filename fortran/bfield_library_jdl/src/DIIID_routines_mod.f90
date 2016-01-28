@@ -8,7 +8,10 @@
 !   
 !-----------------------------------------------------------------------------
 Module DIIID_routines_mod
-Implicit None
+  Implicit None
+  Private
+  Public :: build_d3d_ccoils_jl
+  Public :: build_d3d_icoils_jl
 Contains
 
 !-----------------------------------------------------------------------------

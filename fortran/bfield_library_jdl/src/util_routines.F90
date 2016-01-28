@@ -15,7 +15,11 @@ Module util_routines
   Implicit None
   Private
 
-  Public :: get_psi_2d, get_psiN_2d, num_lines_file, calc_sep, find_xpt_jdl
+  Public :: num_lines_file
+  Public :: calc_sep
+  Public :: find_xpt_jdl
+  Public :: get_psi_2d
+  Public :: get_psiN_2d
   
   Interface get_psi_2d
     Module Procedure get_psi_2d_scalar
