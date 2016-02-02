@@ -139,7 +139,7 @@ End Subroutine int_curve_curve
 !------------------------------------------------------------------------------
 !+ Linear interpolation of curve C to find intersection with line L
 !------------------------------------------------------------------------------
-Subroutine int_line_curve(p1,p2,rline,zline,nline,first,pint1,ierr,found_ind,int_count)
+Subroutine int_line_curve(p1,p2,rline,zline,nline,first,pint1,ierr,found_ind,int_count_out)
 ! Curve is defined by array of points, L by p1,p2
 ! JL 2/2011
 Use kind_mod, Only: real64, int32
@@ -148,13 +148,13 @@ Logical, Intent(in) :: first
 Integer(int32), Intent(in) :: nline
 Real(real64), Intent(in) :: p1(2), p2(2), rline(nline), zline(nline)
 Real(real64), Intent(out) :: pint1(2)
-Integer(int32), Intent(out) :: ierr, found_ind, int_count
+Integer(int32), Intent(out), Optional :: ierr, found_ind, int_count_out
 Logical :: test
-Integer(int32) :: ii, ierr2
+Integer(int32) :: ii, ierr2, int_count
 Real(real64) :: p3(2), p4(2), u1, u2
 
 int_count = 0
-found_ind = 0
+If (Present(found_ind)) found_ind = 0
 Do ii = 1,nline-1
   p3 = [rline(ii),zline(ii)]
   p4 = [rline(ii+1),zline(ii+1)]
@@ -173,19 +173,23 @@ Do ii = 1,nline-1
   If (test) Then
     int_count = int_count + 1
     pint1 = p1 + u1*(p2-p1)
-    ierr = 0
-    found_ind = ii
-    If (first) Return      
+    If(Present(ierr)) ierr = 0
+    If (Present(found_ind)) found_ind = ii
+    If (first) Then
+      If (Present(int_count_out)) int_count_out = int_count
+      Return
+    Endif
   Endif  
 Enddo
 
 If (int_count .eq. 0) Then
     pint1 = [0.d0,0.d0]
-    ierr = 1
+    If(Present(ierr)) ierr = 1
 Endif
 If (int_count > 1) Then
     Write(*,*) 'Warning: More than one intersection found in int_line_curve. Returning last point'
 Endif
+If (Present(int_count_out)) int_count_out = int_count
 
 End Subroutine int_line_curve
 
@@ -237,8 +241,9 @@ Use kind_mod, Only: real64, int32
 Implicit None
 Integer(int32), Intent(in) :: nline
 Real(real64), Intent(in) :: L, rline(nline), zline(nline)
-Real(real64), Intent(out) :: err_near_L, R_L, Z_L
-Integer(int32), Intent(out) :: ic_near_L, ierr
+Real(real64), Intent(out) :: R_L, Z_L
+Real(real64), Intent(out), Optional :: err_near_L
+Integer(int32), Intent(out), Optional :: ierr, ic_near_L
 
 Real(real64) :: dL(nline), Ltot, SumL(nline), delt(nline), diff, theta, dL_step
 Integer(int32) :: ind_diff, ii, i
@@ -250,7 +255,7 @@ Ltot = Sum(dL)
 If ( Ltot .lt. L ) Then
     Write(*,*) 'Requested length, total length ',L,Ltot
     Write(*,*) 'Error: Ltot < L'
-    ierr = 1
+    If (Present(ierr)) ierr = 1
     Return
 Endif
 
@@ -268,7 +273,7 @@ If ( diff .gt. 0.d0 ) Then
     theta = Atan2(zline(ii+1)-zline(ii),rline(ii+1)-rline(ii))
     If ( dL_step .eq. 0.d0 ) Then
       Write(*,*) ' dL_step 1 cannot be zero in move_L_on_C',dL_step
-      ierr = 1
+      If (Present(ierr)) ierr = 1
       Return
     Endif
     R_L = rline(ii) + diff*Cos(theta)
@@ -279,7 +284,7 @@ Elseif ( diff .lt. 0.d0 ) Then
     theta = Atan2(zline(ii-1)-zline(ii),rline(ii-1)-rline(ii))
     If ( dL_step == 0.d0 ) Then
       Write(*,*) ' dL_step 2 cannot be zero in move_L_on_C',dL_step,ind_diff
-      ierr = 1
+      If (Present(ierr)) ierr = 1
       Return
     Endif
     R_L = rline(ii) - diff*Cos(theta)
@@ -289,9 +294,9 @@ Else
     Z_L = zline(ind_diff)
 Endif
 
-ic_near_L = ind_diff
-err_near_L = diff
-ierr = 0
+If (Present(ic_near_L)) ic_near_L = ind_diff
+If (Present(err_near_L)) err_near_L = diff
+If (Present(ierr)) ierr = 0
 
 End Subroutine move_L_on_C
 

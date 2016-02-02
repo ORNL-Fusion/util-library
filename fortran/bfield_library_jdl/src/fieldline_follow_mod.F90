@@ -32,6 +32,11 @@ Module fieldline_follow_mod
   Public :: follow_fieldlines_rzphi
   Public :: follow_fieldlines_rzphi_diffuse
   Private :: fl_derivs_fun
+
+  Interface follow_fieldlines_rzphi
+    Module Procedure follow_fieldlines_rzphi_Npts
+    Module Procedure follow_fieldlines_rzphi_1pt
+  End Interface follow_fieldlines_rzphi
   
   Integer(int32), Public :: bfield_method = 0 ! Used to select fl derivs
 Contains
@@ -236,11 +241,45 @@ Enddo
 
 EndSubroutine follow_fieldlines_rzphi_diffuse
 
+!-----------------------------------------------------------------------------
+!+ Follows fieldlines in cylindrical coords (from one point)
+!-----------------------------------------------------------------------------
+Subroutine follow_fieldlines_rzphi_1pt(rstart,zstart,phistart,dphi,nsteps,r,z,phi,ierr,i_last_good)
+Use kind_mod, Only: real64, int32
+Implicit None
+! Input/output                      !See above for descriptions
+Integer(int32),Intent(in) :: nsteps
+Real(real64),Intent(in) :: rstart,zstart,phistart
+Real(real64),Intent(in) :: dphi
+
+Real(real64),Intent(out),Dimension(nsteps+1) :: r,z,phi
+Integer(int32),Intent(out) :: ierr, i_last_good
+
+! Local
+Integer(int32), Parameter :: n = 2
+Real(real64) :: y(n),x,dx,xout(nsteps+1),yout(n,nsteps+1)
+Integer(int32) :: ierr_rk45, i_last_good_rk45
+
+r = 0._real64
+z = 0._real64
+phi = 0._real64
+dx = dphi
+y(1) = rstart
+y(2) = zstart
+x = phistart
+Call rk45_fixed_step_integrate(y,n,x,dx,nsteps,fl_derivs_fun,yout,xout,ierr_rk45,i_last_good_rk45)
+r(1:nsteps+1)   = yout(1,1:nsteps+1)
+z(1:nsteps+1)   = yout(2,1:nsteps+1)
+phi(1:nsteps+1) = xout
+ierr = ierr_rk45
+i_last_good = i_last_good_rk45
+
+End Subroutine follow_fieldlines_rzphi_1pt
 
 !-----------------------------------------------------------------------------
-!+ Follows fieldlines in cylindrical coords
+!+ Follows fieldlines in cylindrical coords (from multiple points)
 !-----------------------------------------------------------------------------
-Subroutine follow_fieldlines_rzphi(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good)
+Subroutine follow_fieldlines_rzphi_Npts(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good)
 !
 ! Description: 
 !  Follows fieldlines by integrating along toroidal angle in cylindrical coordinates. 
@@ -288,7 +327,8 @@ r = 0._real64
 z = 0._real64
 phi = 0._real64
 dx = dphi
-Do ipt = 1,Npts 
+Do ipt = 1,Npts
+!  Call follow_fieldlines_rzphi_1pt(rstart(ipt),zstart(ipt),phistart(ipt),dphi,nsteps,r,z,phi,ierr,i_last_good)
   y(1) = rstart(ipt)
   y(2) = zstart(ipt)
   x = phistart(ipt)
@@ -300,7 +340,7 @@ Do ipt = 1,Npts
   i_last_good(ipt) = i_last_good_rk45
 Enddo
 
-EndSubroutine follow_fieldlines_rzphi
+EndSubroutine follow_fieldlines_rzphi_Npts
 
 !-----------------------------------------------------------------------------
 !+ Routines field line equation derivatives
