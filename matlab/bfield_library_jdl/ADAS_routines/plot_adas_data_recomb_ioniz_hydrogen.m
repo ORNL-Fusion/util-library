@@ -9,26 +9,35 @@ fname = ['C:\Work\ADAS\adf11_all\plt96\','plt96_h.dat'];  % Radiated power (W cm
 
 
 
-ne_plot_targ = 1e13;  % cm^-3
-[~,in_scd]=min(abs(ne_scd - ne_plot_targ));
-[~,in_acd]=min(abs(ne_acd - ne_plot_targ));
-[~,in_plt]=min(abs(ne_plt - ne_plot_targ));
-fprintf('Plotting scd for ne = %e\n',ne_scd(in_scd))
-fprintf('Plotting acd for ne = %e\n',ne_acd(in_acd))
-fprintf('Plotting plt for ne = %e\n',ne_plt(in_plt))
+ne_plot_targ = [1e13,1e14,1e15];  % cm^-3
+for i = 1:length(ne_plot_targ)
+    [~,in_scd]=min(abs(ne_scd - ne_plot_targ(i)));
+    [~,in_acd]=min(abs(ne_acd - ne_plot_targ(i)));
+    [~,in_plt]=min(abs(ne_plt - ne_plot_targ(i)));
+    scd_arr(:,i) = squeeze(scd(:,in_scd,:));
+    acd_arr(:,i) = squeeze(acd(:,in_acd,:));
+    fprintf('Plotting scd for ne = %e\n',ne_scd(in_scd))
+    fprintf('Plotting acd for ne = %e\n',ne_acd(in_acd))
+    fprintf('Plotting plt for ne = %e\n',ne_plt(in_plt))
+end
 
+
+s = styflipper(length(ne_plot_targ));
 figure; hold on; box on;
-plot(te_scd,squeeze(scd(:,in_scd,:))/1e6,'-','linewidth',2)
-plot(te_acd,squeeze(acd(:,in_acd,:))/1e6,'r-','linewidth',2)
+for i = 1:length(ne_plot_targ)
+    plot(te_scd,scd_arr(:,i),'r','linewidth',2,'linestyle',char(s{i}))
+    plot(te_acd,acd_arr(:,i),'b','linewidth',2,'linestyle',char(s{i}))
+end
 % plot(te_acd,squeeze(acd(1,:,:)),'--')
-set(gca,'xscale','log')
+% set(gca,'xscale','log')
 set(gca,'yscale','log')
 xlabel('T_e (eV)','fontsize',12)
-ylabel('<\sigmav> (m^3/s)','fontsize',12)
+ylabel('<\sigmav> (cm^3/s)','fontsize',12)
 set(gca,'fontsize',12)
-axis([1,1e3,10^-20,10^-12])
+axis([0,5,10^-16,10^-8])
 legend('iz','di-el rc')
 % set(gca,'linewidth',2)
+
 
 
 % figure; hold on; box on;

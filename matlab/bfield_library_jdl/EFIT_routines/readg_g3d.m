@@ -10,7 +10,9 @@ else
 end
 
 fid = fopen(filename,'r');
-
+if fid == -1
+    error(['Could not open file: ',filename])
+end
 line = fgetl(fid); g.ecase = sscanf(line(1:8),'%8s'); sscanf(line(8*6+1:8*6+3),'%4i'); g.mw = sscanf(line(53:56),'%4i'); g.mh = sscanf(line(57:60),'%4i');
 line = fscanf(fid,'%f%f%f%f%f',5); g.xdim = line(1); g.zdim = line(2); g.rzero = line(3); g.rgrid1 = line(4); g.zmid = line(5);
 line = fscanf(fid,'%f%f%f%f%f',5); g.rmaxis = line(1); g.zmaxis = line(2); g.ssimag = line(3); g.ssibry = line(4); g.bcentr = line(5);
