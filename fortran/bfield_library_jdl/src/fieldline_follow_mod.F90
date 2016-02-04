@@ -279,7 +279,7 @@ End Subroutine follow_fieldlines_rzphi_1pt
 !-----------------------------------------------------------------------------
 !+ Follows fieldlines in cylindrical coords (from multiple points)
 !-----------------------------------------------------------------------------
-Subroutine follow_fieldlines_rzphi_Npts(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good)
+Subroutine follow_fieldlines_rzphi_Npts(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good,verbose)
 !
 ! Description: 
 !  Follows fieldlines by integrating along toroidal angle in cylindrical coordinates. 
@@ -291,6 +291,7 @@ Subroutine follow_fieldlines_rzphi_Npts(rstart,zstart,phistart,Npts,dphi,nsteps,
 !  Npts : int32 : Number of starting points
 !  dphi : real64 : Integration step size (radians)
 !  nsteps : int32 : Number of integration steps to take
+! verbose : logcl : Display fl counter  
 ! Output:
 !  r,z,phi : real64(Npts,nsteps+1) : Field line trajectories (m,m,radians)
 !  ierr : int32(Npts) : Error flag for each fl. 0 indicates no error, 1 indicates an error from bfield_geq_bicub
@@ -314,20 +315,24 @@ Implicit None
 Integer(int32),Intent(in) :: Npts, nsteps
 Real(real64),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
 Real(real64),Intent(in) :: dphi
-
+Logical, Intent(in), Optional :: verbose
 Real(real64),Intent(out),Dimension(Npts,nsteps+1) :: r,z,phi
 Integer(int32),Intent(out) :: ierr(Npts), i_last_good(Npts)
 ! Local variables
 Integer(int32), Parameter :: n = 2
 Real(real64) :: y(n),x,dx,xout(nsteps+1),yout(n,nsteps+1)
 Integer(int32) :: ierr_rk45, i_last_good_rk45, ipt
+Logical :: isverbose
 !- End of header -------------------------------------------------------------
 
+isverbose = .false.
+If (Present(verbose)) isverbose = verbose
 r = 0._real64
 z = 0._real64
 phi = 0._real64
 dx = dphi
 Do ipt = 1,Npts
+  If (isverbose) Write(*,'(2(a,i0))') ' Following fl ',ipt,' of ',Npts
 !  Call follow_fieldlines_rzphi_1pt(rstart(ipt),zstart(ipt),phistart(ipt),dphi,nsteps,r,z,phi,ierr,i_last_good)
   y(1) = rstart(ipt)
   y(2) = zstart(ipt)
