@@ -245,11 +245,11 @@ Real(real64), Intent(out) :: R_L, Z_L
 Real(real64), Intent(out), Optional :: err_near_L
 Integer(int32), Intent(out), Optional :: ierr, ic_near_L
 
-Real(real64) :: dL(nline), Ltot, SumL(nline), delt(nline), diff, theta, dL_step
-Integer(int32) :: ind_diff, ii, i
+Real(real64) :: dL(nline-1), Ltot, SumL, f
+Integer(int32) :: i
 
-dL = 0.d0
-dL(2:nline) = Sqrt( (rline(1:nline-1)-rline(2:nline))**2 + (zline(1:nline-1)-zline(2:nline))**2 )
+
+dL = Sqrt( (rline(1:nline-1)-rline(2:nline))**2 + (zline(1:nline-1)-zline(2:nline))**2 )
 
 Ltot = Sum(dL)
 If ( Ltot .lt. L ) Then
@@ -259,45 +259,22 @@ If ( Ltot .lt. L ) Then
     Return
 Endif
 
-SumL(1) = 0.d0
-Do i = 2,nline
-  SumL(i) = SumL(i-1) + dL(i)
+SumL = 0.d0
+Do i = 1,nline-1
+  If (SumL + dL(i) .gt. L) Exit
+  SumL = SumL + dL(i)
 Enddo
-delt = L - SumL
-ind_diff = Minloc(Abs(delt),1)
-diff = delt(ind_diff)
-
-If ( diff .gt. 0.d0 ) Then
-    dL_step = dL(ind_diff+1)
-    ii = ind_diff
-    theta = Atan2(zline(ii+1)-zline(ii),rline(ii+1)-rline(ii))
-    If ( dL_step .eq. 0.d0 ) Then
-      Write(*,*) ' dL_step 1 cannot be zero in move_L_on_C',dL_step
-      If (Present(ierr)) ierr = 1
-      Return
-    Endif
-    R_L = rline(ii) + diff*Cos(theta)
-    Z_L = zline(ii) + diff*Sin(theta)
-Elseif ( diff .lt. 0.d0 ) Then
-    dL_step = dL(ind_diff)
-    ii = ind_diff
-    theta = Atan2(zline(ii-1)-zline(ii),rline(ii-1)-rline(ii))
-    If ( dL_step == 0.d0 ) Then
-      Write(*,*) ' dL_step 2 cannot be zero in move_L_on_C',dL_step,ind_diff
-      If (Present(ierr)) ierr = 1
-      Return
-    Endif
-    R_L = rline(ii) - diff*Cos(theta)
-    Z_L = zline(ii) - diff*Sin(theta)
+f = (L - SumL)/dL(i)
+R_L = f*(rline(i+1)-rline(i))+rline(i)
+Z_L = f*(zline(i+1)-zline(i))+zline(i)
+If (f .gt. 0.5_real64) Then
+  If (Present(ic_near_L)) ic_near_L = i+1
+  If (Present(err_near_L)) err_near_L = (1._real64 - f)*dL(i)
 Else
-    R_L = rline(ind_diff)
-    Z_L = zline(ind_diff)
+  If (Present(ic_near_L)) ic_near_L = i
+  If (Present(err_near_L)) err_near_L = f*dL(i)
 Endif
-
-If (Present(ic_near_L)) ic_near_L = ind_diff
-If (Present(err_near_L)) err_near_L = diff
 If (Present(ierr)) ierr = 0
-
 End Subroutine move_L_on_C
 
 !------------------------------------------------------------------------------
