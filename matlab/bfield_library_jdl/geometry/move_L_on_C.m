@@ -15,33 +15,14 @@ if Ltot < L
 end
 
 SumL = cumsum(dL);
-delt = L-SumL;
-[~,ind_diff] = min(abs(delt));
-diff = delt(ind_diff);
-
-if diff > 0
-    dL_step = dL(ind_diff+1);
-    ii = ind_diff;
-    theta = atan2(zline(ii+1)-zline(ii),rline(ii+1)-rline(ii));
-    if dL_step == 0
-        error(' here')
-    end
-    R_L = rline(ii) + diff*cos(theta);
-    Z_L = zline(ii) + diff*sin(theta);
-elseif diff < 0
-    dL_step = dL(ind_diff);
-    ii = ind_diff;
-    theta = atan2(zline(ii-1)-zline(ii),rline(ii-1)-rline(ii));
-    if dL_step == 0
-        error(' here')
-    end
-    R_L = rline(ii) - diff*cos(theta);
-    Z_L = zline(ii) - diff*sin(theta);
+ind = find(SumL < L,1,'last');
+f = (L - SumL(ind))/dL(ind+1);
+R_L = f*(rline(ind+1)-rline(ind)) + rline(ind);
+Z_L = f*(zline(ind+1)-zline(ind)) + zline(ind);
+if f > 0.5
+    icurve_near_L = ind+1;
+    err_near_L=(1-f)*dL(ind+1);
 else
-    R_L = rline(ind_diff);
-    Z_L = zline(ind_diff);
+    icurve_near_L = ind;
+    err_near_L=f*dL(ind+1);
 end
-
-icurve_near_L = ind_diff;
-err_near_L = diff;
-
