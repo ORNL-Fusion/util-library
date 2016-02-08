@@ -57,7 +57,9 @@ Contains
     Use kind_mod, Only: int32, real64  
     Use fieldline_follow_mod, Only: bfield_method
     Use g3d_module, Only: get_psi_bicub
+#ifdef HAVE_M3DC1
     Use m3dc1_routines_mod, Only: calc_psi_m3dc1_2d
+#endif
     Implicit None
     Real(real64), Dimension(Npts), Intent(In) :: r,z
     Integer(int32), Intent(In) :: Npts
@@ -106,7 +108,9 @@ Contains
     Use kind_mod, Only: int32, real64  
     Use fieldline_follow_mod, Only: bfield_method
     Use g3d_module, Only: get_psiN_bicub
+#ifdef HAVE_M3DC1
     Use m3dc1_routines_mod, Only: calc_psiN_m3dc1_2d
+#endif
     Implicit None
     Real(real64), Dimension(Npts), Intent(In) :: r,z
     Integer(int32), Intent(In) :: Npts
