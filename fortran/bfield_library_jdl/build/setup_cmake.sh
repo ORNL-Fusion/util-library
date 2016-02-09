@@ -37,10 +37,20 @@ then
    # module gcc should be loaded
    # cmake by default will take old gcc from /usr/bin so define manually
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
-	        -DCMAKE_Fortran_COMPILER=gfortran         \
-	        -DCMAKE_C_COMPILER=gcc                          \
-	        -DCMAKE_CXX_COMPILER=g++                    \
-	        ..
+	  -DCMAKE_Fortran_COMPILER=gfortran     \
+	  -DCMAKE_C_COMPILER=gcc                \
+	  -DCMAKE_CXX_COMPILER=g++              \
+	  ..
+elif [ "$MACHINE_ID" == "fusion2.ornl.gov" ]
+then
+    # fusion2
+    #
+    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
+	  ..
+else
+    echo $MACHINE_ID is not supported by this script.
+    echo Please add your machine.
+    echo
 fi
 
 if [$VERBOSE_BUILD==1]; then
@@ -49,32 +59,3 @@ else
     make
 fi
 make install
-
-
-
-#
-
-#
-#   cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
-#               
-#               
-#              
-#elif [ "MACHINE_ID" == "fusion2"]; then
-#
-#     # fusion2
-#
-#   cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE  
-#fi
-#
-#else
-# MACHINE_ID is new and unknown. Inform the user how to add support for this new machine.
-#	echo $MACHINE_ID not suported by this script.
-#	echo To support this machine, add a new elif statement of the form
-#	echo
-#	echo elif [ \$MACHINE_ID == \"$MACHINE_ID\" ]
-#	echo then
-#	echo "    cmake -DVARIABLE=value ...
-#	echo
-#fi
-
-
