@@ -19,7 +19,7 @@ n0_coll_xs = pi*(2*rH2)^2;
 nn0 = 3.3e19;
 
 if 1
-add_slow = 1;
+add_slow = 0;
 
 
 
@@ -32,7 +32,7 @@ n0_mfp = 1/(sqrt(2)*n0_coll_xs*nn0)
 % ne_test = logspace(8,16,5);
 %
 Te_test = linspace(.1,10,100);
-ne_test = logspace(13,13,1);  % cm3
+ne_test = logspace(log10(0.5e13),log10(0.5e13),1);  % cm3
 
 for i=1:length(ne_test)
     sv_iz(:,i) = eval_AMJUEL_H4_fit(data.H4.reaction_215,ne_test(i),Te_test);

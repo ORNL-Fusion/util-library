@@ -1,6 +1,9 @@
 function [Br,Bphi,Bz]=bfield_bs_cyl(P_r,P_phi,P_z,coil,current,nowarn)
 % [Br,Bphi,Bz]=bfield_bs_cyl(P_r,P_phi,P_z,coil,current,nowarn)
-
+if nargin < 6
+    nowarn = 0;
+end
+    
 if isrow(P_r)
     P_r = P_r.';
     P_phi = P_phi.';
