@@ -4,7 +4,8 @@ if nargin < 1
     plotit = 1;
 end
 
-d = load('C:\Work\shot 7445.mat');
+d = load('C:\Work\MPEX\shot 7445.mat');
+% d = load('C:\Work\MPEX\shot 6547.mat');
 
 if 0
     figure; hold on; box on;

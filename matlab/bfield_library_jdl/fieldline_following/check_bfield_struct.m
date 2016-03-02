@@ -61,6 +61,18 @@ switch bfield.type
             ierr = 1;
             return;
         end      
+    case 'MPEX'
+        errstr2 = 'for MPEX ';    
+        if ~isfield(bfield,'coil')
+            fprintf([errstr,errstr2,'type structure must contain field "coil"\n'])
+            ierr = 1;
+            return;
+        end                
+        if ~isfield(bfield,'current')
+            fprintf([errstr,errstr2,'type structure must contain field "current"\n'])
+            ierr = 1;
+            return;
+        end              
     otherwise
         fprintf([errstr,'Did not recognize bfield type\n'])
         fprintf('Supported types are:\n')
@@ -68,6 +80,7 @@ switch bfield.type
         fprintf('     gfile+coils\n')
         fprintf('     vmec\n')        
         fprintf('     just_coils\n')        
+        fprintf('     MPEX\n')      
         error('Throwing error')
         ierr = 1;
         return;

@@ -51,6 +51,10 @@ geo.target = target;
 geo.helicon = helicon;
 geo.vessel =  vessel;
 geo.skimmer = skimmer;
+geo.coilcx.r = rcoil;
+geo.coilcx.z = zcoil;
+geo.cmax = cmax;
+geo.cmin = cmin;
 
 if plotit
     if newfig

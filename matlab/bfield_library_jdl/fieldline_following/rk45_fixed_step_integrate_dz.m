@@ -1,4 +1,4 @@
-function [yout,xout,ierr,i_last_good] = rk45_fixed_step_integrate(y0,x0,dx,nsteps,bfield,nowarn)
+function [yout,xout,ierr,i_last_good] = rk45_fixed_step_integrate_dz(y0,x0,dx,nsteps,bfield,nowarn)
 if nargin < 6
     nowarn = 0;
 end
@@ -14,13 +14,13 @@ xout(1) = x0;
 y = y0;
 x = x0;
 for i = 1:nsteps
-    [dydx,ierr_deriv] = choose_fl_derivs(x,y,bfield,nowarn);
+    [dydx,ierr_deriv] = choose_fl_derivs_dz(x,y,bfield,nowarn);
     if ierr_deriv == 1
         ierr = 1;
         i_last_good = i;
         return;
     end
-    [ytmp,ierr_rk4core] = rk4_core(y,dydx,x,dx,bfield,nowarn);
+    [ytmp,ierr_rk4core] = rk4_core_dz(y,dydx,x,dx,bfield,nowarn);
     if ierr_rk4core == 1
         ierr = 1;
         i_last_good = i;

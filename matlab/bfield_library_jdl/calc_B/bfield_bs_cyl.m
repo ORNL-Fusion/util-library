@@ -1,4 +1,4 @@
-function [Br,Bphi,Bz]=bfield_bs_cyl(P_r,P_phi,P_z,coil,current,nowarn)
+function [Br,Bphi,Bz,Btot]=bfield_bs_cyl(P_r,P_phi,P_z,coil,current,nowarn)
 % [Br,Bphi,Bz]=bfield_bs_cyl(P_r,P_phi,P_z,coil,current,nowarn)
 if nargin < 6
     nowarn = 0;
@@ -19,3 +19,7 @@ P_y = P_r.*sp;
 
 Br = Bx.*cp + By.*sp;
 Bphi = -Bx.*sp + By.*cp;
+
+if nargout > 3
+    Btot = sqrt(Br.^2 + Bphi.^2 + Bz.^2);
+end

@@ -1,6 +1,10 @@
 % function test_fieldline_follow_Proto
 clearvars;
-[coil,current] = build_Proto_coils;
+helicon_current = -80;
+current_A = 6607;
+current_B = 6607;
+config = 'focus';
+[coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
 
 bfield.coil = coil;
 bfield.current = current;
@@ -39,7 +43,7 @@ L = 3;
 nsteps = abs(L/dl);
 for i = 1:length(zz)
     fprintf('Line %d of %d\n',i,num_lines)
-    f = follow_fieldlines_rzphi_dl(bfield,rr(i),zz(i),phistart,dl,nsteps);
+    f = follow_fieldlines_rzphi_dz(bfield,rr(i),zz(i),phistart,dl,nsteps);
     plot(f.z,f.r,'b','linewidth',2)
     fsave{i} = f;
 end

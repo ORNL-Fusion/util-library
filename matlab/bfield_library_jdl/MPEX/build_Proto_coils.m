@@ -1,11 +1,13 @@
-function [coil,current] = build_Proto_coils(helicon_current);
-
-if nargin < 1
-    helicon_current = [];
+function [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose)
+if nargin < 5
+    verbose = 1;
+end
+if nargin < 4
+    error('must specify inputs')
 end
 debug_plots = 0;
 
-[nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current);
+[nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config,verbose);
 
 ntheta_per_wind = 100;
 
