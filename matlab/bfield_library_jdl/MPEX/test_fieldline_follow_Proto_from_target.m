@@ -1,9 +1,15 @@
 % function test_fieldline_follow_Proto
 clearvars;
-helicon_current = -80;
-current_A = 6607;
-current_B = 6607;
-config = 'focus';
+% helicon_current = -80;
+% current_A = 6607;
+% current_B = 6607;
+% config = 'focus';
+
+helicon_current = -70;
+current_A = 3300;
+current_B = 0;
+config = 'flat';
+
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
 
 bfield.coil = coil;
@@ -37,7 +43,8 @@ plot(geo.target.z*[1,1],geo.target.r*[0,1],'k','linewidth',3)
 plot([geo.helicon.z1,geo.helicon.z2],geo.helicon.r*[1,1],'k','linewidth',3)
 
 num_lines = 10;
-rr = linspace(1e-3,0.04,num_lines);
+% rr = linspace(1e-3,0.04,num_lines);
+rr = linspace(1e-3,0.01,num_lines);
 zz = geo.target.z*ones(size(rr));
 L = 3;
 nsteps = abs(L/dl);
@@ -50,7 +57,7 @@ end
 
 
 
-[rr_cm,dd] = plot_IR_data_raw(0);
+[rr_cm,dd] = plot_IR_data_raw(6547);
 
 for i = 1:num_lines    
     if i == 1

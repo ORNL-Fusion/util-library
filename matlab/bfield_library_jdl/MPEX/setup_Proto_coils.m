@@ -16,7 +16,7 @@ rr2 = 0.1785*omat;
 cl = 0.0979*omat;
 z0  = [0.9392    1.2492    1.5792    1.8152    2.1412    2.3392    2.8952    3.1712    3.3692    3.6852    3.9992    4.3172];
 if nargin == 0
-    fprintf('Just returning coil geometry\n')
+%     fprintf('Just returning coil geometry\n')
     cur = [];
     return;
 end
