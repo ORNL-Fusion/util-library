@@ -58,6 +58,7 @@ toc
 
 
 % FOLLOW FROM HELICON WINDOW
+tic;
 if 1
     geo = get_Proto_geometry(1,1,skimmer);
     plot(geo.target.z*[1,1],geo.target.r*[0,1],'k','linewidth',3)
@@ -76,3 +77,4 @@ if 1
     end
     axis([0,5,0,0.2])
 end
+toc

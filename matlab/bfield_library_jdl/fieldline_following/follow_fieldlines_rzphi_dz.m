@@ -31,7 +31,7 @@ dx = dz;
 
 s.r   = yout(:,1:Neq:Nsys*Neq-1);
 s.phi = yout(:,2:Neq:Nsys*Neq);
-s.z   = xout;
+s.z   = repmat(xout,1,Nsys);
 
 ierr = ierr_rk45;
 

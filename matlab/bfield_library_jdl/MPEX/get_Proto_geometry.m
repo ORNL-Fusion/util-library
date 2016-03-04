@@ -22,9 +22,13 @@ helicon_Z_cen = cmax(3) + (cmin(4) - cmax(3))/2;  % Centered between coils 3 and
 helicon.z1 = helicon_Z_cen - helicon_L/2;         
 helicon.z2 = helicon_Z_cen + helicon_L/2;
 helicon.r = helicon_ID/2; 
+helicon.zmid = helicon_Z_cen;
+
 skimmer.z1 = (cmin(5) + cmax(5))/2 + 0.0702 - 0.5e-2;  
 skimmer.z2 = (cmin(5) + cmax(5))/2 + 0.0702 + 0.5e-2;  
+skimmer.zmid = (skimmer.z1+skimmer.z2)/2;
 skimmer.ID = 0.058;
+skimmer.r = skimmer.ID/2;
 
 d1 = 5.834*in2m;  % from 0 to box, excluding helicon
 d2 = helicon_ID;  % helicon
@@ -43,6 +47,8 @@ else
     vessel.z = [0 ,helicon.z1,helicon.z1,helicon.z2,helicon.z2,boxz1,boxz1,boxz2,boxz2,cmax(7),cmax(7),cmin(8),cmin(8),cmax(8),cmax(8),cmin(9),cmin(9),cmax(9),cmax(9),cmin(10),cmin(10),cmax(10),cmax(10),cmin(11),cmin(11),cmax(11),cmax(11),cmin(12),cmin(12),5];    
 end
     
+vessel_clip_z = [0,vessel.z,5];
+vessel_clip_r = [0,vessel.r,0];
 
 geo.target = target;
 geo.helicon = helicon;
@@ -52,6 +58,9 @@ geo.coilcx.r = rcoil;
 geo.coilcx.z = zcoil;
 geo.cmax = cmax;
 geo.cmin = cmin;
+geo.vessel_clip_r = vessel_clip_r;
+geo.vessel_clip_z = vessel_clip_z;
+
 
 if plotit
     if newfig

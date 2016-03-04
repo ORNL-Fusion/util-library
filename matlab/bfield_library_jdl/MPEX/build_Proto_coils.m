@@ -9,20 +9,26 @@ debug_plots = 0;
 
 [nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config,verbose);
 
-ntheta_per_wind = 100;
+ntheta_per_wind = 50;
 
 ncoils = length(nturns);
+ibuild = 0;
 for i=1:ncoils
-    [coil0,current0] = build_circular_coil(rr1(i),rr2(i),z0(i),cl(i),nturns(i),nlayers(i),cur(i),ntheta_per_wind);
-    if i > 1
-        coil = [coil;coil0];
-        current = [current;current0];
-    else
-        coil = coil0;
-        current = current0;
-    end  
+    if cur(i) > 1e-8
+        [coil0,current0] = build_circular_coil(rr1(i),rr2(i),z0(i),cl(i),nturns(i),nlayers(i),cur(i),ntheta_per_wind);
+        if ibuild == 0
+            coil = coil0;
+            current = current0;            
+        else
+            coil = [coil;coil0];
+            current = [current;current0];                        
+        end
+        ibuild = ibuild + 1;
+    end
 end
-
+if verbose
+    fprintf('Built %d out of %d coils. Coils with zero current were excluded.\n',ibuild,length(cur))
+end
 if debug_plots
     figure; hold on; box on;
     % plot3(coil(:,1),coil(:,2),coil(:,3))

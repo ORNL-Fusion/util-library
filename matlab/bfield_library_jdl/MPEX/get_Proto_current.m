@@ -62,3 +62,6 @@ switch shot
     otherwise
         error(['Did not recognize shot: ',num2str(shot)])
 end
+if skimmer
+    fprintf('This shot includes skimmer\n')
+end

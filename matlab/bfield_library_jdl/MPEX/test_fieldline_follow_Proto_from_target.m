@@ -26,32 +26,43 @@ num_lines = 10;
 % rr = linspace(1e-3,0.04,num_lines);
 rr = linspace(1e-3,1.5*plasma_radius_cm/100,num_lines);
 zz = geo.target.z*ones(size(rr));
-L = 3;
+L = 2.5;
 dl = -0.01;
 nsteps = abs(L/dl);
 phistart = zeros(size(rr));
-% tic;
-% f2 = follow_fieldlines_rzphi_dz(bfield,rr,zz(1),phistart,dl,nsteps);
-% toc
 tic;
-for i = 1:length(zz)
-    fprintf('Line %d of %d\n',i,num_lines)
-    f = follow_fieldlines_rzphi_dz(bfield,rr(i),zz(i),phistart(i),dl,nsteps);
-%     plot(f.z,f.r,'b','linewidth',2)
+f2 = follow_fieldlines_rzphi_dz(bfield,rr,zz(1),phistart,dl,nsteps);
+for i =1:length(zz)
+    f.r = f2.r(:,i); f.z = f2.z(:); f.phi = f2.phi(:,i);
     fsave{i} = f;
 end
 toc
+% tic;
+% for i = 1:length(zz)
+%     fprintf('Line %d of %d\n',i,num_lines)
+%     f = follow_fieldlines_rzphi_dz(bfield,rr(i),zz(i),phistart(i),dl,nsteps);
+%     plot(f.z,f.r,'b','linewidth',2)
+%     fsave{i} = f;
+% end
+% toc
 
-
+figure; hold on; box on;
+for i =1:length(zz)
+    plot(fsave{i}.z,fsave{i}.r,'b','linewidth',2)
+end
+set(gca,'fontsize',14)
+xlabel('Z [m]','fontsize',14)
+ylabel('R [m]','fontsize',14)
+title(['Shot ',num2str(shot)])
+get_Proto_geometry(1,0,skimmer);
+axis([0.5,3.5,0,0.2])
 
 
 figure; hold on; box on;
 xlabel('Z [m]','fontsize',14)
 ylabel('R [m]','fontsize',14)
 set(gca,'fontsize',14)
-axis([0,5,0,0.2])
 title(['Shot ',num2str(shot)])
-
 for i = 1:num_lines    
     if i == 1
         z = [fsave{i}.z;flipud(fsave{i}.z)];
@@ -74,14 +85,11 @@ end
 geo = get_Proto_geometry(1,0,skimmer);
 plot(geo.target.z*[1,1],geo.target.r*[0,1],'k','linewidth',3)
 plot([geo.helicon.z1,geo.helicon.z2],geo.helicon.r*[1,1],'k','linewidth',3)
-
+axis([0,5,0,0.2])
 
 
 
 % CLIP AT VESSEL
-vessel_clip_z = [0,geo.vessel.z,5];
-vessel_clip_r = [0,geo.vessel.r,0];
-
 figure; hold on; box on;
 xlabel('Z [m]','fontsize',14)
 ylabel('R [m]','fontsize',14)
@@ -101,7 +109,7 @@ for i = 1:num_lines
         
         rout = fsave{i}.r;
         zout = fsave{i}.z;        
-        isin2 = inpolygon(rout,zout,vessel_clip_r,vessel_clip_z);
+        isin2 = inpolygon(rout,zout,geo.vessel_clip_r,geo.vessel_clip_z);
         is2 = find(isin2 == 0,1,'first')-1;
         if isempty(is2)
             is2 = length(isin2);
