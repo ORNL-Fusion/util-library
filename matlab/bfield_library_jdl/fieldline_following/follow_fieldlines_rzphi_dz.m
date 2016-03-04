@@ -13,6 +13,9 @@ end
 if nargin < 7
     nowarn = 0;
 end
+if length(Zstart) > 1
+    error('Zstart must be a scalar')
+end
 if nsteps <= 0
     error('Nsteps must be positive!')
 end

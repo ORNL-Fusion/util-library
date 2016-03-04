@@ -1,5 +1,6 @@
 function cf = colorflipper(num_colors,cmap)
 % cf = colorflipper(num_colors,cmap)
+% cf(num_colors,3)
 % Available options for cmap: 
 %'jet'
 %'hsv'

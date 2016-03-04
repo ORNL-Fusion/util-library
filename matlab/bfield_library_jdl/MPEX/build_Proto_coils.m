@@ -32,6 +32,5 @@ if debug_plots
         else
             plot3(coil(i:i+1,1),coil(i:i+1,2),coil(i:i+1,3),'b')
         end
-    end
-    
+    end    
 end

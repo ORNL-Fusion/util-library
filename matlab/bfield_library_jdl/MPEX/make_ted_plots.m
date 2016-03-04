@@ -2,7 +2,7 @@ clearvars;
 
 bfield_method = 1;  % 1 is Biot-Savart, 2 is exact
 
-geo = get_Proto_geometry;
+geo = get_Proto_geometry(0,0,0);
 
 
 current_A = 3300;
@@ -20,9 +20,10 @@ current_B = 0;
 
 verbose = 0;
 num_test = 10;
-helicon_currents = linspace(0,400,num_test);
+helicon_currents = linspace(0,600,num_test);
 
 for iconfig = 1:3
+    iconfig
     if iconfig == 1
         config = 'standard';
     elseif iconfig == 2
@@ -31,6 +32,7 @@ for iconfig = 1:3
         config = 'flat';
     end
     for ih = 1:num_test
+        fprintf('ih %d of %d\n',ih,num_test)
         helicon_current = helicon_currents(ih);
         if bfield_method == 1
             [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose);
@@ -93,9 +95,7 @@ for iconfig = 1:3
         nsteps = round(abs(L/dz));
         dz = L/nsteps;
         f = follow_fieldlines_rzphi_dz(bfield,Rstart,Zstart,phistart,dz,nsteps);
-        r_d(iconfig,ih) = f.r(end);                
-        
-aaaa=1
+        r_d(iconfig,ih) = f.r(end);                       
     end
 end
 

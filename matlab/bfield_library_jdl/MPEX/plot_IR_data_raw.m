@@ -1,17 +1,35 @@
-% function [rr,dd] = plot_IR_data_raw(shot,plotit)
-function plot_IR_data_raw
-% if nargin < 2
-%     plotit = 1;
-% end
-clearvars;
-% shot = 7445;
-shot = 7410;
-plotit = 1;
+function [rr,dd,radius,angle,x0_final,y0_final] = plot_IR_data_raw(shot,plotit,x0_guess,y0_guess,force)
+%
+% x0_guess, y0_guess [cm]. Guess of center of plasma from the middle of the
+% frame.  For the 74xx shots I've looked at [0,-2.5] works well.
+%   
+% if force == 1 the guess is not changed
+%  
+if nargin < 2
+    plotit = 1;
+end
+if nargin < 3
+    plotit = 1;
+    manual_select = 1;
+    x0_guess = 0;
+    y0_guess = 0;
+else
+    manual_select = 0;
+end
+if nargin < 5
+    force = 0;
+end
 
+% Settings
+px_per_cm = 12.146;
+debug_plots = 0; % Turn on for plots. Can be level [0,1,2]
+verbose = 0;     % Controls lsqnonlin output.  Can be level [0,1,2]
+tolx = 1e-8;
+tolfun = 1e-8;
+
+% Search data path for file names including string of shot number
 data_path = 'C:\Work\MPEX\Camera\';
-
 files = dir(data_path);
-
 icount = 0;
 for i = 3:length(files)
     itmp = strfind(files(i).name,num2str(shot));
@@ -26,83 +44,72 @@ end
 if icount > 1
     error(['Found multiple files matching shot: ',num2str(shot)])
 end
-
 fprintf('Using file %s \n',files(ishot).name)
 
 d = load(strcat(data_path,files(ishot).name));
-if 0  % plot raw data
+
+% plot raw data
+if debug_plots >= 2
     figure; hold on; box on;
-    h= pcolor(d.Frame);
-    hc = colorbar;
+    h = pcolor(d.Frame);
+    colorbar;
     set(h,'edgecolor','none')
+    title('Raw data','fontsize',14)
+    xlabel('X [px]','fontsize',14)
+    ylabel('Y [px]','fontsize',14)
+    set(gca,'fontsize',14)
 end
 
+% Convert to cm and flip
+data = flipud(d.Frame);
 nw = size(d.Frame,2);
 nh = size(d.Frame,1);
-
-px_per_cm = 12.146;
 dx = nw/px_per_cm;
 dy = nh/px_per_cm;
-
-x = linspace(0,dx,nw+1);
-y = linspace(0,dy,nh+1);
-data = flipud(d.Frame);
-
-% % 
-% y0 = 17.2;
-% x0 = 25.75;
-
-% y0 = 18;
-% x0 = 26.5;
-
-x0_guess = x(end)/2;
-y0_guess = y(end)/2-2.5;
-% z0_guess = y(end)/2;
-
-
-x0 = x0_guess;
-y0 = y0_guess;
-
 icount = 1;
-xcell = zeros(4,nh*nw);
-ycell = zeros(4,nh*nw);
 dcell = zeros(1,nh*nw);
 for i = 1:nw
     for j = 1:nh
-        xcell(:,icount) = [x(i),x(i+1),x(i+1),x(i)];
-        ycell(:,icount) = [y(j),y(j),y(j+1),y(j+1)];
         dcell(icount) = data(j,i);
         icount = icount + 1;
     end
 end
-xmean = mean(xcell);
-ymean = mean(ycell);
+[x,y,xinterp,yinterp,xcell,ycell] = create_cells(dx,dy,nh,nw,x0_guess,y0_guess);
 
-
+% Plot with initial center guess.  If no guess ask for click
 if plotit
     figure;hold on; box on;
-    patch(xcell-x0,ycell-y0,dcell,'edgecolor','none')
-    plot([0,0],[-y0,y(end)-y0],'k-')
-    plot([-x0,x(end)-x0],[0,0],'k-')
+    patch(xcell,ycell,dcell,'edgecolor','none')
     colorbar;
     xlabel('X [cm]','fontsize',14)
-    title('\DeltaT','fontsize',14)
     ylabel('Y [cm]','fontsize',14)
+    title(['\DeltaT, ',num2str(shot)],'fontsize',14)
+    axis tight;
+    axis([-15,15,-15,15])
 
+    if manual_select
+        title('Click on approximate center position')
+        fprintf('Waiting for mouse input\n')
+        [x0_guess,y0_guess] = ginput(1);
+        fprintf('Click gave x0_guess = %f, y0_guess = %f\n',x0_guess,y0_guess)
+
+        [x,y,xinterp,yinterp,xcell,ycell] = create_cells(dx,dy,nh,nw,x0_guess,y0_guess);
+        clf;hold on; box on;
+        patch(xcell,ycell,dcell,'edgecolor','none')
+        colorbar;
+        xlabel('X [cm]','fontsize',14)
+        ylabel('Y [cm]','fontsize',14)
+        title('\DeltaT','fontsize',14)
+        axis tight;
+        axis([-15,15,-15,15])
+    end
     % x = linspace(0,nw/px_per_cm);
     % y = linspace(0,nh)/px_per_cm;
     % h= pcolor(x,y,flipud(d.Frame));
     % set(h,'edgecolor','none')    
 end
 
-
-
-theta = linspace(0,2*pi,100);
-
-verbose = 1;
-tolx = 1e-6;
-tolfun = 1e-6;
-
+% Perform fit for center and radius through maximum
 if verbose == 0
     qval = 'off';
 elseif verbose == 1
@@ -112,84 +119,78 @@ elseif verbose == 2
 else
     qval = 'final';
 end
-opts=optimoptions('lsqnonlin','TolFun',tolfun,'TolX',tolx,'Display',qval,'Algorithm','levenberg-marquardt','TypicalX',[100000000,100000000]);
+% opts=optimoptions('lsqnonlin','TolFun',tolfun,'TolX',tolx,'Display',qval,'Algorithm','levenberg-marquardt','TypicalX',10000000*[1,1,1]);
+opts=optimoptions('lsqnonlin','TolFun',tolfun,'TolX',tolx,'Display',qval,'Algorithm','levenberg-marquardt');
 opts.TolFun=tolfun;
 opts.TolX=tolx;
 opts.Algorithm = 'levenberg-marquardt';
 
-radius_eval = 2.;  %cm
-revals = linspace(0,radius_eval,30);
-tevals = linspace(0,2*pi,40); tevals(end) = [];
-[rr,tt] = meshgrid(revals,tevals);
-xevals = rr.*cos(tt);
-yevals = rr.*sin(tt);
-xinterp = linspace(0,dx,nw)-x0;
-yinterp = linspace(0,dy,nh)-y0;
+radius_eval = 1.5;  %cm
+tevals = linspace(0,2*pi,80); tevals(end) = [];
+costt = cos(tevals);
+sintt = sin(tevals);
 
-x00=[1,0];
-% xub = [max(x)-x0,max(y)-y0]-RTARG;
-% xlb = [min(x)-x0,min(y)-y0]+RTARG;
-% xfinal=lsqnonlin(@minfun,x00,xlb,xub,opts);
+if force == 1
+    x00=[radius_eval];
+else
+    x00=[radius_eval,0,0];
+end
 xfinal=lsqnonlin(@minfun,x00,[],[],opts);
-
-% plot(XTARG+xfinal(1),YTARG+xfinal(2),'m')
-% plot(XTARG+x00(1),YTARG+x00(2),'y--')
-plot(xfinal(1),xfinal(2),'mx')
-plot(x00(1),x00(2),'mo')
-
-
-% plot(
-xfinal
-
-% return;
-
-x0 = x0 + xfinal(1);
-y0 = y0 + xfinal(2);
-
-figure;hold on; box on;
-% clf; hold on; box on;
-patch(xcell-x0,ycell-y0,dcell,'edgecolor','none')
-plot([0,0],[-y0,y(end)-y0],'k-')
-plot([-x0,x(end)-x0],[0,0],'k-')
-colorbar;
-xlabel('X [cm]','fontsize',14)
-title('\DeltaT','fontsize',14)
-ylabel('Y [cm]','fontsize',14)
-
-
-
-r1 = radius_eval;
-xx = r1*cos(theta);
-yy = r1*sin(theta);
-if plotit
-    plot(xx,yy,'m')
+radius   = xfinal(1);
+if force== 1
+    x0_final = x0_guess;
+    y0_final = y0_guess;
+else
+    x0_final = xfinal(2) + x0_guess;
+    y0_final = xfinal(3) + y0_guess;
 end
 
-r1 = 1.8;
-xx = r1*cos(theta);
-yy = r1*sin(theta);
-if plotit
-    plot(xx,yy,'k')
+if plotit 
+    plot(x0_final,y0_final,'mx')
+    if force ~= 1
+        plot(x00(2),x00(3),'mo')
+    end
 end
 
-xeval = radius_eval*cos(theta);
-yeval = radius_eval*sin(theta);
-isin = inpolygon(xmean-x0,ymean-y0,xeval,yeval);
+fprintf('Found x0,y0,radius of %f,%f,%f\n',x0_final,y0_final,radius)
+
+[x,y,xinterp,yinterp,xcell,ycell] = create_cells(dx,dy,nh,nw,x0_final,y0_final);
+
+if debug_plots >= 2 && plotit
+    figure;hold on; box on;
+elseif plotit 
+    clf; hold on; box on;    
+end
+if plotit    
+    patch(xcell,ycell,dcell,'edgecolor','none')
+    plot([0,0],[min(min(ycell)),max(max(ycell))],'k-')
+    plot([min(min(xcell)),max(max(xcell))],[0,0],'k-')
+    colorbar;
+    xlabel('X [cm]','fontsize',14)
+    title(['\DeltaT, ',num2str(shot)],'fontsize',14)
+    ylabel('Y [cm]','fontsize',14)
+    axis tight;
+    axis([-15,15,-15,15])
+end
+
+theta = linspace(0,2*pi,100);
+if plotit
+    plot(radius*cos(theta),radius*sin(theta),'m')
+end
+
+xmean = mean(xcell);
+ymean = mean(ycell);
+xeval = 1.2*radius*cos(theta);
+yeval = 1.2*radius*sin(theta);
+isin = inpolygon(xmean,ymean,xeval,yeval);
 [dmax,imax] = max(dcell(isin));
-xtmp =  xmean(isin) - x0;
-ytmp =  ymean(isin) - y0;
-
+xtmp =  xmean(isin);
+ytmp =  ymean(isin);
 theta1 = atan2(ytmp(imax),xtmp(imax));
-plot(xtmp(imax),ytmp(imax),'ko')
-
-
-
-
-
-
-
-% % theta1 = 0.7*2*pi;
-% theta1 = 0.78*2*pi;
+if plotit
+    plot(xtmp(imax),ytmp(imax),'ko')
+end
+angle = theta1;
 ninterp = 100;
 rr = linspace(0,5,ninterp);
 xx = rr.*cos(theta1);
@@ -197,26 +198,58 @@ yy = rr.*sin(theta1);
 if plotit
     plot(xx,yy,'k')
 end
-% Interpolate along line
 
+% Interpolate along line
 dd = interp2(xinterp,yinterp,data,xx,yy);
 if plotit
     figure; hold on; box on
     plot(rr,dd)
-    xlabel('r [cm]')
-    ylabel('\DeltaT')
+    ylim = get(gca,'ylim');
+    plot(radius*[1,1],ylim,'k')
+    title(num2str(shot),'fontsize',14)
+    xlabel('r [cm]','fontsize',14)
+    ylabel('\DeltaT','fontsize',14)
+    set(gca,'fontsize',14)    
 end
 
 function f = minfun(x)
-
-
-    dtmp = interp2(xinterp,yinterp,data,xevals+x(1),yevals+x(2));
-    f = 1./sum(sum(dtmp));
-%     plot(xevals+x(1),yevals+x(2),'g.')    
-%     fprintf('x,y,f %e, %e, %e\n',x(1),x(2),f)
+    xevals = x(1).*costt;
+    yevals = x(1).*sintt;
+    if length(x) == 3
+        xshift = x(2);
+        yshift = x(3);
+    else
+        xshift = 0;
+        yshift = 0;
+    end
+    dtmp = interp2(xinterp,yinterp,data,xevals+xshift,yevals+yshift);
+    f = [1,1./x(1)]./sum(sum(dtmp));
+    if debug_plots >= 2
+        plot(xevals-xshift,yevals-yshift,'g.')
+    end
 end
 
 end
 
+function [x,y,xinterp,yinterp,xcell,ycell] = create_cells(dx,dy,nh,nw,xshift,yshift)
+x = linspace(-dx/2,dx/2,nw+1);
+y = linspace(-dy/2,dy/2,nh+1);
+x = x - xshift;
+y = y - yshift;
+
+icount = 1;
+xcell = zeros(4,nh*nw);
+ycell = zeros(4,nh*nw);
+for i = 1:nw
+    for j = 1:nh
+        xcell(:,icount) = [x(i),x(i+1),x(i+1),x(i)];
+        ycell(:,icount) = [y(j),y(j),y(j+1),y(j+1)];
+        icount = icount + 1;
+    end
+end
+
+xinterp = x(1:end-1) + diff(x)/2;
+yinterp = y(1:end-1) + diff(y)/2;
+end
 
 

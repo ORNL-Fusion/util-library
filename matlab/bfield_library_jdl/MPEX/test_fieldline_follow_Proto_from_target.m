@@ -5,59 +5,52 @@ clearvars;
 % current_B = 6607;
 % config = 'focus';
 
-helicon_current = -70;
-current_A = 3300;
-current_B = 0;
-config = 'flat';
+% helicon_current = -70;
+% current_A = 3300;
+% current_B = 0;
+% config = 'flat';
 
+% shot = 7418;
+shot = 7503;
+
+[helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
+[rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,0,-2.5);
+geo = get_Proto_geometry(0,0,skimmer);
 
 bfield.coil = coil;
 bfield.current = current;
 bfield.type = 'just_coils';
 
-Rstart = 0.01;
-Zstart = 0;
-phistart = 0;
+num_lines = 10;
+% rr = linspace(1e-3,0.04,num_lines);
+rr = linspace(1e-3,1.5*plasma_radius_cm/100,num_lines);
+zz = geo.target.z*ones(size(rr));
+L = 3;
 dl = -0.01;
-L = 5;
-nsteps = abs(5/dl);
+nsteps = abs(L/dl);
+phistart = zeros(size(rr));
+% tic;
+% f2 = follow_fieldlines_rzphi_dz(bfield,rr,zz(1),phistart,dl,nsteps);
+% toc
+tic;
+for i = 1:length(zz)
+    fprintf('Line %d of %d\n',i,num_lines)
+    f = follow_fieldlines_rzphi_dz(bfield,rr(i),zz(i),phistart(i),dl,nsteps);
+%     plot(f.z,f.r,'b','linewidth',2)
+    fsave{i} = f;
+end
+toc
 
-% f = follow_fieldlines_rzphi_dl(bfield,Rstart,Zstart,phistart,dl,nsteps);
+
+
 
 figure; hold on; box on;
-% plot(f.z,f.r,'b','linewidth',2)
 xlabel('Z [m]','fontsize',14)
 ylabel('R [m]','fontsize',14)
 set(gca,'fontsize',14)
 axis([0,5,0,0.2])
-
-[rcoil,zcoil] = get_coil_cross_sections;
-for i = 1:size(rcoil,1)
-    plot(zcoil(i,:),rcoil(i,:),'r')
-end
-
-
-geo = get_Proto_geometry;
-plot(geo.target.z*[1,1],geo.target.r*[0,1],'k','linewidth',3)
-plot([geo.helicon.z1,geo.helicon.z2],geo.helicon.r*[1,1],'k','linewidth',3)
-
-num_lines = 10;
-% rr = linspace(1e-3,0.04,num_lines);
-rr = linspace(1e-3,0.01,num_lines);
-zz = geo.target.z*ones(size(rr));
-L = 3;
-nsteps = abs(L/dl);
-for i = 1:length(zz)
-    fprintf('Line %d of %d\n',i,num_lines)
-    f = follow_fieldlines_rzphi_dz(bfield,rr(i),zz(i),phistart,dl,nsteps);
-    plot(f.z,f.r,'b','linewidth',2)
-    fsave{i} = f;
-end
-
-
-
-[rr_cm,dd] = plot_IR_data_raw(6547);
+title(['Shot ',num2str(shot)])
 
 for i = 1:num_lines    
     if i == 1
@@ -70,11 +63,17 @@ for i = 1:num_lines
         reval = (r(1)+r(end))/2;
     end
 
-    IR_interp = interp1(rr_cm/100,dd,reval);
+    IR_interp = interp1(rr_cm_IR/100,dd_cm_IR,reval);
     patch(z,r,IR_interp,'edgecolor','none')
 end
-geo = get_Proto_geometry(1,0);
 colorbar;
+[rcoil,zcoil] = get_coil_cross_sections;
+for i = 1:size(rcoil,1)
+    plot(zcoil(i,:),rcoil(i,:),'r')
+end
+geo = get_Proto_geometry(1,0,skimmer);
+plot(geo.target.z*[1,1],geo.target.r*[0,1],'k','linewidth',3)
+plot([geo.helicon.z1,geo.helicon.z2],geo.helicon.r*[1,1],'k','linewidth',3)
 
 
 
@@ -88,8 +87,9 @@ xlabel('Z [m]','fontsize',14)
 ylabel('R [m]','fontsize',14)
 set(gca,'fontsize',14)
 axis([0,5,0,0.2])
-geo = get_Proto_geometry(1,0);
+geo = get_Proto_geometry(1,0,skimmer);
 colorbar;
+title(['Shot ',num2str(shot)])
 
 
 for i = 1:num_lines    
@@ -134,7 +134,7 @@ for i = 1:num_lines
         
     end
      
-    IR_interp = interp1(rr_cm/100,dd,reval);
+    IR_interp = interp1(rr_cm_IR/100,dd_cm_IR,reval);
     patch(z,r,IR_interp,'edgecolor','none')
 end
 

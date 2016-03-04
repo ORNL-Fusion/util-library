@@ -1,13 +1,10 @@
-function [geo] = get_Proto_geometry(plotit,newfig)
-
+function [geo] = get_Proto_geometry(plotit,newfig,add_skimmer)
 if nargin < 1
     plotit = 0;
 end
 if nargin < 2
     newfig = 1;
 end
-
-add_skimmer = 1;
 
 in2m = 0.0254;
 
