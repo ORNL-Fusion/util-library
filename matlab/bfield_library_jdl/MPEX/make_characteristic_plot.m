@@ -3,6 +3,8 @@ function make_characteristic_plot(shot)
 
 % shot = 7477;
 
+ZMIN = 1;
+
 [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
 % [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,0,-2.5);
@@ -24,7 +26,7 @@ dl = 0.01; nsteps = round(abs(L/dl)); dl = sign(dl)*L/nsteps;
 phistart = zeros(size(rr));
 f2a = follow_fieldlines_rzphi_dz(bfield,rr,zz(1),phistart,dl,nsteps);
 f2a = clip_fl_at_vessel(f2a,geo);
-L = geo.helicon.zmid - 0.5;
+L = geo.helicon.zmid - ZMIN;
 dl = -0.01;
 nsteps = round(abs(L/dl)); dl = sign(dl)*L/nsteps;
 f2b = follow_fieldlines_rzphi_dz(bfield,rr,zz(1),phistart,dl,nsteps);
@@ -35,7 +37,7 @@ L = geo.target.z - geo.helicon.z1;
 dl = 0.01; nsteps = round(abs(L/dl)); dl = sign(dl)*L/nsteps;
 f3a = follow_fieldlines_rzphi_dz(bfield,geo.helicon.r,geo.helicon.z1,0,dl,nsteps);
 f3a = clip_fl_at_vessel(f3a,geo);
-L = geo.helicon.z1 - 0.5;
+L = geo.helicon.z1 - ZMIN;
 dl = -0.01; nsteps = round(abs(L/dl)); dl = sign(dl)*L/nsteps;
 f3b = follow_fieldlines_rzphi_dz(bfield,geo.helicon.r,geo.helicon.z1,0,dl,nsteps);
 f3b = clip_fl_at_vessel(f3b,geo);
@@ -44,7 +46,7 @@ L = geo.target.z - geo.helicon.z2;
 dl = 0.01; nsteps = round(abs(L/dl)); dl = sign(dl)*L/nsteps;
 f4a = follow_fieldlines_rzphi_dz(bfield,geo.helicon.r,geo.helicon.z2,0,dl,nsteps);
 f4a = clip_fl_at_vessel(f4a,geo);
-L = geo.helicon.z2 - 0.5;
+L = geo.helicon.z2 - ZMIN;
 dl = -0.01; nsteps = round(abs(L/dl)); dl = sign(dl)*L/nsteps;
 f4b = follow_fieldlines_rzphi_dz(bfield,geo.helicon.r,geo.helicon.z2,0,dl,nsteps);
 f4b = clip_fl_at_vessel(f4b,geo);
@@ -54,7 +56,7 @@ if skimmer
     dl = 0.01; nsteps = round(abs(L/dl)); dl = sign(dl)*L/nsteps;
     f5a = follow_fieldlines_rzphi_dz(bfield,geo.skimmer.r,geo.skimmer.zmid,0,dl,nsteps);
     f5a = clip_fl_at_vessel(f5a,geo);
-    L = geo.skimmer.zmid - 0.5;
+    L = geo.skimmer.zmid - ZMIN;
     dl = -0.01; nsteps = round(abs(L/dl)); dl = sign(dl)*L/nsteps;
     f5b = follow_fieldlines_rzphi_dz(bfield,geo.skimmer.r,geo.skimmer.zmid,0,dl,nsteps);
     f5b = clip_fl_at_vessel(f5b,geo);
@@ -73,8 +75,8 @@ end
 set(gca,'fontsize',14)
 xlabel('Z [m]','fontsize',14)
 ylabel('R [m]','fontsize',14)
-title(['Shot ',num2str(shot)])
+title(sprintf('Shot %d, I_H=%3.0f A, I_A=%4.0f A',shot,helicon_current,current_A))
 get_Proto_geometry(1,0,skimmer);
-axis([0.5,3.5,0,0.2])
+axis([0.5,3.5,0,0.15])
 
 
