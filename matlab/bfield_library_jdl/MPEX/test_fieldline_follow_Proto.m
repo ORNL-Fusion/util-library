@@ -6,7 +6,7 @@ tic;
 % current_B = 0;
 % config = 'flat';
 
-shot = 7503;
+shot = 7477;
 
 [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 
@@ -24,16 +24,16 @@ end
 
 % FOLLOW A SINGLE FIELD LINE
 
-if 0
+if 1
     % Rstart = 0.241089;
     
-    % Helicon center
-    Rstart = 0.06477;
-    Zstart = 1.74;
+%     % Helicon center
+%     Rstart = 0.06477;
+%     Zstart = 1.74;
     
-%     %Skimmer
-%     Rstart = 0.058/2;
-%     Zstart = 2.2603;
+    %Skimmer
+    Rstart = 0.058/2;
+    Zstart = 2.2603;
     phistart = 0;
     
     dz = 0.01;

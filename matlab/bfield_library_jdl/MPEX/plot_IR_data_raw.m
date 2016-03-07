@@ -201,7 +201,7 @@ end
 
 % Interpolate along line
 dd = interp2(xinterp,yinterp,data,xx,yy);
-if plotit
+if plotit > 2
     figure; hold on; box on
     plot(rr,dd)
     ylim = get(gca,'ylim');

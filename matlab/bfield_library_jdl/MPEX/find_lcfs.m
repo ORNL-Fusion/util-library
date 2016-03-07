@@ -1,4 +1,14 @@
 function f = find_lcfs(shot,plotit,num_lines,rmax)
+if length(shot) == 5
+    helicon_current = shot{1};
+    current_A = shot{2};
+    current_B = shot{3};
+    config = shot{4};
+    skimmer = shot{5};
+    notashot = 1;
+else
+    notashot = 0;
+end
 if nargin < 2
     plotit = 0;
 end
@@ -6,7 +16,7 @@ if nargin < 3
     num_lines = 6;
 end
 if nargin < 4
-    rmax = 0.021;
+    rmax = 0.022;
 end
 if nargin < 5
     nresolve = 3;
@@ -14,6 +24,7 @@ end
     
 ZMIN = 1;  % Below this Z lines are not checked for cutoff
 
+if notashot == 0
 % check if saved file exists
 data_path = 'C:\Work\MPEX\LCFS\';
 files = dir(data_path);
@@ -38,8 +49,9 @@ else
     return;
 end
 
-tic;
 [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
+end
+tic;
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
 % [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,0,-2.5);
 geo = get_Proto_geometry(0,0,skimmer);
@@ -92,9 +104,12 @@ end
 f.r = f2a.r(:,ilcfs);
 f.z = f2a.z(:,ilcfs);
 
+if notashot ==0
 fname = [data_path,'shot_',num2str(shot),'.mat'];
 fprintf('saving LCFS data as %s\n',fname)
 save(fname,'f')
+end
 time=toc;
+
 fprintf('Finding LCFS took %f seconds.\n',time)
 

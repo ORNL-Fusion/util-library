@@ -1,15 +1,29 @@
 function make_characteristic_plot(shot)
-% clearvars;
+clearvars;
 
 % shot = 7477;
 
 ZMIN = 1;
 
 [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
+% helicon_current = 100;
+% current_A = 3300;
+% current_B = 0;
+% config = 'standard';
+% skimmer = 1;
+% 
+% shot_tmp{1} = helicon_current;
+% shot_tmp{2} = current_A;
+% shot_tmp{3} = current_B;
+% shot_tmp{4} = config;
+% shot_tmp{5} = skimmer;
+% f = find_lcfs(shot_tmp);
+
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
 % [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,0,-2.5);
 geo = get_Proto_geometry(0,0,skimmer);
 f_lcfs = find_lcfs(shot);
+% f_lcfs = find_lcfs(shot_tmp,0,6,0.01);
 
 bfield.coil = coil;
 bfield.current = current;
