@@ -30,25 +30,29 @@ skimmer.zmid = (skimmer.z1+skimmer.z2)/2;
 skimmer.ID = 0.058;
 skimmer.r = skimmer.ID/2;
 
-d1 = 5.834*in2m;  % from 0 to box, excluding helicon
-d2 = helicon_ID;  % helicon
-d3 = 24*in2m;     % box
-d4 = 19.25*in2m;  % wide sections from box to end
+dump.z = cmax(11) + (cmin(12) - cmax(11))/2 - 3.70;  % 370cm from 11.5
+dump.OD = 15.75*in2m;
+
+d0 = dump.OD;
+d1 = 5.834*in2m;    % from 0 to box, excluding helicon
+d2 = helicon_ID;    % helicon
+d3 = 24*in2m;       % box
+d4 = 19.25*in2m;    % wide sections from box to end
 d5 = 4.272*2*in2m;  % Narrow sections are just inside of coil
-d6 = skimmer.ID;       % skimmer
+d6 = skimmer.ID;    % skimmer
 boxz1 = cmax(6);
 boxz2 = cmin(7);
 
 if add_skimmer
-    vessel.r = [d1,d1        ,d2        ,d2        ,d1        ,d1            ,d6            ,d6            ,d1            ,d1   ,d3   ,d3   ,d5   ,d5     ,d4     ,d4     ,d5     ,d5     ,d4     ,d4     ,d5     ,d5     ,d4     ,d4      ,d5      ,d5      ,d4      ,d4      ,d5      ,d5      ,d4      ,d4      ,d5      ,d5]/2;
-    vessel.z = [0 ,helicon.z1,helicon.z1,helicon.z2,helicon.z2,skimmer.z1,skimmer.z1,skimmer.z2,skimmer.z2,boxz1,boxz1,boxz2,boxz2,cmax(7),cmax(7),cmin(8),cmin(8),cmax(8),cmax(8),cmin(9),cmin(9),cmax(9),cmax(9),cmin(10),cmin(10),cmax(10),cmax(10),cmin(11),cmin(11),cmax(11),cmax(11),cmin(12),cmin(12),5];
+    vessel.r = [0     ,d0    ,d0         ,d1       ,d1        ,d2        ,d2        ,d1        ,d1        ,d6        ,d6        ,d1        ,d1   ,d3   ,d3   ,d5   ,d5     ,d4     ,d4     ,d5     ,d5     ,d4     ,d4     ,d5     ,d5     ,d4     ,d4      ,d5      ,d5      ,d4      ,d4      ,d5      ,d5      ,d4      ,d4      ,d5      ,d5]/2;
+    vessel.z = [dump.z,dump.z,dump.z+0.2,dump.z+0.2,helicon.z1,helicon.z1,helicon.z2,helicon.z2,skimmer.z1,skimmer.z1,skimmer.z2,skimmer.z2,boxz1,boxz1,boxz2,boxz2,cmax(7),cmax(7),cmin(8),cmin(8),cmax(8),cmax(8),cmin(9),cmin(9),cmax(9),cmax(9),cmin(10),cmin(10),cmax(10),cmax(10),cmin(11),cmin(11),cmax(11),cmax(11),cmin(12),cmin(12),5];
 else
-    vessel.r = [d1,d1        ,d2        ,d2        ,d1        ,d1   ,d3   ,d3   ,d5   ,d5     ,d4     ,d4     ,d5     ,d5     ,d4     ,d4     ,d5     ,d5     ,d4     ,d4      ,d5      ,d5      ,d4      ,d4      ,d5      ,d5      ,d4      ,d4      ,d5      ,d5]/2;
-    vessel.z = [0 ,helicon.z1,helicon.z1,helicon.z2,helicon.z2,boxz1,boxz1,boxz2,boxz2,cmax(7),cmax(7),cmin(8),cmin(8),cmax(8),cmax(8),cmin(9),cmin(9),cmax(9),cmax(9),cmin(10),cmin(10),cmax(10),cmax(10),cmin(11),cmin(11),cmax(11),cmax(11),cmin(12),cmin(12),5];    
+    vessel.r = [0     ,d0    ,d0         ,d1       ,d1        ,d2        ,d2        ,d1        ,d1   ,d3   ,d3   ,d5   ,d5     ,d4     ,d4     ,d5     ,d5     ,d4     ,d4     ,d5     ,d5     ,d4     ,d4      ,d5      ,d5      ,d4      ,d4      ,d5      ,d5      ,d4      ,d4      ,d5      ,d5]/2;
+    vessel.z = [dump.z,dump.z,dump.z+0.2,dump.z+0.2,helicon.z1,helicon.z1,helicon.z2,helicon.z2,boxz1,boxz1,boxz2,boxz2,cmax(7),cmax(7),cmin(8),cmin(8),cmax(8),cmax(8),cmin(9),cmin(9),cmax(9),cmax(9),cmin(10),cmin(10),cmax(10),cmax(10),cmin(11),cmin(11),cmax(11),cmax(11),cmin(12),cmin(12),5];    
 end
     
-vessel_clip_z = [0,vessel.z,5];
-vessel_clip_r = [0,vessel.r,0];
+vessel_clip_z = [vessel.z,5];
+vessel_clip_r = [vessel.r,0];
 
 geo.target = target;
 geo.helicon = helicon;
@@ -77,6 +81,8 @@ if plotit
     plot([geo.helicon.z1,geo.helicon.z2],geo.helicon.r*[1,1],'k','linewidth',3)
     % VESSEL
     plot(geo.vessel.z,geo.vessel.r,'k','linewidth',1)
+    
+%     plot(vessel_clip_z,vessel_clip_r,'c')
     
     xlabel('Z [m]','fontsize',14)
     ylabel('R [m]','fontsize',14)

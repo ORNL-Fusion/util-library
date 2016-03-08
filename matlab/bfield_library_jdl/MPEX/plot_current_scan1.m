@@ -1,4 +1,4 @@
-clearvars;
+    clearvars;
 shots = 7400 + [0,3:6,8,10,12:13,16,17,18]; mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1;
 % shots = 7400 + [3,8,12,18]; mytitle = 'I_A = 3300 A, no skimmer';
 % shots = 7400 + [77,87,88,92:98,100,101,103]; mytitle = 'I_A = 3300 A, with skimmer';x0_guess = -.5877;y0_guess = -2.8914; force_guess = 1;

@@ -14,26 +14,29 @@ clearvars;
 % current_A = 3300;
 % current_B = 0;
 % config = 'standard';
-skimmer = 1;
-plasma_radius_cm = 1;
+% skimmer = 1;
+% plasma_radius_cm = 1;
 
 
-shot = 7412;  mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
+% shot = 7412;  mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
 %  shot = 7488; mytitle = 'I_A = 3300 A, with skimmer';x0_guess = -.5877;y0_guess = -2.8914; force_guess = 1; % shots = 7400 + [77,87,88,92:98,100,101,103];
+
+% shot = 5954;
+shot = 6550;
 
 [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
-% [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,0,-2.5);
-[rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,x0_guess,y0_guess,force_guess);
+[rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,0,-2.5);
+% [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,x0_guess,y0_guess,force_guess);
 geo = get_Proto_geometry(0,0,skimmer);
 
 bfield.coil = coil;
 bfield.current = current;
 bfield.type = 'just_coils';
 
-num_lines = 10;
+num_lines = 20;
 % rr = linspace(1e-3,0.04,num_lines);
-rr = linspace(1e-3,1.5*plasma_radius_cm/100,num_lines);
+rr = linspace(1e-3,2.0*plasma_radius_cm/100,num_lines);
 zz = geo.target.z*ones(size(rr));
 L = 2.5;
 dl = -0.01;

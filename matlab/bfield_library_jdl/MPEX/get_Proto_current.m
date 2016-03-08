@@ -2,6 +2,13 @@ function [helicon_current,current_A,current_B,config,skimmer] = get_Proto_curren
 
 
 switch shot
+    case 5954
+        helicon_current = 0; current_A = 3300; current_B = 0; config = 'standard'; skimmer = 0;
+    
+    case 6550
+        helicon_current = 140; current_A = 6600; current_B = 0; config = 'focus'; skimmer = 0;
+
+        
     case 7400
         helicon_current = 30; current_A = 6368; current_B = 0; config = 'flat'; skimmer = 0;
     case 7403
@@ -59,6 +66,9 @@ switch shot
         helicon_current = 500; current_A = 3300; current_B = 0; config = 'flat'; skimmer = 1;                
     case 7503
         helicon_current = 600; current_A = 3300; current_B = 0; config = 'flat'; skimmer = 1;                                
+
+    case {7670, 7680, 7687}
+        helicon_current = 210; current_A = 6400; current_B = 0; config = 'flat'; skimmer = 1;        
     otherwise
         error(['Did not recognize shot: ',num2str(shot)])
 end
