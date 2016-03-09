@@ -26,7 +26,7 @@ shot = 6550;
 
 [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
-[rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,0,-2.5);
+[rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,0,0);
 % [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,x0_guess,y0_guess,force_guess);
 geo = get_Proto_geometry(0,0,skimmer);
 

@@ -57,7 +57,7 @@ if plotit
         [x0_guess,y0_guess] = ginput(1);
         fprintf('Click gave x0_guess = %f, y0_guess = %f\n',x0_guess,y0_guess)
 
-        cells = create_cells(data,x0_guess,y0_guess);
+        cells = create_IR_cells(data,x0_guess,y0_guess);
         clf;hold on; box on;
         patch(cells.xcell,cells.ycell,data.IRdata1D,'edgecolor','none')
         colorbar;
@@ -81,7 +81,7 @@ else
     qval = 'final';
 end
 opts=optimoptions(@lsqnonlin,'TolFun',tolfun,'TolX',tolx,'Display',qval);
-min_method = 1;  % 0 = LM, 1 = trust
+min_method = 0;  % 0 = LM, 1 = trust
 if min_method == 0
     opts.Algorithm = 'levenberg-marquardt';
     lb = [];
@@ -103,10 +103,17 @@ if force == 1
         lb = lb(1);
         ub = ub(1);
     end
+    A = 1;
+    b = 10;
 else
     x00=[radius_eval,0,0];
+    A = [1,0,0];
+    b = 10;
 end
-xfinal=lsqnonlin(@minfun,x00,lb,ub,opts);
+
+xfinal = fmincon(@minfun,x00,A,b);
+
+% xfinal=lsqnonlin(@minfun,x00,lb,ub,opts);
 radius   = xfinal(1);
 if force== 1
     x0_final = x0_guess;
@@ -195,8 +202,16 @@ function f = minfun(x)
         yshift = 0;
     end
     dtmp = interp2(cells.xinterp1D,cells.yinterp1D,data.IRdata2D,xevals+xshift,yevals+yshift);
+%     f = -sum(dtmp);
+%     if length(x) == 3 && length(f) == 1
+%         fprintf('x: %f %f %f, y: %f\n',x,f)
+%     else
+%         fprintf('x: %f, y: %f\n',x,f)
+%     end
 %     f = [1,1./x(1)]./sum(sum(dtmp));
-    f = 1./dtmp;
+        f  = -sum(dtmp);
+%     f = 1./dtmp;
+%     f = -sum(abs(dtmp));
     if debug_plots >= 2
         plot(xevals-xshift,yevals-yshift,'g.')
     end

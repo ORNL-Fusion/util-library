@@ -13,7 +13,7 @@ plotitIR = 1;
 for i = 1:ns
     shot = shots(i);
     [helicon_current(i),current_A,current_B,config,skimmer] = get_Proto_current(shot);
-    [rr{i},dd{i},radius(i),angle(i),x0_final(i),y0_final(i)] = plot_IR_data_raw(shot,plotitIR,x0_guess,y0_guess,force_guess);
+    [rr{i},dd{i},radius(i),angle(i),x0_final(i),y0_final(i)] = fit_IR_data(shot,plotitIR,x0_guess,y0_guess,force_guess);
     set(gca,'clim',[0,14])
     axis([-4,4,-4,4])
     drawnow;
