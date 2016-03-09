@@ -109,7 +109,7 @@ elseif optimizer == 1
 elseif optimizer == 2
     fprintf('Using lsqnonlin trust-region-reflective\n')
     opts=optimoptions(@lsqnonlin,'Display',opt_display);
-    xfinal = lsqnonlin(@minfun,x00,lb,ub,opts);    
+    xfinal = lsqnonlin(@minfun,x00,[],[],opts);    
 else    
     error('Bad value for optimizer %d',optimizer)
 end
@@ -131,13 +131,8 @@ end
 fprintf('Found x0,y0,radius of %f,%f,%f\n',x0_final,y0_final,radius)
 if optimizer == 0
     fprintf('Found max function value of %f\n',minfun(xfinal))
-elseif optimizer == 1
-    f = minfun(xfinal);
-    f = sum(1./f(1:end-1));
-    fprintf('Found max function value of %f\n',f)
-elseif optimizer == 2
-    f = minfun(xfinal);
-    f = sum(1./f);
+elseif optimizer > 0
+    f = 1/minfun(xfinal);    
     fprintf('Found max function value of %f\n',f)
 end
 
@@ -215,12 +210,9 @@ end
         dtmp = interp2(cells.xinterp1D,cells.yinterp1D,data.IRdata2D,xevals+xshift,yevals+yshift);
         
         if optimizer == 0
-            f  = sum(dtmp);
-        elseif optimizer == 1
-            f = [1,1./x(1)]./sum(dtmp);
-%             f = 1./dtmp;            
-        elseif optimizer == 2
-            f = 1./dtmp;            
+            f  = sum(dtmp)*sqrt(x(1));
+        elseif optimizer > 0
+            f = 1/(sqrt(x(1))*sum(dtmp));      
         end
 
             if debug && length(x) == 3 && length(f) == 1

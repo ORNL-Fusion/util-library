@@ -1,4 +1,4 @@
-function [dydx,ierr] = choose_fl_derivs(x,y,bfield,nowarn)
+function [dydx,ierr] = choose_fl_derivs_dphi(x,y,bfield,nowarn)
 if nargin < 4
     nowarn = 0;
 end

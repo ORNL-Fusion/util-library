@@ -4,7 +4,7 @@ if nargin < 4
 end
 
 N = length(RP);
-[Br,Bz] = bfield_circular_coil(bfield.coil,bfield.current,RP(1:2:N-1),Z);
+[Br,Bz] = bfield_circular_coils(bfield.coil,bfield.current,RP(1:2:N-1),Z);
 df(1:2:N-1) = Br./Bz; % dR/dz
 df(2:2:N)   = zeros(size(Br)); % dphi/dz
 ierr = 0;

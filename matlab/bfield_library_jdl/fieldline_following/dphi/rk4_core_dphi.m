@@ -1,11 +1,11 @@
-function [yout,ierr] = rk4_core(y,dydx,x,dx,bfield,nowarn)
+function [yout,ierr] = rk4_core_dphi(y,dydx,x,dx,bfield,nowarn)
 if nargin < 6
     nowarn = 0;
 end
 d1 = dx*dydx;
 xtmp = x+dx/2;
 ytmp = y+d1/2;
-[dydx,ierr_deriv] = choose_fl_derivs(xtmp,ytmp,bfield,nowarn);
+[dydx,ierr_deriv] = choose_fl_derivs_dphi(xtmp,ytmp,bfield,nowarn);
 if ierr_deriv == 1
     if ~nowarn
         warning('fl deriv error in rk4_core')
@@ -16,7 +16,7 @@ end
 d2 = dx*dydx;
 xtmp = x+dx/2;
 ytmp = y+d2/2;
-[dydx,ierr_deriv] = choose_fl_derivs(xtmp,ytmp,bfield,nowarn);
+[dydx,ierr_deriv] = choose_fl_derivs_dphi(xtmp,ytmp,bfield,nowarn);
 if ierr_deriv == 1
     if ~nowarn
         warning('fl deriv error in rk4_core')
@@ -27,7 +27,7 @@ end
 d3 = dx*dydx;
 xtmp = x+dx;
 ytmp = y+d3;
-[dydx,ierr_deriv] = choose_fl_derivs(xtmp,ytmp,bfield,nowarn);
+[dydx,ierr_deriv] = choose_fl_derivs_dphi(xtmp,ytmp,bfield,nowarn);
 
 if ierr_deriv == 1
     if ~nowarn

@@ -1,4 +1,4 @@
-function [s,ierr,i_last_good]=follow_fieldlines_rzphi(bfield,Rstart,Zstart,phistart,dphi,nsteps,nowarn)
+function [s,ierr,i_last_good]=follow_fieldlines_rzphi_dphi(bfield,Rstart,Zstart,phistart,dphi,nsteps,nowarn)
 % Rstart, Zstart in meters (can be arrays)
 % phistart in radians, must be scalar
 % dphi in radians
@@ -27,7 +27,7 @@ y(2:Neq:Nsys*Neq)   = Zstart;
 x = phistart;
 dx = dphi;
 
-[yout,xout,ierr_rk45,i_last_good] = rk45_fixed_step_integrate(y,x,dx,nsteps,bfield,nowarn);
+[yout,xout,ierr_rk45,i_last_good] = rk45_fixed_step_integrate_dphi(y,x,dx,nsteps,bfield,nowarn);
 
 s.r = yout(:,1:Neq:Nsys*Neq-1);
 s.z = yout(:,2:Neq:Nsys*Neq);
