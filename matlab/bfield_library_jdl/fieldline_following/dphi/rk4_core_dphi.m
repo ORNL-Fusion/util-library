@@ -8,7 +8,7 @@ ytmp = y+d1/2;
 [dydx,ierr_deriv] = choose_fl_derivs_dphi(xtmp,ytmp,bfield,nowarn);
 if ierr_deriv == 1
     if ~nowarn
-        warning('fl deriv error in rk4_core')
+        warning('fl deriv error in rk4_core_dphi')
     end
     yout = []; ierr = 1;
     return;
@@ -19,7 +19,7 @@ ytmp = y+d2/2;
 [dydx,ierr_deriv] = choose_fl_derivs_dphi(xtmp,ytmp,bfield,nowarn);
 if ierr_deriv == 1
     if ~nowarn
-        warning('fl deriv error in rk4_core')
+        warning('fl deriv error in rk4_core_dphi')
     end
     yout = []; ierr = 1;
     return;
@@ -31,7 +31,7 @@ ytmp = y+d3;
 
 if ierr_deriv == 1
     if ~nowarn
-        warning('fl deriv error in rk4_core')
+        warning('fl deriv error in rk4_core_dphi')
     end
     yout = []; ierr = 1;
     return;

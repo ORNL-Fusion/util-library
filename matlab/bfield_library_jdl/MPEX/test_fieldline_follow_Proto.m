@@ -11,12 +11,12 @@ shot = 7477;
 [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 
 if 1
-    [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,'flat');
+    [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
     bfield.coil = coil;
     bfield.current = current;
     bfield.type = 'just_coils';
 else
-    [coil,current] = build_Proto_coils_jackson(helicon_current,current_A,current_B,'flat');
+    [coil,current] = build_Proto_coils_jackson(helicon_current,current_A,current_B,config);
     bfield.coil = coil;
     bfield.current = current;
     bfield.type = 'MPEX';    

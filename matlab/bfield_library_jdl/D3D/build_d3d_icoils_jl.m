@@ -36,11 +36,11 @@ phicens = [-32.7,-87.3,-152.7,-207.3,-272.7,-327.3,...
            -32.7,-87.3,-152.7,-207.3,-272.7,-327.3]*pi/180;  % Center of each coil in degrees
 phiext = 51.72*pi/180;      % Toroidal extent of each coil
 % 2003 
-R = [2.184,2.394];          % Major radius of upper and lower toroidal coil arc (meters)
-Z = [1.012,0.504];          % Vertical position of coil (meters)  --- Upper coil, lower just invert and flip Z
+% R = [2.184,2.394];          % Major radius of upper and lower toroidal coil arc (meters)
+% Z = [1.012,0.504];          % Vertical position of coil (meters)  --- Upper coil, lower just invert and flip Z
 % % 2006 'revised'
-% R = [2.164,2.373];          % Major radius of upper and lower toroidal coil arc (meters)
-% Z = [1.016,0.504];          % Vertical position of coil (meters)  --- Upper coil, lower just invert and flip Z
+R = [2.164,2.373];          % Major radius of upper and lower toroidal coil arc (meters)
+Z = [1.016,0.504];          % Vertical position of coil (meters)  --- Upper coil, lower just invert and flip Z
 nturn = 1;                  % number of electrical turns
 
 
