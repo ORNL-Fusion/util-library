@@ -23,12 +23,15 @@ USE_M3DC1 = 1  # Set to 1 to compile with m3dc1
 
 SOURCEPATH = ./
 
-# Location of bfield library and .mod files
-LIBBJDL_DIR = $(HOME)/util-library/fortran/bfield_library_jdl/build
+# Location of bfield library 
+LIBBJDL_DIR = $(HOME)/util-library/fortran/bfield_library_jdl/lib
+# Location of bfield library include
+INCJDL_DIR = $(HOME)/util-library/fortran/bfield_library_jdl/include
 
 # Libraries needed to build the executable
 LIBDIR = -L$(LIBBJDL_DIR) 
 LIBS = -lbjdl -llapack
+INC  = -I$(INCJDL_DIR)
 
 # External library paths and libraries for m3dc1
 ifeq ($(strip $(USE_M3DC1)),1)
@@ -54,29 +57,38 @@ MODS90 =
 .PHONY: debug all_tests
 .default: all_tests
 
-all_tests: test_int_two_lines.x test_int_curve_curve.x test_find_xpt_gonly.x
+all_tests: test_int_two_lines.x test_int_curve_curve.x test_find_xpt_gonly.x test_bfield_rmp_d3d.x
 
 
 test_int_two_lines.x: test_int_two_lines.o $(LIBBJDL_DIR)/libbjdl.a 
 	@echo "Creating "$@
-	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS)
+	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) $(INC)
 
 test_int_two_lines.o : test_int_two_lines.f90 
-	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS) $<
+	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS) $(INC) $<
 
 test_int_curve_curve.x: test_int_curve_curve.o $(LIBBJDL_DIR)/libbjdl.a 
 	@echo "Creating "$@
-	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS)
+	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) $(INC)
 
 test_int_curve_curve.o : test_int_curve_curve.f90 
-	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS) $<
+	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS)  $(INC) $<
 
 test_find_xpt_gonly.x: %.x :%.o $(LIBBJDL_DIR)/libbjdl.a 
 	@echo "Creating "$@
-	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) -L$(LIBDIR_m3dc1) $(LIBS_m3dc1) -I$(INCLUDE_m3dc1)
+	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) -L$(LIBDIR_m3dc1) $(LIBS_m3dc1) -I$(INCLUDE_m3dc1)  $(INC)
 
 test_find_xpt_gonly.o : %.o : %.f90 
-	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS) $<
+	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS)  $(INC) $<
+
+test_bfield_rmp_d3d.o : %.o : %.f90 
+	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS)  $(INC) $<
+
+test_bfield_rmp_d3d.x: %.x : %.o $(LIBBJDL_DIR)/libbjdl.a 
+	@echo "Creating "$@
+	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) $(INC)
+
+
 
 debug: FF = $(FF_DEBUG)
 debug: all_tests

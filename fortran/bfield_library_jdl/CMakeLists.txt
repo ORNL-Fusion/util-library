@@ -15,7 +15,7 @@ enable_language (Fortran)
 #
 # 1) cd build
 # 2) cmake -DCMAKE_BUILD_TYPE=Release .. 
-# 3) make install
+# 3) make 
 #
 # To see the commands during compilation use "make VERBOSE=1"
 #
@@ -56,6 +56,9 @@ if (USE_M3DC1 MATCHES 1)
   include_directories (${M3DC1_INCLUDE_PATH})  
 endif ()
 
+set(LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
+set(ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
+
 add_library( bjdl STATIC
   ${SRC_DIR}/bfield_module.f90
   ${SRC_DIR}/bspline90_22.f90
@@ -73,7 +76,7 @@ add_library( bjdl STATIC
   )
 
 # Installation
-install( DIRECTORY DESTINATION ${LIB_DIR} )
-install( TARGETS bjdl
-  LIBRARY DESTINATION ${LIB_DIR}
-  ARCHIVE DESTINATION ${LIB_DIR})
+#install( DIRECTORY DESTINATION ${LIB_DIR} )
+#install( TARGETS bjdl
+#  LIBRARY DESTINATION ${LIB_DIR}
+#  ARCHIVE DESTINATION ${LIB_DIR})

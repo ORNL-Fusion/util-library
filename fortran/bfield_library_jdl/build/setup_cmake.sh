@@ -53,9 +53,10 @@ else
     echo
 fi
 
-if [$VERBOSE_BUILD -eq 1]; then
+if [ $VERBOSE_BUILD -eq 1 ]
+then
     make VERBOSE=$VERBOSE_BUILD
 else
     make
 fi
-make install
+

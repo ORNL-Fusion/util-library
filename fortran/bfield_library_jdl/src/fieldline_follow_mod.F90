@@ -20,6 +20,7 @@
 !                     3 -- gfile + M3DC1 perturbed field
 !                     4 -- M3DC1 total field
 !                     5 -- M3DC1 2D field only
+!                     6 -- Just coils
 ! 
 !-----------------------------------------------------------------------------
 Module fieldline_follow_mod
@@ -31,7 +32,13 @@ Module fieldline_follow_mod
   Public :: follow_fieldlines_rzphi_AS
   Public :: follow_fieldlines_rzphi
   Public :: follow_fieldlines_rzphi_diffuse
-  Private :: fl_derivs_fun
+  Public :: follow_fieldlines_rzphi_dz
+  Private :: fl_derivs_fun, fl_derivs_fun_dz
+
+  Interface follow_fieldlines_rzphi_dz
+    Module Procedure follow_fieldlines_rzphi_dz_Npts
+    Module Procedure follow_fieldlines_rzphi_dz_1pt
+  End Interface follow_fieldlines_rzphi_dz
 
   Interface follow_fieldlines_rzphi
     Module Procedure follow_fieldlines_rzphi_Npts
@@ -277,7 +284,42 @@ i_last_good = i_last_good_rk45
 End Subroutine follow_fieldlines_rzphi_1pt
 
 !-----------------------------------------------------------------------------
-!+ Follows fieldlines in cylindrical coords (from multiple points)
+!+ Follows fieldlines in cylindrical coords (from one point)
+!-----------------------------------------------------------------------------
+Subroutine follow_fieldlines_rzphi_dz_1pt(rstart,zstart,phistart,dz,nsteps,r,z,phi,ierr,i_last_good)
+Use kind_mod, Only: real64, int32
+Implicit None
+! Input/output                      !See above for descriptions
+Integer(int32),Intent(in) :: nsteps
+Real(real64),Intent(in) :: rstart,zstart,phistart
+Real(real64),Intent(in) :: dz
+
+Real(real64),Intent(out),Dimension(nsteps+1) :: r,z,phi
+Integer(int32),Intent(out) :: ierr, i_last_good
+
+! Local
+Integer(int32), Parameter :: n = 2
+Real(real64) :: y(n),x,dx,xout(nsteps+1),yout(n,nsteps+1)
+Integer(int32) :: ierr_rk45, i_last_good_rk45
+
+r = 0._real64
+z = 0._real64
+phi = 0._real64
+dx = dz
+y(1) = rstart
+y(2) = phistart
+x = zstart
+Call rk45_fixed_step_integrate(y,n,x,dx,nsteps,fl_derivs_fun_dz,yout,xout,ierr_rk45,i_last_good_rk45)
+r(1:nsteps+1)   = yout(1,1:nsteps+1)
+phi(1:nsteps+1) = yout(2,1:nsteps+1)
+z(1:nsteps+1)   = xout
+ierr = ierr_rk45
+i_last_good = i_last_good_rk45
+
+End Subroutine follow_fieldlines_rzphi_dz_1pt
+
+!-----------------------------------------------------------------------------
+!+ Follows fieldlines dphi in cylindrical coords (from multiple points)
 !-----------------------------------------------------------------------------
 Subroutine follow_fieldlines_rzphi_Npts(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good,verbose)
 !
@@ -348,7 +390,77 @@ Enddo
 EndSubroutine follow_fieldlines_rzphi_Npts
 
 !-----------------------------------------------------------------------------
-!+ Routines field line equation derivatives
+!+ Follows fieldlines dz in cylindrical coords (from multiple points)
+!-----------------------------------------------------------------------------
+Subroutine follow_fieldlines_rzphi_dz_Npts(rstart,zstart,phistart,Npts,dz,nsteps,r,z,phi,ierr,i_last_good,verbose)
+!
+! Description: 
+!  Follows fieldlines by integrating along toroidal angle in cylindrical coordinates. 
+!
+!  Integration method is RK45 with fixed step size
+!
+! Input:
+!  rstart, zstart, phistart : real64(Npts) : Launching points for fieldlines (m,m,radians)
+!  Npts : int32 : Number of starting points
+!  dphi : real64 : Integration step size (radians)
+!  nsteps : int32 : Number of integration steps to take
+! verbose : logcl : Display fl counter  
+! Output:
+!  r,z,phi : real64(Npts,nsteps+1) : Field line trajectories (m,m,radians)
+!  ierr : int32(Npts) : Error flag for each fl. 0 indicates no error, 1 indicates an error from bfield_geq_bicub
+!  i_last_good : int32(Npts) : If an error occured for the fl, this array gives the last 'good' index, i.e., before the 
+!                             error occured
+!
+! Calls:
+!  Subroutine rk45_fixed_step_integrate
+!
+! History:
+!  Version   Date      Comment
+!  -------   ----      -------
+!  1.0     04/20/2011  Original code
+!
+! Author(s): J.D Lore - 04/20/2011
+!
+! Modules used:
+Use kind_mod, Only: real64, int32
+Implicit None
+! Input/output                      !See above for descriptions
+Integer(int32),Intent(in) :: Npts, nsteps
+Real(real64),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
+Real(real64),Intent(in) :: dz
+Logical, Intent(in), Optional :: verbose
+Real(real64),Intent(out),Dimension(Npts,nsteps+1) :: r,z,phi
+Integer(int32),Intent(out) :: ierr(Npts), i_last_good(Npts)
+! Local variables
+Integer(int32), Parameter :: n = 2
+Real(real64) :: y(n),x,dx,xout(nsteps+1),yout(n,nsteps+1)
+Integer(int32) :: ierr_rk45, i_last_good_rk45, ipt
+Logical :: isverbose
+!- End of header -------------------------------------------------------------
+
+isverbose = .false.
+If (Present(verbose)) isverbose = verbose
+r = 0._real64
+z = 0._real64
+phi = 0._real64
+dx = dz
+Do ipt = 1,Npts
+  If (isverbose) Write(*,'(2(a,i0))') ' Following fl ',ipt,' of ',Npts
+  y(1) = rstart(ipt)
+  y(2) = phistart(ipt)
+  x = zstart(ipt)
+  Call rk45_fixed_step_integrate(y,n,x,dx,nsteps,fl_derivs_fun_dz,yout,xout,ierr_rk45,i_last_good_rk45)
+  r(ipt,1:nsteps+1)   = yout(1,1:nsteps+1)
+  phi(ipt,1:nsteps+1) = yout(2,1:nsteps+1)
+  z(ipt,1:nsteps+1)   = xout
+  ierr(ipt) = ierr_rk45
+  i_last_good(ipt) = i_last_good_rk45
+Enddo
+
+EndSubroutine follow_fieldlines_rzphi_dz_Npts
+
+!-----------------------------------------------------------------------------
+!+ Routines field line equation derivatives (dphi)
 !-----------------------------------------------------------------------------
 Subroutine fl_derivs_fun(n,phi,RZ,df,ierr)
 !
@@ -393,9 +505,9 @@ Real(real64), Intent(In), Dimension(n) :: RZ
 Real(real64), Intent(Out), Dimension(n) :: df
 
 Integer(int32),Parameter :: Npts = 1
-Real(real64) :: bval(Npts,3), phi_tmp(Npts), bval_screened(Npts,3), bval_tmp(Npts,3)
+Real(real64) :: bval(Npts,3), bval_screened(Npts,3), bval_tmp(Npts,3)
 Integer(int32) :: ierr_b, ierr_rmp
-Real(real64) :: Bz, Br, Bphi, Br_rmp(Npts), Bphi_rmp(Npts), Bz_rmp(Npts)
+Real(real64) :: Bz, Br, Bphi, Br_rmp, Bphi_rmp, Bz_rmp, phi_tmp(Npts)
 !- End of header -------------------------------------------------------------
 
 bval = 0._real64
@@ -408,19 +520,13 @@ If (bfield_method == 0) Then     ! gfile field only
   Bphi = bval(1,3)
 Elseif (bfield_method == 1) Then ! g + rmp coils
   Call bfield_geq_bicub(RZ(1),RZ(2),Npts,bval,ierr_b)     
-  phi_tmp(1) = phi
-!  If (Allocated(rmp_coil)) Then
-    Call bfield_bs_cyl(RZ(1),phi_tmp,RZ(2),Npts,rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
-!  Else
-!    Write(*,*) 'RMP VARIABLES NOT ALLOCATED, EXITING FROM fl_derivs_fun!'
-!    Stop
-!  Endif
+    Call bfield_bs_cyl(RZ(1),phi,RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
   ierr_rmp = 0
-  Br   = bval(1,1) + Br_rmp(1)
-  Bz   = bval(1,2) + Bz_rmp(1)
-  Bphi = bval(1,3) + Bphi_rmp(1)
+  Br   = bval(1,1) + Br_rmp
+  Bz   = bval(1,2) + Bz_rmp
+  Bphi = bval(1,3) + Bphi_rmp
 Elseif (bfield_method == 2) Then ! g + screening B-spline
-  Call bfield_geq_bicub(RZ(1),RZ(2),Npts,bval,ierr_b)     
+  Call bfield_geq_bicub(RZ(1),RZ(2),Npts,bval,ierr_b)
   phi_tmp(1) = phi
   Call bfield_bspline(RZ(1),phi_tmp,RZ(2),Npts,bval_screened,ierr_rmp)
   Br   = bval(1,1) + bval_screened(1,1)
@@ -465,6 +571,64 @@ df(1) = RZ(1)*Br/Bphi
 df(2) = RZ(1)*Bz/Bphi
 
 End Subroutine fl_derivs_fun
+
+
+!-----------------------------------------------------------------------------
+!+ Routines field line equation derivatives (dz)
+!-----------------------------------------------------------------------------
+Subroutine fl_derivs_fun_dz(n,Z,RP,df,ierr)
+!
+! Description: 
+!  Evaluates field line deriviatives (based on bfield_method). Should be easy to generalize to different
+!  integration methods, but right now it is hard-coded to assume two simultaneous equations evaluated at 1 pt.
+!
+! Input:
+!  n : int32 : Number of equations
+!  z : real64 : Integration variable (m)
+!  RP : real64(n) : Evaluation points (solution vector)  RP(1) = R, RP(2) = Phi in radians
+! 
+! Output:
+!  df : real64(n) : derivative evaluation
+!  ierr : int32 : Error flag (0 = no error)
+!
+! Calls:
+!  Subroutine bfield_geq_bicub
+!  Subroutine bfield_bs_cyl
+!
+! History:
+!  Version   Date      Comment
+!  -------   ----      -------
+!  1.0     04/20/2011  Original code
+!
+! Author(s): J.D Lore - 04/20/2011
+!
+! Modules used:
+Use kind_mod, Only: real64, int32
+Use bfield_module, Only : bfield_bs_cyl
+Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
+Implicit None
+Real(real64), Intent(In) :: Z
+Integer(int32), Intent(In) :: n
+Integer(int32), Intent(Out) :: ierr
+Real(real64), Intent(In), Dimension(n) :: RP
+Real(real64), Intent(Out), Dimension(n) :: df
+
+Real(real64) :: Bz, Br, Bphi
+!- End of header -------------------------------------------------------------
+
+ierr = 0
+If (bfield_method == 6) Then     ! just coils
+  Call bfield_bs_cyl(RP(1),RP(2),Z,rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br,Bphi,Bz)
+Else
+  Write(*,*) 'Unknown bfield_method in fl_derivs_fun_dz'
+  Write(*,*) 'The following are supported'
+  Write(*,*) '(6) just coils'
+  stop
+Endif
+df(1) = Br/Bz
+df(2) = Bphi/(Bz*RP(1))
+
+End Subroutine fl_derivs_fun_dz
 
 
 !-----------------------------------------------------------------------------
@@ -625,7 +789,7 @@ Real(real64), Dimension(n) :: y, dydx, ytmp
 Real(real64) :: x, RZ(2), perpdir1(3), perpdir2(3), alpha, dca, dsa, delta_x, dL
 Real(real64) :: bval(1,3), phi_tmp(1), bval_screened(1,3), bval_tmp(1,3), phi, rnum
 Integer(int32) :: ierr_b, ierr_rmp
-Real(real64) :: Bz, Br, Bphi, Br_rmp(1), Bphi_rmp(1), Bz_rmp(1)
+Real(real64) :: Bz, Br, Bphi, Br_rmp, Bphi_rmp, Bz_rmp
 
 Interface
   Subroutine odefun(n,x,y,dydx,ierr)
@@ -663,7 +827,6 @@ Do i=1,nsteps
     Return
   Endif
 
-
   x = x + dx
 
   !
@@ -683,12 +846,11 @@ Do i=1,nsteps
     Bphi = bval(1,3)
   Elseif (bfield_method == 1) Then ! g + rmp coils
     Call bfield_geq_bicub(RZ(1),RZ(2),1,bval,ierr_b,verbose)     
-    phi_tmp(1) = phi
-    Call bfield_bs_cyl(RZ(1),phi_tmp,RZ(2),1,rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
+    Call bfield_bs_cyl(RZ(1),phi,RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
     ierr_rmp = 0
-    Br   = bval(1,1) + Br_rmp(1)
-    Bz   = bval(1,2) + Bz_rmp(1)
-    Bphi = bval(1,3) + Bphi_rmp(1)
+    Br   = bval(1,1) + Br_rmp
+    Bz   = bval(1,2) + Bz_rmp
+    Bphi = bval(1,3) + Bphi_rmp
   Elseif (bfield_method == 2) Then ! g + screening B-spline
     Call bfield_geq_bicub(RZ(1),RZ(2),1,bval,ierr_b,verbose)     
     phi_tmp(1) = phi

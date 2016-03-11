@@ -9,7 +9,7 @@ Program test_int_curve_curve
   Integer(int32) :: itest, ipass, ierr_ans, ierr, nline1, nline2, found_ind1_ans, found_ind2_ans
   Integer(int32) :: int_count_ans, found_ind1, found_ind2, int_count
   Logical :: first
-  Logical, Parameter :: DEBUG = .false.
+  Logical, Parameter :: DEBUG = .true.
 
   Real(real64), Parameter :: dtol = 2.e-16_real64
   Integer(int32), Parameter :: ntest = 6
@@ -96,7 +96,7 @@ Program test_int_curve_curve
       pans(2) = 1._real64
       ierr_ans = 0
       found_ind1_ans = 1
-      found_ind2_ans = 2
+      found_ind2_ans = 3
       int_count_ans = 1
 
     Case (5)
@@ -158,6 +158,8 @@ Program test_int_curve_curve
       Write(*,*) 'P_ans',pans
       Write(*,*) 'ierr    ',ierr
       Write(*,*) 'ierr_ans',ierr_ans
+      Write(*,*) 'found_ind1, ans',found_ind1, found_ind1_ans
+      Write(*,*) 'found_ind2, ans',found_ind2, found_ind2_ans
     Endif
     
     diff = Sqrt(Sum(pans-pint)**2)
@@ -166,6 +168,13 @@ Program test_int_curve_curve
       Write(*,*) 'PASS'
       ipass = ipass + 1
     Else
+      if (DEBUG) Then
+        Write(*,*) 'ierr equal?',(ierr == ierr_ans)
+        Write(*,*) 'found_ind1 equal?',(found_ind1 == found_ind1_ans)
+        Write(*,*) 'found_ind2 equal?',(found_ind2 == found_ind2_ans)
+        Write(*,*) 'int_count equal?',(int_count == int_count_ans)
+        Write(*,*) 'diff ok?',diff,dtol,(diff .le. dtol)
+      Endif
       Write(*,*) 'FAIL'
     Endif
 
