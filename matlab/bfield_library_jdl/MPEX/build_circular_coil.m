@@ -83,7 +83,7 @@ if debug_plots
     
     figure; hold on; box on;
     for i = 1:length(xwind)-1
-        if current(i) < 1e-8
+        if abs(current(i)) < 1e-8
             plot3(xwind(i:i+1),ywind(i:i+1),zwind(i:i+1),'r-')
         else
             plot3(xwind(i:i+1),ywind(i:i+1),zwind(i:i+1),'b-')
