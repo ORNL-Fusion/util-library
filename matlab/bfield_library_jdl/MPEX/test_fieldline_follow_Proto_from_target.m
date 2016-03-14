@@ -22,12 +22,12 @@ clearvars;
 %  shot = 7488; mytitle = 'I_A = 3300 A, with skimmer';x0_guess = -.5877;y0_guess = -2.8914; force_guess = 1; % shots = 7400 + [77,87,88,92:98,100,101,103];
 
 % shot = 5954;
-shot = 6550;
+shot = 5954;
+[rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,0,0);
+% [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,x0_guess,y0_guess,force_guess);
 
 [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
-[rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,0,0);
-% [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,x0_guess,y0_guess,force_guess);
 geo = get_Proto_geometry(0,0,skimmer);
 
 bfield.coil = coil;

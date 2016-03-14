@@ -38,6 +38,9 @@ opt_display = 'off';     % Controls optimization output.  'off','final','iter'
 ax_size = 7;     % plot axes are ax_size*[-1,1,-1,1]
 optimizer = 0;   % 0:fmincon, 1:lsqnonlin w/ LM, 2:lsqnonlin w/ trust-region-reflective
 debug = 0;       % display function evaluations
+radius_fit_power = 0.9;  % Mimizing function is weighted by r to this power 
+                         % to avoid a fit with a tiny radius in the maximum deltaT region.  
+                         % range of 0.7 to 1 seems to work pretty well.
 
 % Read data and create intial cells
 fname = find_IR_file(shot);
@@ -210,9 +213,9 @@ end
         dtmp = interp2(cells.xinterp1D,cells.yinterp1D,data.IRdata2D,xevals+xshift,yevals+yshift);
         
         if optimizer == 0
-            f  = sum(dtmp)*sqrt(x(1));
+            f  = sum(dtmp)*x(1)^radius_fit_power;
         elseif optimizer > 0
-            f = 1/(sqrt(x(1))*sum(dtmp));      
+            f = 1/(x(1)^radius_fit_power*sum(dtmp));      
         end
 
             if debug && length(x) == 3 && length(f) == 1
