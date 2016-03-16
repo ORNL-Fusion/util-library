@@ -1,38 +1,44 @@
 % function test_fieldline_follow_Proto
 clearvars;
-% helicon_current = -80;
-% current_A = 6607;
-% current_B = 6607;
-% config = 'focus';
+helicon_current = -140;
+current_A = 6600;
+current_B = 0;
+config = 'flat';
+skimmer = 1;
+shot = 0;
 
-% helicon_current = 0;
-% current_A = 3300;
-% current_B = 0;
-% config = 'flat';
-
+% % helicon_current = 0;
+% % current_A = 3300;
+% % current_B = 0;
+% % config = 'flat';
+% 
 % helicon_current = 100;
 % current_A = 3300;
 % current_B = 0;
 % config = 'standard';
-% skimmer = 1;
-% plasma_radius_cm = 1;
+% % skimmer = 1;
+plasma_radius_cm = 1;
 
 
 % shot = 7412;  mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
 %  shot = 7488; mytitle = 'I_A = 3300 A, with skimmer';x0_guess = -.5877;y0_guess = -2.8914; force_guess = 1; % shots = 7400 + [77,87,88,92:98,100,101,103];
 
-% shot = 5954;
-shot = 5954;
-[rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,0,0);
-% [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = plot_IR_data_raw(shot,1,x0_guess,y0_guess,force_guess);
 
-[helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
+% shot = 6550; x0_guess = 0.05; y0_guess = -1.7; force_guess = 0;
+% % [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,0,0);
+% [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,x0_guess,y0_guess,force_guess);
+
+% [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
 geo = get_Proto_geometry(0,0,skimmer);
 
 bfield.coil = coil;
 bfield.current = current;
 bfield.type = 'just_coils';
+bfield.vessel_clip_r   = geo.vessel_clip_r;
+bfield.vessel_clip_z   = geo.vessel_clip_z;
+bfield.vessel_clip_phi = 0;
+bfield.stop_at_vessel = 1;
 
 num_lines = 20;
 % rr = linspace(1e-3,0.04,num_lines);
@@ -68,7 +74,6 @@ ylabel('R [m]','fontsize',14)
 title(['Shot ',num2str(shot)])
 get_Proto_geometry(1,0,skimmer);
 axis([0.5,3.5,0,0.15])
-
 
 figure; hold on; box on;
 xlabel('Z [m]','fontsize',14)

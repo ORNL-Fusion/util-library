@@ -21,11 +21,12 @@ current_B = 0;
 skimmer = 1;
 geo = get_Proto_geometry(0,0,skimmer);
 % configs = [{'flat'},{'standard'},{'focus'}];
-configs = [{'flat'}];
+% configs = [{'flat'}];
+configs = [{'focus'}];
 
 verbose = 0;
-num_test = 10;
-helicon_currents = linspace(100,300,num_test);
+num_test = 5;
+helicon_currents = linspace(-100,100,num_test);
 
 doLCFS = 1;
 

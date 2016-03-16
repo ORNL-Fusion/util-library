@@ -3,10 +3,12 @@ function [helicon_current,current_A,current_B,config,skimmer] = get_Proto_curren
 
 switch shot
     case 5954
-        helicon_current = 0; current_A = 3300; current_B = 0; config = 'standard'; skimmer = 0;
-    
+        helicon_current = 0; current_A = 3300; current_B = 3300; config = 'standard'; skimmer = 0;
+
+    case 6547
+        helicon_current = -80; current_A = 6600; current_B = 6600; config = 'focus'; skimmer = 0;        
     case 6550
-        helicon_current = 140; current_A = 6600; current_B = 0; config = 'focus'; skimmer = 0;
+        helicon_current = -140; current_A = 6600; current_B = 6600; config = 'focus'; skimmer = 0;
 
         
     case 7400
