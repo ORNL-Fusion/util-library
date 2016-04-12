@@ -30,6 +30,7 @@ function [poss,vecrot,isign] = symmetrize(pos,nsymm,stellsymm)
 %isign:       a +1 or -1 which must multiply vectors or gradb matrices
 %             calculated at point pos in order to be correct at
 %             the point poss
+% JDL note: From P. Probert
   if nargin < 3
     stellsymm=0;
   end

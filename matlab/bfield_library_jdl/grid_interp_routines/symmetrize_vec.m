@@ -1,5 +1,5 @@
 function [rs,phis,zs] = symmetrize_vec(r,phi,z,nfp,stellsym)
-%this function takes an input position in r,phi,z space
+%this function takes an input position in r,phi [rad],z space
 %which can be anywhere in the stellarator and returns
 %a position poss which is equivalent but lies in the
 %first period (in the case of no "stellarator symmetry"

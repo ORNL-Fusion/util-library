@@ -30,17 +30,19 @@ for i = 1:nsteps
     x = x + dx;
     
     % Here check in vessel?
-    if bfield.stop_at_vessel
-        if length(bfield.vessel_clip_phi) == 1
-            rtest = ytmp(1:2:end);
-            ztest = x*ones(size(rtest));
-            isin = inpolygon(rtest,ztest,bfield.vessel_clip_r,bfield.vessel_clip_z);
-        else
-            error('need to write phi vessel interpolation')
+    if isfield(bfield,'stop_at_vessel')
+        if bfield.stop_at_vessel
+            if length(bfield.vessel_clip_phi) == 1
+                rtest = ytmp(1:2:end);
+                ztest = x*ones(size(rtest));
+                isin = inpolygon(rtest,ztest,bfield.vessel_clip_r,bfield.vessel_clip_z);
+            else
+                error('need to write phi vessel interpolation')
+            end
+            rtest(~isin) = NaN;
+            ytmp(1:2:end) = rtest;
+            ytmp(2:2:end) = rtest;
         end
-        rtest(~isin) = NaN;        
-        ytmp(1:2:end) = rtest;
-        ytmp(2:2:end) = rtest;        
     end
     
     yout(i+1,:) = ytmp;

@@ -30,6 +30,8 @@ helicon_currents = linspace(-100,100,num_test);
 
 doLCFS = 1;
 
+
+% MIRROR RATIOS
 for iconfig = 1:length(configs)
     config = configs{iconfig};
     for ih = 1:num_test
@@ -173,6 +175,7 @@ end
 % end
 
 
+% target radial positions
 for iconfig = 1:length(configs)
     config = configs{iconfig};
     figure; hold on; box on;

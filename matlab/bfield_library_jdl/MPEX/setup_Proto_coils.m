@@ -1,4 +1,4 @@
-function [nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config,verbose)
+function [nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C)
 % helicon_current = coils 3-4
 % nturns = number of turns per coil layer in each coil (see note below)
 % nlayers = number of layers in each coil (see note below)
@@ -19,6 +19,9 @@ if nargin == 0
 %     fprintf('Just returning coil geometry\n')
     cur = [];
     return;
+end
+if nargin < 6
+    current_C = [];
 end
 
 if nargin < 3
@@ -46,6 +49,10 @@ switch config
     otherwise
         error(['Did not recognize field configuration: ',config])
 end
+if ~isempty(current_C)
+    cur(2) = current_C;
+%     warning(['SETTING CURRENT_C = ',num2str(current_C)]);
+end
 
 %     cur = [4000      4000      200       200       4000      4000      4000      0         4000      4000      4000      4000];
 %          1         2         3         4         5         6         7         8         9         10        11        12
@@ -58,6 +65,9 @@ if verbose
     fprintf('Using helicon current (coils 3:4) of %f\n',cur(3))
     fprintf('Using current_A of %f\n',current_A)
     fprintf('Using current_B of %f\n',current_B)    
+    if ~isempty(current_C)
+        fprintf('Using current_C of %f\n',current_C)    
+    end
     fprintf('--------------------------------------\n')
 end
 end

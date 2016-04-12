@@ -1,4 +1,4 @@
-function [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose)
+function [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C)
 if nargin < 5
     verbose = 1;
 end
@@ -7,7 +7,7 @@ if nargin < 4
 end
 debug_plots = 0;
 
-[nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config,verbose);
+[nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C);
 
 ntheta_per_wind = 50;
 

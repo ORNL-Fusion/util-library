@@ -1,15 +1,20 @@
 clearvars;
 
-fname = ['C:\Work\ADAS\adf11_all\scd96\','scd96_h.dat'];  % Effective ionization coefficients (cm^-3/s)
+% suffix = '96'; element='h';
+suffix = '50'; element='w';
+
+fprintf('Reading scd\n');
+fname = ['C:\Work\ADAS\adf11_all\scd',suffix,'\','scd',suffix,'_',element,'.dat'];  % Effective ionization coefficients (cm^-3/s)
 [te_scd,ne_scd,scd] = read_adas_adf11_file(fname);
-fname = ['C:\Work\ADAS\adf11_all\acd96\','acd96_h.dat'];  % Effective recombination coefficients (cm^-3/s)
+fprintf('Reading acd\n');
+fname = ['C:\Work\ADAS\adf11_all\acd',suffix,'\','acd',suffix,'_',element,'.dat'];  % Effective recombination coefficients (cm^-3/s)
 [te_acd,ne_acd,acd] = read_adas_adf11_file(fname);
-fname = ['C:\Work\ADAS\adf11_all\plt96\','plt96_h.dat'];  % Radiated power (W cm^3)
+fprintf('Reading plt\n');
+fname = ['C:\Work\ADAS\adf11_all\plt',suffix,'\','plt',suffix,'_',element,'.dat'];  % Radiated power (W cm^3)
 [te_plt,ne_plt,plt] = read_adas_adf11_file(fname);
 
-
-
 ne_plot_targ = [1e13,1e14,1e15];  % cm^-3
+
 for i = 1:length(ne_plot_targ)
     [~,in_scd]=min(abs(ne_scd - ne_plot_targ(i)));
     [~,in_acd]=min(abs(ne_acd - ne_plot_targ(i)));

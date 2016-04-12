@@ -1,5 +1,4 @@
 function make_characteristic_plot(shot)
-clearvars;
 
 % shot = 7477;
 

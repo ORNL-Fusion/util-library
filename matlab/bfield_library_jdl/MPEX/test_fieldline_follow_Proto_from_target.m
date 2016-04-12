@@ -1,34 +1,32 @@
 % function test_fieldline_follow_Proto
 clearvars;
-helicon_current = -140;
-current_A = 6600;
-current_B = 0;
-config = 'flat';
-skimmer = 1;
-shot = 0;
+x0_guess = []; y0_guess = []; force_guess = 0;
 
-% % helicon_current = 0;
-% % current_A = 3300;
-% % current_B = 0;
-% % config = 'flat';
-% 
-% helicon_current = 100;
-% current_A = 3300;
-% current_B = 0;
-% config = 'standard';
-% % skimmer = 1;
-plasma_radius_cm = 1;
+if 0
+    
+    helicon_current = -140;
+    current_A = 6600;
+    current_B = 0;
+    config = 'flat';
+    skimmer = 1;
+    shot = 0;
+    plasma_radius_cm = 1;
+    
+else
+    
+    shot = 7418;  mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
+    %  shot = 7488; mytitle = 'I_A = 3300 A, with skimmer';x0_guess = -.5877;y0_guess = -2.8914; force_guess = 1; % shots = 7400 + [77,87,88,92:98,100,101,103];
+    
+    
+%     shot = 6547; x0_guess = 0.05; y0_guess = -1.7; force_guess = 0;
+    if isempty(x0_guess)
+        [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,0,0);
+    else
+        [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,x0_guess,y0_guess,force_guess);
+    end
+    [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
+end
 
-
-% shot = 7412;  mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
-%  shot = 7488; mytitle = 'I_A = 3300 A, with skimmer';x0_guess = -.5877;y0_guess = -2.8914; force_guess = 1; % shots = 7400 + [77,87,88,92:98,100,101,103];
-
-
-% shot = 6550; x0_guess = 0.05; y0_guess = -1.7; force_guess = 0;
-% % [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,0,0);
-% [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,x0_guess,y0_guess,force_guess);
-
-% [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
 geo = get_Proto_geometry(0,0,skimmer);
 
@@ -40,7 +38,7 @@ bfield.vessel_clip_z   = geo.vessel_clip_z;
 bfield.vessel_clip_phi = 0;
 bfield.stop_at_vessel = 1;
 
-num_lines = 20;
+num_lines = 10;
 % rr = linspace(1e-3,0.04,num_lines);
 rr = linspace(1e-3,2.0*plasma_radius_cm/100,num_lines);
 zz = geo.target.z*ones(size(rr));

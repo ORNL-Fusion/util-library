@@ -1,4 +1,5 @@
 function plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty)
+% plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty)
 
 % gfile_name = 'C:\Work\EMC3_revival\gfiles\g140508.00403';
 % gfile_name = 'C:\Work\EMC3_revival\gfiles\g1090814013.00743_604';
