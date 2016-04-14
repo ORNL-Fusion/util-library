@@ -14,15 +14,15 @@ if fid == -1
 end
 
 % First line
-nums = fscanf(fid,'%i %i %i %i %i'); izmax = nums(1); idmaxd = nums(2); itmaxd = nums(3); iz1min = nums(4); iz1max = nums(5);
+nums = fscanf(fid,'%d %d %d %d %d'); izmax = nums(1); idmaxd = nums(2); itmaxd = nums(3); iz1min = nums(4); iz1max = nums(5);
 strs = fscanf(fid,'%s',1); species_name = strs(2:end);
 strs = fgetl(fid); note = strs(2:end);
 
 fprintf('Reading file: %s\n',fname);
 fprintf('Species: %s\n',species_name);
-fprintf('Nuclear charge %i\n',izmax);
-fprintf('Number of densities, temperatures = [%i,%i]\n',idmaxd,itmaxd);
-fprintf('Lowest, highest charge = [%i,%i]\n',iz1min,iz1max);
+fprintf('Nuclear charge %d\n',izmax);
+fprintf('Number of densities, temperatures = [%d,%d]\n',idmaxd,itmaxd);
+fprintf('Lowest, highest charge = [%d,%d]\n',iz1min,iz1max);
 
 % Read ne, Te
 junk = fgetl(fid);

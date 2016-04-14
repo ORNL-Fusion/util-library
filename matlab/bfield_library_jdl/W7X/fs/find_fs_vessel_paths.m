@@ -125,6 +125,9 @@ if plotit
         
         plot(ves_cut.r,ves_cut.z,'b')
         plot([r1,r2],[z1,z2],'r')
+        plot(r1,z1,'ro')
+        plot(r2,z2,'rx')
+        text(r1,z1,'start')
 %         plot([ifs.p1cyl_ves(1),ifs.p2cyl_ves(1)],[ifs.p1cyl_ves(3),ifs.p2cyl_ves(3)],'r')
         title(sprintf('%s\n \\phi = [%4.1f,%4.1f]',names{i},phi1*180/pi,phi2*180/pi))        
     end
