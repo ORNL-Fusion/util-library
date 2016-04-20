@@ -41,6 +41,7 @@ else ()
 endif ()
 
 # Set up directories and options
+message ("CMAKE_CURRENT_SOURCE_DIR:" ${CMAKE_CURRENT_SOURCE_DIR})
 set (SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set (LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set (INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -56,8 +57,8 @@ if (USE_M3DC1 MATCHES 1)
   include_directories (${M3DC1_INCLUDE_PATH})  
 endif ()
 
-set(LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
-set(ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 
 add_library( bjdl STATIC
   ${SRC_DIR}/bfield_module.f90
