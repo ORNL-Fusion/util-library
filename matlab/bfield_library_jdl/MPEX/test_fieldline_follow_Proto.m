@@ -1,22 +1,32 @@
 % function test_fieldline_follow_Proto
 clearvars;
 tic;
-% helicon_current = -70;
-% current_A = 3300;
-% current_B = 0;
-% config = 'flat';
 
-shot = 7477;
-
-[helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
+verbose = 0;
 
 if 1
-    [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
+    helicon_current = 440;
+    current_A = 6400;
+    current_B = 6400;
+    current_C = 1;
+    config = 'flat';
+    skimmer = 1;
+    shot = 0;
+    plasma_radius_cm = 1;
+    target_position = 2;
+    sleeve = 1;
+else
+    shot = 7477;
+    [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
+end
+
+if 0
+    [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C);
     bfield.coil = coil;
     bfield.current = current;
     bfield.type = 'just_coils';
 else
-    [coil,current] = build_Proto_coils_jackson(helicon_current,current_A,current_B,config);
+    [coil,current] = build_Proto_coils_jackson(helicon_current,current_A,current_B,config,verbose,current_C);
     bfield.coil = coil;
     bfield.current = current;
     bfield.type = 'MPEX';    
@@ -27,15 +37,23 @@ end
 if 1
     % Rstart = 0.241089;
     
-%     % Helicon center
-%     Rstart = 0.06477;
-%     Zstart = 1.74;
-    
-    %Skimmer
-    Rstart = 0.058/2;
-    Zstart = 2.2603;
+    % Helicon center
+    Rstart = 0.06477;
+    Zstart = 1.74;
     phistart = 0;
+
+        % Helicon center  shift
+%     Rstart = 0.06477 - 0.005;
+    Zstart = 1.74;
+    phistart = 0;
+
     
+    %     
+%     %Skimmer
+%     Rstart = 0.058/2;
+%     Zstart = 2.2603;
+%     phistart = 0;
+%     
     dz = 0.01;
     L = 2.5;
     nsteps = abs(L/dz);
@@ -52,15 +70,15 @@ if 1
     for i = 1:size(rcoil,1)
         plot(zcoil(i,:),rcoil(i,:),'r')
     end
-    geo = get_Proto_geometry(1,0,skimmer);
+    geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve);
 end
 toc
 
 
 % FOLLOW FROM HELICON WINDOW
 tic;
-if 1
-    geo = get_Proto_geometry(1,1,skimmer);
+if 0
+    geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve);
     plot(geo.target.z*[1,1],geo.target.r*[0,1],'k','linewidth',3)
     plot([geo.helicon.z1,geo.helicon.z2],geo.helicon.r*[1,1],'k','linewidth',3)
     

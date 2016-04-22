@@ -1,6 +1,6 @@
 clearvars;
 
-shot = 7477;
+shot = 7277;
 
 [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
@@ -72,5 +72,5 @@ get_Proto_geometry(1,0,skimmer);
 axis([0.5,3.5,0,0.2])
 
 
-plot(
+% plot(
 

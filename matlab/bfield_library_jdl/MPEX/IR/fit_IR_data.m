@@ -36,9 +36,9 @@ end
 debug_plots = 0; % Turn on for plots. Can be level [0,1,2,3]
 opt_display = 'off';     % Controls optimization output.  'off','final','iter'
 ax_size = 7;     % plot axes are ax_size*[-1,1,-1,1]
-optimizer = 0;   % 0:fmincon, 1:lsqnonlin w/ LM, 2:lsqnonlin w/ trust-region-reflective
+optimizer = 1;   % 0:fmincon, 1:lsqnonlin w/ LM, 2:lsqnonlin w/ trust-region-reflective
 debug = 0;       % display function evaluations
-radius_fit_power = 0.9;  % Mimizing function is weighted by r to this power 
+radius_fit_power = 1;  % Mimizing function is weighted by r to this power 
                          % to avoid a fit with a tiny radius in the maximum deltaT region.  
                          % range of 0.7 to 1 seems to work pretty well.
 

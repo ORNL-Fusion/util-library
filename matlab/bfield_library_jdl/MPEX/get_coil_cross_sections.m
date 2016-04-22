@@ -1,6 +1,6 @@
 function [rcoil,zcoil] = get_coil_cross_sections
 
-[nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils;
+[nturns,nlayers,rr1,rr2,cl,z0] = define_proto_coil_filaments;
 ncoils = length(nturns);
 for i = 1:ncoils
     rcoil(i,:) = [rr1(i),rr2(i),rr2(i),rr1(i),rr1(i)];

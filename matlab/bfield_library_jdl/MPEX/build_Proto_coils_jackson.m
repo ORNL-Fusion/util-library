@@ -1,10 +1,10 @@
-function [coil,current] = build_Proto_coils_jackson(helicon_current,current_A,current_B,config)
+function [coil,current] = build_Proto_coils_jackson(helicon_current,current_A,current_B,config,verbose,current_C)
 if nargin < 4
     error('must specify inputs')
 end
 
 
-[nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config);
+[nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C);
 
 ncoil = length(nturns);
 for i = 1:ncoil

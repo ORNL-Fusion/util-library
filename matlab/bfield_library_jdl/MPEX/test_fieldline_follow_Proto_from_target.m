@@ -1,22 +1,27 @@
 % function test_fieldline_follow_Proto
 clearvars;
 x0_guess = []; y0_guess = []; force_guess = 0;
-
-if 0
+verbose = 0;
+if 1
     
-    helicon_current = -140;
-    current_A = 6600;
+    helicon_current = 500;
+    current_A = 6400;
     current_B = 0;
+    current_C = 1;
     config = 'flat';
     skimmer = 1;
     shot = 0;
     plasma_radius_cm = 1;
+    target_position = 2;
+    sleeve = 1;
     
 else
     
-    shot = 7418;  mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
-    %  shot = 7488; mytitle = 'I_A = 3300 A, with skimmer';x0_guess = -.5877;y0_guess = -2.8914; force_guess = 1; % shots = 7400 + [77,87,88,92:98,100,101,103];
-    
+%     shot = 7418;  mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
+%      shot = 7477; mytitle = 'I_A = 3300 A, with skimmer';x0_guess = -.5877;y0_guess = -2.8914; force_guess = 1; % shots = 7400 + [77,87,88,92:98,100,101,103];
+    shot = 7277;  mytitle = 'I_A = 3300 A, no skimmer';  x0_guess = -0.604712; y0_guess = -3.026471; force_guess = 0; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
+%     shot = 7278;  mytitle = 'I_A = 3300 A, no skimmer';  x0_guess = -0.604712; y0_guess = -3.026471; force_guess = 0; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
+%     shot = 7674;  mytitle = 'I_A = 3300 A, no skimmer';  x0_guess = -0.591378; y0_guess = -2.477497; force_guess = 0; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
     
 %     shot = 6547; x0_guess = 0.05; y0_guess = -1.7; force_guess = 0;
     if isempty(x0_guess)
@@ -24,11 +29,12 @@ else
     else
         [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,x0_guess,y0_guess,force_guess);
     end
-    [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
+    [helicon_current,current_A,current_B,config,skimmer,current_C] = get_Proto_current(shot);
 end
+drawnow;
 
-[coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config);
-geo = get_Proto_geometry(0,0,skimmer);
+[coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C);
+geo = get_Proto_geometry(0,0,skimmer,target_position,sleeve);
 
 bfield.coil = coil;
 bfield.current = current;
@@ -38,7 +44,7 @@ bfield.vessel_clip_z   = geo.vessel_clip_z;
 bfield.vessel_clip_phi = 0;
 bfield.stop_at_vessel = 1;
 
-num_lines = 10;
+num_lines = 25;
 % rr = linspace(1e-3,0.04,num_lines);
 rr = linspace(1e-3,2.0*plasma_radius_cm/100,num_lines);
 zz = geo.target.z*ones(size(rr));
@@ -70,7 +76,7 @@ set(gca,'fontsize',14)
 xlabel('Z [m]','fontsize',14)
 ylabel('R [m]','fontsize',14)
 title(['Shot ',num2str(shot)])
-get_Proto_geometry(1,0,skimmer);
+geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve);
 axis([0.5,3.5,0,0.15])
 
 figure; hold on; box on;

@@ -1,5 +1,6 @@
-function [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot)
+function [helicon_current,current_A,current_B,config,skimmer,current_C] = get_Proto_current(shot)
 
+current_C = 0;
 
 switch shot
     case 5954
@@ -39,7 +40,13 @@ switch shot
     case 7445
         helicon_current = 210; current_A = 3300; current_B = 0; config = 'flat'; skimmer = 0;
 
-    
+    % Half field, no skimmer, helicon current scan
+    case 7277
+        helicon_current = 300; current_A = 3300; current_B = 0; config = 'flat'; skimmer = 0;
+    case 7278
+        helicon_current = 350; current_A = 3300; current_B = 0; config = 'flat'; skimmer = 0;
+        
+    % Half field, skimmer, helicon current scan
     case 7477
         helicon_current = 30; current_A = 3300; current_B = 0; config = 'flat'; skimmer = 1;
     case 7483
@@ -69,6 +76,10 @@ switch shot
     case 7503
         helicon_current = 600; current_A = 3300; current_B = 0; config = 'flat'; skimmer = 1;                                
 
+    % Half field, no skimmer, helicon current scan
+    case 7674
+        helicon_current = 400; current_A = 6400; current_B = 0; config = 'flat'; skimmer = 1;
+        
     case {7670, 7680, 7687}
         helicon_current = 210; current_A = 6400; current_B = 0; config = 'flat'; skimmer = 1;        
     otherwise
