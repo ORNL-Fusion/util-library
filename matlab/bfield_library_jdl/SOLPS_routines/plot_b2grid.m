@@ -1,5 +1,5 @@
 function plot_b2grid(fname_in,plotit,newfig,col,lw)
-
+% This will read the .geo file
 if nargin < 2
     plotit = 1;
 end

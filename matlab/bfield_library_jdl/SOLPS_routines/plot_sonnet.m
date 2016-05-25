@@ -1,4 +1,5 @@
 function plot_sonnet(fname_in,plotit,newfig,col,lw,jxa_test,jxi_test)
+% reads .sno file
 
 % jxa_test = 54;
 % jxi_test = 39;
@@ -29,7 +30,7 @@ dat = fgetl(fid); data = textscan(dat,'%s %s %d'); ny = cell2mat(data(3));
 dat = fgetl(fid); dat = fgetl(fid); dat = fgetl(fid); dat = fgetl(fid); dat = fgetl(fid); dat = fgetl(fid);
 
 ncell = (nx+2)*(ny+2);
-
+fprintf('nx=%d, ny=%d, ncell=%d\n',nx,ny,ncell)
 % Account for extra line in ddn grids
 if isempty(dat) 
     dat = fgetl(fid);
