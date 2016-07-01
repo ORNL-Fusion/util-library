@@ -8,7 +8,7 @@ if 1
     helicon_current = 440;
     current_A = 6400;
     current_B = 6400;
-    current_C = 1;
+    current_C = [];
     config = 'flat';
     skimmer = 1;
     shot = 0;
@@ -20,7 +20,7 @@ else
     [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 end
 
-if 0
+if 1
     [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C);
     bfield.coil = coil;
     bfield.current = current;
