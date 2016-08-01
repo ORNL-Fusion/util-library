@@ -3,11 +3,14 @@ function cf = colorflipper(num_colors,cmap)
 % cf(num_colors,3)
 % Available options for cmap: 
 %'jet'
+%'jet_to_white'
+%'parula'
 %'hsv'
 %'cw'  -- cool warm
 %'rb'
 %'blues'
 %'morgan'
+%'rainbow'
 %Default is jet
 
     if nargin < 1

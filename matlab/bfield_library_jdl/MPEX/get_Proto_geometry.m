@@ -7,6 +7,15 @@ end
 if nargin < 2
     newfig = 1;
 end
+% if nargin < 3 
+%     add_skimmer = 0;
+% end
+% if nargin < 4
+%     target_position = 1;
+% end
+% if nargin < 5
+%     add_sleeve = 0;
+% end
 
 in2m = 0.0254;
 

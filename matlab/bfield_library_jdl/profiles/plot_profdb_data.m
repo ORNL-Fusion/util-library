@@ -1,4 +1,4 @@
-function plot_profdb_data(fname,psin_range,te_max,ti_max,ne_max,newfig)
+function plot_profdb_data(fname,psin_range,te_max,ti_max,ne_max,newfig,BIN_TS)
 %  te, ti max in kev
 %  ne max in 10^20
 %
@@ -20,6 +20,9 @@ end
 if nargin < 6
     newfig = 1;
 end
+if nargin < 7
+    BIN_TS = 0;
+end
 
 
 shift = 0.0;
@@ -30,7 +33,7 @@ SCALE_TI = 0;
 ti_exp_scale_min = 5; % eV
 ti_exp_scale_width = 0.03; % delta psiN
 
-BIN_TS = 1;
+% BIN_TS = 1;
 % ;; Settings for binning TS data
 binleft=0.85;    %; Range in psi_N
 binright=1.1;
@@ -80,7 +83,11 @@ subplot(n1_sub,n2_sub,1); hold on; box on; set(gca,'xlim',xrange);
 if ~isempty(te_max) 
     set(gca,'ylim',[0,te_max]);
 end
-errorbar(psiNbin+shift,tebin,teberr,col,'marker','none','linestyle','none')
+if BIN_TS
+    errorbar(psiNbin+shift,tebin,teberr,col,'marker','none','linestyle','none')
+else
+    errorbar(profs.psi_te+shift,profs.tedat,profs.te_err,col,'marker','none','linestyle','none')
+end
 plot(psiNfit+shift,tefit,[col,'-'],'linewidth',3)
 ylabel('T_e [keV]','fontsize',12)
 title('Profiles vs \Psi_N','fontsize',12)
@@ -90,7 +97,11 @@ subplot(n1_sub,n2_sub,2); hold on; box on; set(gca,'xlim',xrange);
 if ~isempty(ne_max)
     set(gca,'ylim',[0,ne_max]);
 end
-errorbar(psiNbin+shift,nebin,neberr,col,'marker','none','linestyle','none')
+if BIN_TS
+    errorbar(psiNbin+shift,nebin,neberr,col,'marker','none','linestyle','none')
+else
+    errorbar(profs.psi_ne+shift,profs.nedat,profs.ne_err,col,'marker','none','linestyle','none')
+end
 plot(psiNfit+shift,nefit,[col,'-'],'linewidth',3)
 ylabel('n_e [10^{20} m^{-3}]','fontsize',12)
 set(gca,'fontsize',12)
