@@ -18,7 +18,8 @@ SRC_DIR = ../src/
 BIN_DIR = ../bin/
 
 # Location of bfield library and .mod files
-LIBBJDL_DIR = $(HOME)/util-library/fortran/bfield_library_jdl/build
+LIBBJDL_DIR = $(HOME)/util-library/fortran/bfield_library_jdl/lib
+LIBBJDL_INCDIR = $(HOME)/util-library/fortran/bfield_library_jdl/include
 
 # Location of m3dc1 libraries
 LIBM3DC1_DIR = $(FIO_INSTALL_DIR)/lib
@@ -58,7 +59,7 @@ debug: $(EXEC)
 # Static patterns
 
 $(OBJS90) : %.o:  $(SRC_DIR)%.f90
-	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS) $<
+	$(FC) $(FF) -c -I$(LIBBJDL_INCDIR) $(LIBDIR) $(LIBS) $<
 
 $(MODS90) : %.mod:  $(SRC_DIR)%.f90
 	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS) $<

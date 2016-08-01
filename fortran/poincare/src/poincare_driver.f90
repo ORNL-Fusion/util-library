@@ -9,7 +9,7 @@ Program poincare_driver
 Use kind_mod, Only: int32, real64
 Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts,bfield_bs_cyl,build_d3d_ccoils_jl,&
   build_d3d_icoils_jl
-Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factor, m3dc1_itime, m3dc1_toroidal_on_err,bfield_m3dc1, &
+Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factors, m3dc1_itime, m3dc1_toroidal_on_err,bfield_m3dc1, &
      m3dc1_field_type
 Use g3d_module, Only : readg_g3d, bfield_geq_bicub, get_psi_bicub
 Use math_geo_module, Only : rlinspace
@@ -30,29 +30,31 @@ Real(real64) :: dphi_line, Adphirat
 character(10) :: junk
 Real(Kind=4)  :: tarray(2),tres,tres0
 Logical :: calc_psiN_min = .false., follow_both_ways = .false.
+Integer(int32), parameter :: max_m3dc1_files = 10
 !---------------------------------------------------------------------------
 ! Namelist variables:
 Real(real64) :: &
  rmp_current(max_rmp_coils) = 0.d0, &
- m3dc1_scale_factor = 0.d0, &
+ m3dc1_scale_factors(max_m3dc1_files) = 0.d0, &
  phistart_deg, rstart, rend, zstart, zend, dphi_line_deg
 
 Character(Len=120) :: &
  rmp_type = 'none',  &
  gfile_name = 'none', &
  rmp_coil_type = 'none', &
- m3dc1_filename = 'none.none'
+ m3dc1_filenames(max_m3dc1_files)
 
 Integer(int32) :: &
  m3dc1_time = -1, &
  num_pts = 2, &
  ntransits = 1, &
- Nsym = 1
+ Nsym = 1, &
+ m3dc1_nsets = 0
 
 ! Namelist files
-Namelist / settings_nml / gfile_name, rmp_type, rmp_coil_type, m3dc1_filename, &
-     m3dc1_scale_factor, rmp_current, m3dc1_time, phistart_deg, rstart, rend, zstart, zend, &
-     num_pts, ntransits, dphi_line_deg, Nsym, calc_psiN_min, follow_both_ways
+Namelist / settings_nml / gfile_name, rmp_type, rmp_coil_type, m3dc1_filenames, &
+     m3dc1_scale_factors, rmp_current, m3dc1_time, phistart_deg, rstart, rend, zstart, zend, &
+     num_pts, ntransits, dphi_line_deg, Nsym, calc_psiN_min, follow_both_ways,m3dc1_nsets
 
 !---------------------------------------------------------------------------
 !---------------------------------------------------------------------------
@@ -122,12 +124,12 @@ Select Case (rmp_type)
       Stop
     Endif
     m3dc1_itime = m3dc1_time           ! Variables in module
-    m3dc1_factor = m3dc1_scale_factor
+    m3dc1_factors = m3dc1_scale_factors
     m3dc1_toroidal_on_err = m3dc1_toroidal_off_grid
     m3dc1_field_type = 1
-    Call prepare_m3dc1_fields(m3dc1_filename)
+    Call prepare_m3dc1_fields(m3dc1_filenames(1:m3dc1_nsets))
     Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
-    Write(*,'(a,f12.4)') '---------> M3DC1 scale factor: ',m3dc1_factor    
+    Write(*,*) '---------> M3DC1 scale factor: ',m3dc1_factors(1:m3dc1_nsets)
     If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
   Case ('m3dc1_full_field')
     Write(*,'(a)') '-----> BFIELD METHOD IS M3DC1_FULL_FIELD'
@@ -138,12 +140,12 @@ Select Case (rmp_type)
       Stop
     Endif
     m3dc1_itime = m3dc1_time           ! Variables in module
-    m3dc1_factor = m3dc1_scale_factor
+    m3dc1_factors = m3dc1_scale_factors
     m3dc1_toroidal_on_err = m3dc1_toroidal_off_grid
     m3dc1_field_type = 0
-    Call prepare_m3dc1_fields(m3dc1_filename)
+    Call prepare_m3dc1_fields(m3dc1_filenames(1:m3dc1_nsets))
     Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
-    Write(*,'(a,f12.4)') '---------> M3DC1 scale factor: ',m3dc1_factor
+    Write(*,*) '---------> M3DC1 scale factor: ',m3dc1_factors(1:m3dc1_nsets)
     If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
   Case ('m3dc1_as')
     Write(*,'(a)') '-----> BFIELD METHOD IS m3dc1_as'
@@ -154,12 +156,12 @@ Select Case (rmp_type)
       Stop
     Endif
     m3dc1_itime = m3dc1_time           ! Variables in module
-    m3dc1_factor = m3dc1_scale_factor
+    m3dc1_factors = m3dc1_scale_factors
     m3dc1_toroidal_on_err = m3dc1_toroidal_off_grid
     m3dc1_field_type = 0
-    Call prepare_m3dc1_fields(m3dc1_filename)
+    Call prepare_m3dc1_fields(m3dc1_filenames(1:m3dc1_nsets))
     Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
-    Write(*,'(a,f12.4)') '---------> M3DC1 scale factor: ',m3dc1_factor
+    Write(*,*) '---------> M3DC1 scale factor: ',m3dc1_factors(1:m3dc1_nsets)
     If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
   Case Default
     Write(*,*) 'Unknown rmp_type in poincare_driver!'
