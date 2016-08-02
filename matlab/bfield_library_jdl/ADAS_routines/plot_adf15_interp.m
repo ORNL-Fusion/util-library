@@ -1,8 +1,12 @@
 % function plot_adf15_interp
 clearvars;
 
-wl_nm = 656;
-fname = 'C:\Work\ADAS\pec12#h_pju#h0.dat';
+% wl_nm = 656;
+% fname = 'C:\Work\ADAS\pec12#h_pju#h0.dat';
+
+wl_nm = 514;
+fname = 'C:\Work\ADAS\pec96#c_vsu#c1.dat';
+
 adf15 = read_adas_adf15_file(fname);
 [i_ex,i_rc] = find_adf15_transition(adf15,wl_nm,1);
 

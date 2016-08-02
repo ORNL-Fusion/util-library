@@ -27,10 +27,10 @@ if verbose
 end
 
 for isel = 1:adf15.nsel
-    line = fgetl(fid); data = sscanf(line,'%fA %d %d');
+    line = fgetl(fid); data = sscanf(line,'%f %s %d %d'); %data = sscanf(line,'%8.1fA %d %d');
     adf15.wlng(isel)  = data(1);   % wavelength of transition (Ang)
-    adf15.ndens(isel) = data(2);   % number of densities
-    adf15.nte(isel)   = data(3);   % number of temperatures
+    adf15.ndens(isel) = data(3);   % number of densities
+    adf15.nte(isel)   = data(4);   % number of temperatures
     sis = find(line == '/');
     if length(sis) ~= 4
         error('Could not parse adf15 file (slashes)')
@@ -65,7 +65,9 @@ for isel = 1:adf15.nsel
             case 2
                 adf15.type{isel} = sscanf(line(i1:i2),fmt);
             case 3
-                adf15.indm(isel) = sscanf(line(i1:i2),fmt);
+%                 adf15.indm(isel) = sscanf(line(i1:i2),fmt);
+                % commenting out for now because I don't use it and don't
+                % know whay 'T' means               
             case 4
                 adf15.isel(isel) = sscanf(line(i1:i2),fmt);
         end        
