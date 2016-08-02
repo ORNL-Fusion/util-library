@@ -45,7 +45,7 @@ switch bfield.type
     case 'vmec'
         errstr2 = 'for vmec ';
         if ~isfield(bfield,'wout')
-            fprintf([errstr,errstr2,'type structure must contain field "g"\n'])
+            fprintf([errstr,errstr2,'type structure must contain field "wout"\n'])
             ierr = 1;
             return;
         end        
@@ -72,7 +72,31 @@ switch bfield.type
             fprintf([errstr,errstr2,'type structure must contain field "current"\n'])
             ierr = 1;
             return;
-        end              
+        end            
+    case 'ipec_eq'
+        errstr2 = 'for ipec_eq ';
+        if ~isfield(bfield,'ipec')
+            fprintf([errstr,errstr2,'type structure must contain field "ipec"\n'])
+            ierr = 1;
+            return;
+        end         
+        if ~isfield(bfield.ipec,'eq')
+            fprintf([errstr,errstr2,'type structure must contain field "ipec.eq"\n'])
+            ierr = 1;
+            return;
+        end        
+    case 'ipec_vac'
+        errstr2 = 'for ipec_vac ';
+        if ~isfield(bfield,'ipec')
+            fprintf([errstr,errstr2,'type structure must contain field "ipec"\n'])
+            ierr = 1;
+            return;
+        end         
+        if ~isfield(bfield.ipec,'vac')
+            fprintf([errstr,errstr2,'type structure must contain field "ipec.vac"\n'])
+            ierr = 1;
+            return;
+        end          
     otherwise
         fprintf([errstr,'Did not recognize bfield type\n'])
         fprintf('Supported types are:\n')
@@ -81,6 +105,8 @@ switch bfield.type
         fprintf('     vmec\n')        
         fprintf('     just_coils\n')        
         fprintf('     MPEX\n')      
+        fprintf('     ipec_eq\n')     
+        fprintf('     ipec_vac\n')     
         error('Throwing error')
         ierr = 1;
         return;

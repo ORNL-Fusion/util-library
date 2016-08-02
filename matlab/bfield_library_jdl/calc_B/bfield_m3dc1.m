@@ -79,7 +79,7 @@ end
 if ~isempty(iroff) | ~isempty(izoff)
     if toroidal_field_off_grid == 1
         if ~nowarn
-            warning(['Point(s) off grid in --> returning toroidal field = 1 there'])
+            warning(['Point(s) off grid --> returning toroidal field = 1 there'])
         end
         ierr = 0; br(mask == 1) = 0; bz(mask == 1) = 0; bt(mask == 1) = 1;
         return;
