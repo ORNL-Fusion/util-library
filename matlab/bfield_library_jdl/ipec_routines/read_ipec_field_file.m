@@ -20,12 +20,14 @@ end
 fid = fopen(fname);
 dat = fgetl(fid);
 fprintf('%s\n',dat)
-if ~isempty(strfind(dat,'EQBRZPHI'))
+if ~isempty(strfind(dat,'_EQBRZPHI'))
     field_size = 3;
-elseif ~isempty(strfind(dat,'PBRZPHI'))
+elseif ~isempty(strfind(dat,'_PBRZPHI'))
     field_size = 6;
-elseif ~isempty(strfind(dat,'CBRZPHI'))
+elseif ~isempty(strfind(dat,'_CBRZPHI'))
     field_size = 6;
+elseif ~isempty(strfind(dat,'_BRZPHI'))
+    field_size = 6;    
 else
     error('Did not recognize field type: %s\n',dat)
 end
@@ -61,16 +63,16 @@ field.npts = nr*nz;
 field.r = reshape(data(2,:),[nr,nz]).';
 field.z = reshape(data(3,:),[nr,nz]).';
 if field_size == 3    
-    field.b_r   = reshape(data(4,:),[nr,nz]).';
-    field.b_z   = reshape(data(5,:),[nr,nz]).';
-    field.b_phi = reshape(data(6,:),[nr,nz]).';
+    field.br   = reshape(data(4,:),[nr,nz]).';
+    field.bz   = reshape(data(5,:),[nr,nz]).';
+    field.bphi = reshape(data(6,:),[nr,nz]).';
 else
-    field.rb_r = reshape(data(4,:),[nr,nz]).';
-    field.ib_r = reshape(data(5,:),[nr,nz]).';
-    field.rb_z = reshape(data(6,:),[nr,nz]).';
-    field.ib_z = reshape(data(7,:),[nr,nz]).';
-    field.rb_phi = reshape(data(8,:),[nr,nz]).';
-    field.ib_phi = reshape(data(9,:),[nr,nz]).';
+    field.rbr = reshape(data(4,:),[nr,nz]).';
+    field.ibr = reshape(data(5,:),[nr,nz]).';
+    field.rbz = reshape(data(6,:),[nr,nz]).';
+    field.ibz = reshape(data(7,:),[nr,nz]).';
+    field.rbphi = reshape(data(8,:),[nr,nz]).';
+    field.ibphi = reshape(data(9,:),[nr,nz]).';
 end
 
 save(matfile,'field')

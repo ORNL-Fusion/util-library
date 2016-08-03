@@ -97,6 +97,18 @@ switch bfield.type
             ierr = 1;
             return;
         end          
+    case 'ipec_pert'
+        errstr2 = 'for ipec_pert ';
+        if ~isfield(bfield,'ipec')
+            fprintf([errstr,errstr2,'type structure must contain field "ipec"\n'])
+            ierr = 1;
+            return;
+        end         
+        if ~isfield(bfield.ipec,'pert')
+            fprintf([errstr,errstr2,'type structure must contain field "ipec.pert"\n'])
+            ierr = 1;
+            return;
+        end                  
     otherwise
         fprintf([errstr,'Did not recognize bfield type\n'])
         fprintf('Supported types are:\n')
@@ -107,6 +119,7 @@ switch bfield.type
         fprintf('     MPEX\n')      
         fprintf('     ipec_eq\n')     
         fprintf('     ipec_vac\n')     
+        fprintf('     ipec_pert\n')     
         error('Throwing error')
         ierr = 1;
         return;

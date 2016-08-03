@@ -13,9 +13,11 @@ switch bfield.type
     case 'just_coils'        
         [dydx,ierr] = fl_derivs_dphi_just_coils(x,y,bfield,nowarn);
     case 'ipec_eq'        
-        [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,1);        
+        [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,0);        
     case 'ipec_vac'        
-        [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,2);                
+        [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,1);                
+    case 'ipec_pert'        
+        [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,2);        
     otherwise
         fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
@@ -25,6 +27,7 @@ switch bfield.type
         fprintf('     just_coils\n')
         fprintf('     ipec_eq\n')
         fprintf('     ipec_vac\n')
+        fprintf('     ipec_pert\n')
         ierr = 1;
         return;
 end

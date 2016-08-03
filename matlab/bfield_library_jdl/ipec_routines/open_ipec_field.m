@@ -6,7 +6,7 @@ function ipec = open_ipec_field(run_path)
 % run_path = 'C:\Work\DIII-D\164723\g164723.03059_d3d_kinetic\low\gpec\';
 
 fname_eq = fullfile(run_path,'ipec_eqbrzphi_n3.out');
-fname_p  = fullfile(run_path,'ipec_pbrzphi_n3.out');
+fname_p  = fullfile(run_path,'ipec_brzphi_n3.out');
 fname_c  = fullfile(run_path,'ipec_cbrzphi_n3.out');
 
 ipec.eq = read_ipec_field_file(fname_eq);
