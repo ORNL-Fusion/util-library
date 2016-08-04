@@ -222,6 +222,26 @@ Do i=1,Npts
     bimg = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
     Bout(i,3) = Bout(i,3) + breal*cosphi + bimg*sinphi
   Elseif (ifield_type .eq. 2) Then
+    cosphi = cos(ipec_pert_n*phi(i))
+    sinphi = sin(ipec_pert_n*phi(i))
+    
+    QQ = ipec_pert_rbr(ir:ir+1,iz:iz+1)
+    breal = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
+    QQ = ipec_pert_ibr(ir:ir+1,iz:iz+1)
+    bimg = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)        
+    Bout(i,1) = Bout(i,1) + breal*cosphi + bimg*sinphi
+
+    QQ = ipec_pert_rbz(ir:ir+1,iz:iz+1)
+    breal = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
+    QQ = ipec_pert_ibz(ir:ir+1,iz:iz+1)
+    bimg = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
+    Bout(i,2) = Bout(i,2) + breal*cosphi + bimg*sinphi
+        
+    QQ = ipec_pert_rbphi(ir:ir+1,iz:iz+1)
+    breal = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
+    QQ = ipec_pert_ibphi(ir:ir+1,iz:iz+1)
+    bimg = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
+    Bout(i,3) = Bout(i,3) + breal*cosphi + bimg*sinphi    
   Else
     Write(*,*) "Did not recognize ifield_type in bfield_ipec ",ifield_type
     Stop "Exiting"
