@@ -1,0 +1,46 @@
+&settings_nml
+
+!**************************************************************************
+! 2) Magnetic equilibrium data
+!**************************************************************************
+
+
+rmp_type = 'ipec'
+ipec_field_eval_type = 0
+ipec_run_path = '/home/jjl/IPEC/164723/low/gpec'
+gfile_name = '/home/jjl/DIII-D/164723/g164723.03059_410' ! used for psiN
+
+Nsym = 3
+
+!**************************************************************************
+! 3) FL data
+!**************************************************************************
+rstart = 1.95d0
+rend = 2.3d0
+zstart = 0.d0
+zend = 0.d0
+
+! TS
+!rstart = 1.94d0
+!rend = 1.94d0
+!zstart = 0.d0
+!zend = 0.83d0
+
+! ECE
+!rstart = 1.8d0
+!rend = 2.31d0
+!zstart = 0.004d0
+!zend = 0.004d0
+
+
+num_pts = 250
+!phistart_deg = 60.d0  ! 60, 240 for TS
+!phistart_deg = 100.d0  ! 280, 100 for ECE
+phistart_deg = 0.d0
+ntransits = 100
+dphi_line_deg = 0.5d0
+
+follow_both_ways = .true.
+calc_psiN_min = .true.
+
+/
