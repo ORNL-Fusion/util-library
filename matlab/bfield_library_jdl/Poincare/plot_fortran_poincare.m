@@ -70,9 +70,9 @@ fname_psimin = []; fname_psimin2 = [];
 % run_path = 'C:\Work\fortran\test_poincare\164723\2FL\'; suffix = '0deg'; gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';  mytitle = '2FL \phi = 0';
 % run_path = 'C:\Work\fortran\test_poincare\164723\AS\'; suffix = '0deg'; gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';  mytitle = 'AS \phi = 0';
 % run_path = 'C:\Work\fortran\test_poincare\164723\VAC\'; suffix = '0deg'; gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';  mytitle = 'VAC \phi = 0';
-% run_path = 'C:\Work\fortran\test_poincare\164723\1FL_VAC\'; suffix = '30deg'; gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';  mytitle = '1FL VAC \phi = 0';
+% run_path = 'C:\Work\fortran\test_poincare\164723\1FL_VAC\'; suffix = '0deg'; gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';  mytitle = '1FL VAC \phi = 0';
 % run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_eq\'; suffix = '0deg'; gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';  mytitle = 'IPEC eq \phi = 0';
-run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_vac\'; suffix = '-30deg'; gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';  mytitle = 'IPEC eq \phi = 0';
+% run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_vac\'; suffix = '0deg'; gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';  mytitle = 'IPEC VAC \phi = 0';
 
 % run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '-120'; gfile_name = 'C:\Work\DIII-D\165274\kinetic\g165274.02120'; mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;
 

@@ -2,36 +2,27 @@ clearvars;
 tic;
 connect_dots = 0;
 
-gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';
+gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';
 g = readg_g3d(gfile_name);
 
-rmp.type = 'g3d';
-g.toroidal_off_grid = 1;
+% bfield.type = 'gfile';
+% bfield.g = g;
+% isaxisym = 1;
 
-% AXISYMMETRIC-AXISYMMETRIC-AXISYMMETRIC-AXISYMMETRIC %
-% rmp.isaxisym = 1;
-% rmp.current = 0;
-% RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP %
-% taper = [-897.705, 2362.30, 3228.76, 897.705, -2362.30, -3228.76];
-% rmp = build_d3d_ccoils_jl(taper);
-% rmp.type = 'g3d';
-% rmp.isaxisym = 0;
-% nsym = 1;
-% RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP-RMP %
-% taper_i = [   -3740.   3863.  -3720.   3855.  -3718.   3858. 3862.  -3791.   3884.  -3854.   3923.  -3847.];
-taper_i = 3826*[-1 1 -1 1 -1 1 1 -1 1 -1 1 -1];
-rmp = build_d3d_icoils_jl(taper_i); 
-rmp.type = 'g3d';
-rmp.isaxisym = 0;
+bfield.g = g;
+% rmp = build_d3d_icoils_jl([-2903.   2939.  -2889.   2935.  -2886.   2940. -2851.   2907.  -2866.   2918.  -2910.   2918.]);
+taper = [-2900.d0 2900.d0 -2900.d0 2900.d0 -2900.d0 2900.d0 -2900.d0 2900.d0 -2900.d0 2900.d0 -2900.d0 2900.d0];
+rmp = build_d3d_icoils_jl(taper);
+
+bfield.type = 'gfile+coils';
+bfield.coil = rmp.coil;
+bfield.current = rmp.current;
+isaxisym = 0;
 nsym = 3;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-
-% Rstart = 1.7;    % if [] this is set to g.rmaxis
 Rend   = 2.25;    % if [] this is set to max radius of g.bdry
 Rstart = 2.05;    % if [] this is set to g.rmaxis
-% Rend   = 1.7;    % if [] this is set to max radius of g.bdry
 
 Zstart = 0;
 Zend = 0;
@@ -58,8 +49,8 @@ nsteps = floor(num_transits*2*pi/dphi);
 phistart = phistart_deg*pi/180;
 
 
-s1=follow_fieldlines_rzphi(g,rmp,Rstarts,Zstarts,phistart,dphi,nsteps,0);
-s2=follow_fieldlines_rzphi(g,rmp,Rstarts,Zstarts,phistart,-dphi,nsteps,0);
+s1=follow_fieldlines_rzphi_dphi(bfield,Rstarts,Zstarts,phistart,dphi,nsteps);
+s2=follow_fieldlines_rzphi_dphi(bfield,Rstarts,Zstarts,phistart,-dphi,nsteps);
 phi = [s2.phi(end:-1:2);s1.phi];
 r = [s2.r(end:-1:2,:);s1.r];
 z = [s2.z(end:-1:2,:);s1.z];
@@ -80,7 +71,7 @@ if connect_dots
         r(:,i) = r(sort_inds,i);   
         z(:,i) = z(sort_inds,i);
         phi = phi(sort_inds);
-        if ~rmp.isaxisym
+        if ~isaxisym
             phi = mod(phi,2*pi/nsym);
             inds = find(abs(phi - phistart_deg) < 1e-6);
             rfinal(:,i) = r(inds,i);
@@ -90,7 +81,7 @@ if connect_dots
     r = rfinal;
     z = zfinal;
 else
-    if ~rmp.isaxisym
+    if ~isaxisym
         phi = mod(phi,2*pi/nsym);
         phi(abs(phi - 2*pi/nsym) < 1e-6) = 0;
         inds = find(abs(phi - phistart) < 1e-6);

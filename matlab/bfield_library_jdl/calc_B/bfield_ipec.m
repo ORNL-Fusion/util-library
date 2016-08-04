@@ -1,7 +1,9 @@
 function [Br,Bz,Bphi,Btot]=bfield_ipec(R,Z,P_rad,ipec,nowarn,field_choice)
 % field_choice == 0: equilibrium only
-% field_choice == 1: vacuum
-% field_choice == 2: pert
+% field_choice == 1: vacuum + eq
+% field_choice == 2: pert + eq
+% field_choice == 3: vacuum pert only
+% field_choice == 4: pert only
 
 npts = length(R);
 Br=zeros(npts,1);
@@ -11,14 +13,16 @@ Bphi=zeros(npts,1);
 
 for i = 1:npts
     
+    Br(i) = 0;
+    Bz(i) = 0;
+    Bphi(i) = 0;
+    
     ir = floor(interp1(ipec.eq.r(:,1),1:ipec.eq.nr,R(i))); %stuck with interp as it gives NaN for OOB
     iz = floor(interp1(ipec.eq.z(1,:),1:ipec.eq.nz,Z(i)));
     if isnan(ir) || isnan(iz)
         if ~nowarn
             warning(['Point(s) off grid in bfield_ipec --> returning toroidal field = 1 there'])
         end
-        Br(i) = 0;
-        Bz(i) = 0;
         Bphi(i) = 1;
         continue;
     end
@@ -30,16 +34,17 @@ for i = 1:npts
     dz2 = ipec.eq.z(1,iz+1) - Z(i);
     dz1 = dz_grid - dz2;
 
-    QQ = ipec.eq.br(ir:ir+1,iz:iz+1);
-    Br(i) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid);
-    QQ = ipec.eq.bz(ir:ir+1,iz:iz+1);
-    Bz(i) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid);
-    QQ = ipec.eq.bphi(ir:ir+1,iz:iz+1);
-    Bphi(i) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid);
-
+    if field_choice < 3
+        QQ = ipec.eq.br(ir:ir+1,iz:iz+1);
+        Br(i) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid);
+        QQ = ipec.eq.bz(ir:ir+1,iz:iz+1);
+        Bz(i) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid);
+        QQ = ipec.eq.bphi(ir:ir+1,iz:iz+1);
+        Bphi(i) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid);
+    end
     if field_choice == 0
         continue;
-    elseif field_choice == 1
+    elseif (field_choice == 1 || field_choice == 3)
         sinphi = sin(ipec.vac.n*P_rad(i));
         cosphi = cos(ipec.vac.n*P_rad(i));
         
@@ -60,7 +65,7 @@ for i = 1:npts
         QQ = ipec.vac.ibphi(ir:ir+1,iz:iz+1);
         ibphi = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid);
         Bphi(i) = Bphi(i) + rbphi*cosphi + ibphi*sinphi;
-    elseif field_choice == 2
+    elseif (field_choice == 2 || field_choice == 4)
         sinphi = sin(ipec.pert.n*P_rad(i));
         cosphi = cos(ipec.pert.n*P_rad(i));
         

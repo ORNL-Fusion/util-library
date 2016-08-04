@@ -85,7 +85,7 @@ switch bfield.type
             ierr = 1;
             return;
         end        
-    case 'ipec_vac'
+    case {'ipec_vac','ipec_vac_only'}
         errstr2 = 'for ipec_vac ';
         if ~isfield(bfield,'ipec')
             fprintf([errstr,errstr2,'type structure must contain field "ipec"\n'])
@@ -97,7 +97,7 @@ switch bfield.type
             ierr = 1;
             return;
         end          
-    case 'ipec_pert'
+    case {'ipec_pert','ipec_pert_only'}
         errstr2 = 'for ipec_pert ';
         if ~isfield(bfield,'ipec')
             fprintf([errstr,errstr2,'type structure must contain field "ipec"\n'])
@@ -119,7 +119,9 @@ switch bfield.type
         fprintf('     MPEX\n')      
         fprintf('     ipec_eq\n')     
         fprintf('     ipec_vac\n')     
-        fprintf('     ipec_pert\n')     
+        fprintf('     ipec_pert\n')    
+        fprintf('     ipec_vac_only\n')     
+        fprintf('     ipec_pert_only\n')        
         error('Throwing error')
         ierr = 1;
         return;
