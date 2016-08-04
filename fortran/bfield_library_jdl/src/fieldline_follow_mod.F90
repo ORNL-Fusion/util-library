@@ -21,6 +21,9 @@
 !                     4 -- M3DC1 total field
 !                     5 -- M3DC1 2D field only
 !                     6 -- Just coils
+!                     7 -- ipec eq only
+!                     8 -- ipec vac
+!                     9 -- ipec perturbed
 ! 
 !-----------------------------------------------------------------------------
 Module fieldline_follow_mod
@@ -494,6 +497,7 @@ Use g3d_module, Only : bfield_geq_bicub
 Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
 Use bfield_module, Only : bfield_bs_cyl
+Use ipec_module, Only : bfield_ipec
 #ifdef HAVE_M3DC1
 Use m3dc1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
 #endif
@@ -520,7 +524,7 @@ If (bfield_method == 0) Then     ! gfile field only
   Bphi = bval(1,3)
 Elseif (bfield_method == 1) Then ! g + rmp coils
   Call bfield_geq_bicub(RZ(1),RZ(2),Npts,bval,ierr_b)     
-    Call bfield_bs_cyl(RZ(1),phi,RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
+  Call bfield_bs_cyl(RZ(1),phi,RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
   ierr_rmp = 0
   Br   = bval(1,1) + Br_rmp
   Bz   = bval(1,2) + Bz_rmp
@@ -555,6 +559,23 @@ Elseif (bfield_method == 5) Then  ! m3dc1 2d field only
   Bz   = bval(1,2)
   Bphi = bval(1,3)
 #endif
+Elseif (bfield_method == 6) Then     ! just coils
+  Call bfield_bs_cyl(RZ(1),phi_tmp(1),RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br,Bphi,Bz)
+Elseif (bfield_method == 7) Then  ! ipec eq only
+  Call bfield_ipec(RZ(1),(/0.d0/),RZ(2),Npts,bval,ierr_rmp,0)
+  Br   = bval(1,1)
+  Bz   = bval(1,2)
+  Bphi = bval(1,3)
+Elseif (bfield_method == 8) Then  ! ipec vac
+  Call bfield_ipec(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,1)
+  Br   = bval(1,1)
+  Bz   = bval(1,2)
+  Bphi = bval(1,3)
+Elseif (bfield_method == 9) Then  ! ipec pert
+  Call bfield_ipec(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,2)
+  Br   = bval(1,1)
+  Bz   = bval(1,2)
+  Bphi = bval(1,3)  
 Else
   Write(*,*) 'Unknown bfield_method in fl_derivs_fun'
   stop

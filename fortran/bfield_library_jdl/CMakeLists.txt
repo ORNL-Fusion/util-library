@@ -73,6 +73,7 @@ add_library( bjdl STATIC
   ${SRC_DIR}/rmp_module.f90
   ${SRC_DIR}/screening_module.f90
   ${SRC_DIR}/util_routines.F90
+  ${SRC_DIR}/IPEC_routines_mod.f90
   ${EXTRA_FILES}
   )
 

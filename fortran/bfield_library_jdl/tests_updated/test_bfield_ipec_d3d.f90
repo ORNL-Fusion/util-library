@@ -1,34 +1,44 @@
 !-----------------------------------------------------------------------------
 !
-! Tests bfield_geq_bicub, bfield_bs_jdl, bfield_bs_cyl, build_d3d_icoils_jl
 ! -- JDL
 !
-Program test_bfield_rmp_d3d
+Program test_bfield_ipec_d3d
 Use kind_mod, Only: int32, real64
 Use gfile_var_pass
 Use g3d_module
 Use bfield_module, only: bfield_bs_jdl, bfield_bs_cyl
 Use diiid_routines_mod
+Use ipec_module
 Implicit None
 
 ! Local variables (scalar)
 Real(real64),Allocatable :: Btest(:,:),Rtest(:),Ztest(:)
 ! Local variables (array)
-Character(Len=100) :: gfilename
+Character(Len=100) :: gfilename, fname, run_path
 
-Integer :: ierr_b,Ntest
+Integer :: ierr_b,Ntest,ierr,ifield_type
 
 Real(real64),allocatable :: rmp_coil(:,:),rmp_current(:)
 Real(Real64) :: taper(12)
 Integer(int32) :: ntorpts,ncoil_pts
-
+Real(real64) :: Bout(1,3)
 Real(real64), allocatable, Dimension(:) :: Bx,By,Bz,P_x,P_y,P_z,Phitest,Br,Bphi
 
 !- End of header -------------------------------------------------------------
 
+run_path = '/home/jjl/IPEC/164723/low/gpec'
+!fname = '/home/jjl/IPEC/164723/low/gpec/ipec_eqbrzphi_n3.out'
+!Write(*,*) 'Reading ipec file:', fname
+!Call read_ipec_field_file(fname,0)
+Call open_ipec_fields(run_path)
+ifield_type = 1
 
-!gfilename = './g160884.03014_251'
-gfilename = '/home/jjl/DIII-D/164723/g164723.03059_410'
+Call bfield_ipec((/2.1d0/),(/0.1d0/),(/0.05d0/),1,Bout,ierr,ifield_type)
+WRite(*,*) Bout
+Call close_ipec_fields
+
+stop
+gfilename = './g160884.03014_251'
 
 Call readg_g3d(gfilename)
 
@@ -52,12 +62,8 @@ Write(*,'(a,3f10.4,i0)') 'And the answer: ',Btest(1,:),ierr_b
 Write(*,'(a,3f10.4,i0)') 'And the answer: ',Btest(2,:),ierr_b
 
 Write(*,*) 'building coils'
-!taper = (/-3740.d0, 3863.d0,-3720.d0, 3855.d0,-3718.d0, 3858.d0, &
-!           3862.d0,-3791.d0, 3884.d0,-3854.d0, 3923.d0,-3847.d0/)
-
-taper = (/-2900.d0, 2900.d0, -2900.d0, 2900.d0, -2900.d0, 2900.d0, &
-          -2900.d0, 2900.d0, -2900.d0, 2900.d0, -2900.d0, 2900.d0/)
-
+taper = (/-3740.d0, 3863.d0,-3720.d0, 3855.d0,-3718.d0, 3858.d0, &
+           3862.d0,-3791.d0, 3884.d0,-3854.d0, 3923.d0,-3847.d0/)
 ntorpts = 6
 Allocate(rmp_coil(12*(2*ntorpts+1),3))
 Allocate(rmp_current(12*(2*ntorpts+1)))
@@ -86,5 +92,5 @@ Write(*,*) 'Bphi',Bphi
 Write(*,*) 'Bz',Bz
 
 
-End program test_bfield_rmp_d3d
+End program test_bfield_ipec_d3d
 

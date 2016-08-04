@@ -70,13 +70,17 @@ Contains
     If ( (bfield_method == 0) .OR. &    ! g only
          (bfield_method == 1) .OR. &    ! g+rmp coils
          (bfield_method == 2) .OR. &    ! g+screening
-         (bfield_method == 3) ) Then    ! g + m3dc1
+         (bfield_method == 3) .OR. &    ! g + m3dc1
+         (bfield_method == 7) .OR. &    ! ipec
+         (bfield_method == 8) .OR. &
+         (bfield_method == 9) &         
+      ) Then    
       Call get_psi_bicub(r,z,Npts,psi,ierr_tmp)
 #ifdef HAVE_M3DC1
     Elseif ( (bfield_method == 4) .OR. & ! m3dc1 total field
          (bfield_method == 5) ) Then ! m3dc1 total field (AS only)  
       Call calc_psi_m3dc1_2d(r,z,Npts,psi,ierr_tmp)
-#endif          
+#endif
     Else
       Write(*,*) 'Bad value for bfield_method in get_psi_2d'
       Write(*,*) 'bfield_method is',bfield_method
@@ -121,7 +125,11 @@ Contains
     If ( (bfield_method == 0) .OR. &    ! g only
          (bfield_method == 1) .OR. &    ! g+rmp coils
          (bfield_method == 2) .OR. &    ! g+screening
-         (bfield_method == 3) ) Then    ! g + m3dc1
+         (bfield_method == 3) .OR. &    ! g + m3dc1
+         (bfield_method == 7) .OR. &    ! ipec
+         (bfield_method == 8) .OR. &
+         (bfield_method == 9) &         
+      ) Then          
       Call get_psiN_bicub(r,z,Npts,psiN,ierr_tmp)
 #ifdef HAVE_M3DC1
     Elseif ( (bfield_method == 4) .OR. & ! m3dc1 total field
@@ -129,7 +137,7 @@ Contains
       Call calc_psiN_m3dc1_2d(r,z,Npts,psiN,ierr_tmp)
 #endif          
     Else
-      Write(*,*) 'Bad value for bfield_method in get_psiN_2d'
+      Write(*,*) 'Bad value for bfield_method in get_psiN_2d_array'
       Write(*,*) 'bfield_method is',bfield_method
       Stop
     Endif
