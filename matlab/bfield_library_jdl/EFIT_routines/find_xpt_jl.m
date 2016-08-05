@@ -18,21 +18,27 @@ if nargin < 7
     zguess = [];
 end
 if nargin < 8
-    %   de1 = 0.3;
-    %   de2 = 0.25;
-    de1 = [];
-    de2 = [];
-else
-    de1 = de;
-    de2 = de;
+    de = [];
 end
 
-if isempty(de1)
-    de1 = (g.r(end)-g.r(1))*.15;
-    de2 = (g.z(end)-g.z(1))*.15; 
+if isempty(de)
+    der = (g.r(end)-g.r(1))*.05;
+    dez = (g.z(end)-g.z(1))*.05; 
+else
+    der = de;
+    dez = de;
 end
+
+first_guess_Bp_tol = 1e-2;  % If guess from boundary is > this then try another method (for limited configs)
+Rmin_eval = g.r(3) + 1e-3;
+Zmin_eval = g.z(3) + 1e-3;
+Rmax_eval = g.r(end-2) - 1e-3;
+Zmax_eval = g.z(end-2) - 1e-3;
 
 niter_max = 15;
+
+der_save = der;
+dez_save = dez;
 
 if isempty(rguess)
 
@@ -47,6 +53,14 @@ if isempty(rguess)
     b=bfield_geq_bicub(g,rb,zb);
     bp = sqrt(b.br.^2 + b.bz.^2);
     [bpx,ix] = min(bp);
+    
+    if bpx > first_guess_Bp_tol 
+        if quiet == 0
+            fprintf('Guess from boundary exceed tolerance!\n')
+        end
+        der = (g.r(end)-g.r(1))*.15;
+        dez = (g.z(end)-g.z(1))*.15;
+    end
     rx = rb(ix);
     zx = zb(ix);
     if quiet == 0
@@ -74,8 +88,8 @@ if refine == 1
   zg = zeros(n1,n1);
   niter = 1;
   while err > tol && niter < niter_max
-    rt = linspace(rx-0.5*de1,rx+0.5*de1,n1);
-    zt = linspace(zx-0.5*de1,zx+0.5*de1,n1);
+    rt = linspace(max([Rmin_eval,rx-der]),min([Rmax_eval,rx+der,n1]));
+    zt = linspace(max([Zmin_eval,zx-dez]),min([Zmax_eval,zx+dez,n1]));
     for i = 1:n1 
       ztmp = repmat(zt(i),1,n1);
       b = bfield_geq_bicub(g,rt,ztmp);
@@ -86,11 +100,15 @@ if refine == 1
     [~,ix] = min(bp);
     [bpx,jx] = min(min(bp));
     ix=ix(jx);
-    de1 = sqrt( (rg(ix,jx)-rx)^2 + (zg(ix,jx)-zx)^2);
-    err = bpx;
     
+    der = abs(rg(ix,jx) - rx);
+    dez = abs(zg(ix,jx) - zx);
+    
+    err = bpx;
+           
     rx = rg(ix,jx);
     zx = zg(ix,jx);
+    plot(rx,zx,'k.')
     niter = niter + 1;    
     if niter >= niter_max
         warning('niter_max exceeded for 1st x-point')
@@ -106,6 +124,8 @@ end
 % Find second xpoint
 rx2=[];
 zx2=[];
+der = der_save;
+dez = dez_save;
 
 if second == 1 
     
@@ -124,8 +144,8 @@ if second == 1
       zg = zeros(n1,n1);
       niter = 1;
       while err > tol && niter < niter_max
-          rt = linspace(rx2-0.5*de2,rx2+0.5*de2,n1);
-          zt = linspace(zx2-0.5*de2,zx2+0.5*de2,n1);
+    rt = linspace(max([Rmin_eval,rx2-der]),min([Rmax_eval,rx2+der,n1]));
+    zt = linspace(max([Zmin_eval,zx2-dez]),min([Zmax_eval,zx2+dez,n1]));
           for i = 1:n1
               ztmp = repmat(zt(i),1,n1);
               b = bfield_geq_bicub(g,rt,ztmp);
@@ -136,7 +156,10 @@ if second == 1
           [~,ix] = min(bp);
           [bpx2,jx] = min(min(bp));
           ix=ix(jx);
-          de2 = sqrt( (rg(ix,jx)-rx2)^2 + (zg(ix,jx)-zx2)^2);          
+
+          der = abs(rg(ix,jx) - rx2);
+          dez = abs(zg(ix,jx) - zx2);
+
           err = bpx2;
           
           rx2 = rg(ix,jx);

@@ -36,7 +36,7 @@ plot(bdry_r,bdry_z,'k--')
 
 % Find the xpt(s)
 % xpt_info = find_xpt_jl(g,1,1,1e-8,1,[],[],0.1);
-xpt_info = find_xpt_jl(g,1,1,1e-8,1);
+xpt_info = find_xpt_jl(g,1,1,1e-8,0);
 xr1 = xpt_info.rx;
 xz1 = xpt_info.zx;
 xr2 = xpt_info.rx2;
