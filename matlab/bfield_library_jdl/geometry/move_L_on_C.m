@@ -15,7 +15,11 @@ if Ltot < L
 end
 
 SumL = cumsum(dL);
-ind = find(SumL < L,1,'last');
+if L < eps
+    ind = 1;
+else
+    ind = find(SumL < L,1,'last');
+end
 f = (L - SumL(ind))/dL(ind+1);
 R_L = f*(rline(ind+1)-rline(ind)) + rline(ind);
 Z_L = f*(zline(ind+1)-zline(ind)) + zline(ind);

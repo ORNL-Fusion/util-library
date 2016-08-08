@@ -67,7 +67,8 @@ fname_psimin = []; fname_psimin2 = [];
 
 %------------ simplified lines
  gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410'; 
-run_path = 'C:\Work\fortran\test_poincare\164723\1FL\'; suffix = '30deg'; mytitle = '1FL \phi = 30';
+run_path = 'C:\Work\fortran\test_poincare\164723\1FL_AS\'; suffix = '30deg'; mytitle = '1FL \phi = 30';
+%  run_path = 'C:\Work\fortran\test_poincare\164723\1FL\'; suffix = '30deg'; mytitle = '1FL \phi = 30';
 % run_path = 'C:\Work\fortran\test_poincare\164723\2FL\'; suffix = '30deg'; mytitle = '2FL \phi = 30';
 % run_path = 'C:\Work\fortran\test_poincare\164723\AS\'; suffix = '0deg'; mytitle = 'AS \phi = 0';
 % run_path = 'C:\Work\fortran\test_poincare\164723\VAC\'; suffix = '-30deg';  mytitle = 'VAC \phi = -30';
@@ -134,7 +135,7 @@ end
 %------------------------------------------------------------------------------------------------------------------------------------
 %------------------------------------------------------------------------------------------------------------------------------------
 
-if 0
+if 1
     figure; hold on; box on;
     for ifile = 1:max_file
         plot(rline{ifile},zline{ifile},'k.','markersize',2)
