@@ -16,7 +16,8 @@ Real(real64) :: rx,zx,rx2,zx2
 !- End of header -------------------------------------------------------------
 
 
-gfilename = './g160884.03014_251'
+!gfilename = './g160884.03014_251'
+gfilename = '/home/jjl/DIII-D/164723/g164723.03059_410'
 
 Call readg_g3d(gfilename)
 !Subroutine find_xpt_jdl(second,refine,tol,quiet,rx,zx,rx2,zx2,phi_eval_deg,dx)

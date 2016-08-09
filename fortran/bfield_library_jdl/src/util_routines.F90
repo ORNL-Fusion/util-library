@@ -370,6 +370,7 @@ Contains
     Real(real64), Allocatable :: rtmp(:), ztmp(:),Bout(:,:)
     Real(real64) :: bp(n1,n1), rg(n1,n1), zg(n1,n1), rt(n1), zt(n1)
     Real(real64) :: bpx, err, de, bpx2, dx1_grid, dx2_grid
+    Real(real64) :: Rmin_eval, Rmax_eval, Zmin_eval, Zmax_eval, dx1_save, dx2_save
     Integer(int32) :: icount, i, npts_bdry, ierr, ix,ixjx(2), niter
     ! Local parameters               
     !- End of header -------------------------------------------------------------
@@ -394,12 +395,20 @@ Contains
     Endif
 
     ! set search area based on grid size
-    dx1_grid = (g_r(g_mw) - g_r(1))*.15  ! These seem to work ok, really should make sure 
-    dx2_grid = (g_z(g_mh) - g_z(1))*.15  ! boundary not exceeded by these guesses
+    dx1_grid = (g_r(g_mw) - g_r(1))*.05  ! These seem to work ok, really should make sure 
+    dx2_grid = (g_z(g_mh) - g_z(1))*.05  ! boundary not exceeded by these guesses
     If (present(dx)) Then
       dx1_grid=dx
       dx2_grid=dx
     Endif
+
+    dx1_save = dx1_grid
+    dx2_save = dx2_grid
+
+    Rmin_eval = g_r(3) + 1.d-3
+    Zmin_eval = g_z(3) + 1.d-3
+    Rmax_eval = g_r(g_mw-2) - 1.d-3
+    Zmax_eval = g_z(g_mh-2) - 1.d-3
 
     Allocate(Bout(icount,3))
 
@@ -419,15 +428,14 @@ Contains
     Allocate(ztmp(n1),Bout(n1,3))
     If (refine) Then
       err = bpx
-      de = dx1_grid
       bp = 0.d0
       rg = 0.d0
       zg = 0.d0
       niter = 1
       Do While ((err .gt. tol) .AND. (niter .lt. niter_max))
-        rt = rlinspace(rx-0.5d0*de,rx+0.5d0*de,n1)
-        zt = rlinspace(zx-0.5d0*de,zx+0.5d0*de,n1)
-
+        rt = rlinspace(Max(Rmin_eval,rx-dx1_grid),Min(Rmax_eval,rx+dx1_grid),n1)
+        zt = rlinspace(Max(Zmin_eval,zx-dx2_grid),Min(Zmax_eval,zx+dx2_grid),n1)
+     
         Do i = 1,n1 
           ztmp(:) = zt(i)
           If (bfield_method == 0 ) Then      ! g only
@@ -461,7 +469,9 @@ Contains
 
         ixjx = Minloc(bp)
         bpx = bp(ixjx(1),ixjx(2))
-        de = Sqrt( (rg(ixjx(1),ixjx(2))-rx)**2 + (zg(ixjx(1),ixjx(2))-zx)**2 )
+!        de = Sqrt( (rg(ixjx(1),ixjx(2))-rx)**2 + (zg(ixjx(1),ixjx(2))-zx)**2 )
+        dx1_grid = Abs(rg(ixjx(1),ixjx(2))-rx)
+        dx2_grid = Abs(zg(ixjx(1),ixjx(2))-zx)
         err = bpx
 
         rx = rg(ixjx(1),ixjx(2))
@@ -481,6 +491,8 @@ Contains
     ! Find second xpoint
     rx2 = 0.d0
     zx2 = 0.d0
+    dx1_grid = dx1_save
+    dx2_grid = dx2_save
     If (second) Then      
       ! Guess that config is approximately up-down symmetric
       rx2 = rx
@@ -492,16 +504,19 @@ Contains
       Deallocate(Bout)
       Allocate(ztmp(n1),Bout(n1,3))
       If (refine) Then
-        de = dx2_grid
+!        de = dx2_grid
         bp = 0.d0
         rg = 0.d0
         zg = 0.d0
         niter = 1
 
         Do While ((err .gt. tol) .AND. (niter .lt. niter_max))
-          rt = rlinspace(rx2-0.5d0*de,rx2+0.5d0*de,n1)
-          zt = rlinspace(zx2-0.5d0*de,zx2+0.5d0*de,n1)
+!          rt = rlinspace(rx2-0.5d0*de,rx2+0.5d0*de,n1)
+!          zt = rlinspace(zx2-0.5d0*de,zx2+0.5d0*de,n1)
+          rt = rlinspace(Max(Rmin_eval,rx2-dx1_grid),Min(Rmax_eval,rx2+dx1_grid),n1)
+          zt = rlinspace(Max(Zmin_eval,zx2-dx2_grid),Min(Zmax_eval,zx2+dx2_grid),n1)
 
+          
           Do i = 1,n1 
             ztmp(:) = zt(i)
             If (bfield_method == 0 ) Then      ! g only
@@ -535,7 +550,10 @@ Contains
 
           ixjx = Minloc(bp)
           bpx2 = bp(ixjx(1),ixjx(2))
-          de = Sqrt( (rg(ixjx(1),ixjx(2))-rx2)**2 + (zg(ixjx(1),ixjx(2))-zx2)**2 )
+!          de = Sqrt( (rg(ixjx(1),ixjx(2))-rx2)**2 + (zg(ixjx(1),ixjx(2))-zx2)**2 )
+          dx1_grid = Abs(rg(ixjx(1),ixjx(2))-rx2)
+          dx2_grid = Abs(zg(ixjx(1),ixjx(2))-zx2)
+
           err = bpx2
 
           rx2 = rg(ixjx(1),ixjx(2))
