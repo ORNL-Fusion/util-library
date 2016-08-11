@@ -17,6 +17,7 @@ Use fieldline_follow_mod, Only: bfield_method, follow_fieldlines_rzphi
 Use util_routines, Only: get_psin_2d
 Use phys_const, Only: pi
 Use ipec_module, Only: open_ipec_fields
+Use xpand_module, Only: open_xpand_fields
 Implicit none
 
 Logical, Parameter :: m3dc1_toroidal_off_grid = .true.
@@ -44,7 +45,8 @@ Character(Len=120) :: &
  gfile_name = 'none', &
  rmp_coil_type = 'none', &
  m3dc1_filenames(max_m3dc1_files), &
- ipec_run_path = 'none'
+ ipec_run_path = 'none', &
+ xpand_fname = 'none'
 
 Integer(int32) :: &
  m3dc1_time = -1, &
@@ -52,13 +54,14 @@ Integer(int32) :: &
  ntransits = 1, &
  Nsym = 1, &
  m3dc1_nsets = 0, &
- ipec_field_eval_type = -1
+ ipec_field_eval_type = -1, &
+ xpand_field_eval_type = -1
 
 ! Namelist files
 Namelist / settings_nml / gfile_name, rmp_type, rmp_coil_type, m3dc1_filenames, &
      m3dc1_scale_factors, rmp_current, m3dc1_time, phistart_deg, rstart, rend, zstart, zend, &
      num_pts, ntransits, dphi_line_deg, Nsym, calc_psiN_min, follow_both_ways, m3dc1_nsets, &
-     ipec_run_path, ipec_field_eval_type
+     ipec_run_path, ipec_field_eval_type, xpand_fname, xpand_field_eval_type
 
 !---------------------------------------------------------------------------
 !---------------------------------------------------------------------------
@@ -184,6 +187,20 @@ Select Case (rmp_type)
     Endif
     Call readg_g3d(gfile_name)
     Call open_ipec_fields(ipec_run_path)
+  Case ('xpand')
+    Write(*,'(a)') '-----> BFIELD METHOD IS XPAND'
+    Write(*,'(a,i0)') '-----> xpand_field_eval_type is: ',xpand_field_eval_type
+    If (xpand_field_eval_type .eq. 0) Then
+      Write(*,'(a)') '-----> Evaluating XPAND fields as PERTURBED!'
+      bfield_method = 10
+    Elseif (xpand_field_eval_type .eq. 1) Then
+      Write(*,'(a)') '-----> Evaluating XPAND fields as VACUUM!'
+      bfield_method = 11
+    Else
+      Stop "Did not recognize xpand_field_eval_type"
+    Endif
+    Call readg_g3d(gfile_name)
+    Call open_xpand_fields(xpand_fname)    
   Case Default
     Write(*,*) 'Unknown rmp_type in poincare_driver!'
     Write(*,*) 'Current options are:'
@@ -193,6 +210,7 @@ Select Case (rmp_type)
     Write(*,*) '''m3dc1_full_field'''
     Write(*,*) '''m3dc1_as'''
     Write(*,*) '''ipec'''
+    Write(*,*) '''xpand'''
     Stop      
 End Select
 

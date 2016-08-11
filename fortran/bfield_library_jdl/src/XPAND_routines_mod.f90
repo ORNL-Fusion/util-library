@@ -182,6 +182,8 @@ Do i=1,Npts
     Bout(i,3) = ((1._real64-phi_fac)*(QQ1(1,1)*dr2*dz2 + QQ1(2,1)*dr1*dz2 + QQ1(1,2)*dr2*dz1 + QQ1(2,2)*dr1*dz1) + &
          phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1))/(dr_grid*dz_grid)
   Elseif (ifield_type .eq. 1) Then
+    Write(*,*) 'This only works with gfile!'
+    Stop
     QQ1 = xpand_vac_br(ir:ir+1,iz:iz+1,iphi)
     QQ2 = xpand_vac_br(ir:ir+1,iz:iz+1,iphi+1)
     Bout(i,1) = ((1._real64-phi_fac)*(QQ1(1,1)*dr2*dz2 + QQ1(2,1)*dr1*dz2 + QQ1(1,2)*dr2*dz1 + QQ1(2,2)*dr1*dz1) + &

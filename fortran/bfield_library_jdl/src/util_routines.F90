@@ -68,13 +68,15 @@ Contains
     Real(real64), Dimension(Npts) :: psi
     Integer(int32) :: ierr_tmp
 
-    If ( (bfield_method == 0) .OR. &    ! g only
-         (bfield_method == 1) .OR. &    ! g+rmp coils
-         (bfield_method == 2) .OR. &    ! g+screening
-         (bfield_method == 3) .OR. &    ! g + m3dc1
-         (bfield_method == 7) .OR. &    ! ipec
-         (bfield_method == 8) .OR. &
-         (bfield_method == 9) &         
+    If ( (bfield_method == 0)  .OR. &    ! g only
+         (bfield_method == 1)  .OR. &    ! g+rmp coils
+         (bfield_method == 2)  .OR. &    ! g+screening
+         (bfield_method == 3)  .OR. &    ! g + m3dc1
+         (bfield_method == 7)  .OR. &    ! ipec
+         (bfield_method == 8)  .OR. &
+         (bfield_method == 9)  .OR. &
+         (bfield_method == 10) .OR. &    ! xpand
+         (bfield_method == 11) &         
       ) Then    
       Call get_psi_bicub(r,z,Npts,psi,ierr_tmp)
 #ifdef HAVE_M3DC1
@@ -83,7 +85,7 @@ Contains
       Call calc_psi_m3dc1_2d(r,z,Npts,psi,ierr_tmp)
 #endif
     Else
-      Write(*,*) 'Bad value for bfield_method in get_psi_2d'
+      Write(*,*) 'Bad value for bfield_method in get_psi_2d_array'
       Write(*,*) 'bfield_method is',bfield_method
       Stop
     Endif

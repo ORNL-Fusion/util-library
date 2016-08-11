@@ -38,7 +38,7 @@ Write(*,*) '--------------------------------'
 fname = '/home/jjl/XPAND/164723/3059/xpand_164723_3059.dat'
 Call read_xpand_field_file(fname)
 
-ifield_type = 0
+ifield_type = 1
 
 Call bfield_xpand(Rtest,Phitest,Ztest,Ntest,Bftest,ierr,ifield_type)
 
