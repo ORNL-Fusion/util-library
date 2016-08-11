@@ -9,6 +9,7 @@
 !       Subroutine calc_sep
 !       Subroutine find_xpt_jdl
 !       Subroutine get_psi_2d
+!       Subroutine get_psiN_2d
 !
 !-----------------------------------------------------------------------------
 Module util_routines
@@ -122,18 +123,22 @@ Contains
     Real(real64), Dimension(Npts) :: psiN
     Integer(int32) :: ierr_tmp
 
-    If ( (bfield_method == 0) .OR. &    ! g only
-         (bfield_method == 1) .OR. &    ! g+rmp coils
-         (bfield_method == 2) .OR. &    ! g+screening
-         (bfield_method == 3) .OR. &    ! g + m3dc1
-         (bfield_method == 7) .OR. &    ! ipec
-         (bfield_method == 8) .OR. &
-         (bfield_method == 9) &         
+    If ( (bfield_method == 0)  .OR. &    ! g only
+         (bfield_method == 1)  .OR. &    ! g+rmp coils
+         (bfield_method == 2)  .OR. &    ! g+screening
+         (bfield_method == 3)  .OR. &    ! g + m3dc1
+         (bfield_method == 7)  .OR. &    ! ipec
+         (bfield_method == 8)  .OR. &
+         (bfield_method == 9)  .OR. &
+         (bfield_method == 10) .OR. &   ! xpand      
+         (bfield_method == 11) &         
       ) Then          
       Call get_psiN_bicub(r,z,Npts,psiN,ierr_tmp)
 #ifdef HAVE_M3DC1
-    Elseif ( (bfield_method == 4) .OR. & ! m3dc1 total field
-         (bfield_method == 5) ) Then ! m3dc1 total field (AS only)  
+    Elseif ( &
+         (bfield_method == 4) .OR. & ! m3dc1 total field
+         (bfield_method == 5) &      ! m3dc1 total field (AS only)  
+         ) Then 
       Call calc_psiN_m3dc1_2d(r,z,Npts,psiN,ierr_tmp)
 #endif          
     Else
@@ -438,22 +443,23 @@ Contains
      
         Do i = 1,n1 
           ztmp(:) = zt(i)
-          If (bfield_method == 0 ) Then      ! g only
-            Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
-          Elseif (bfield_method == 1) Then ! g+rmp coils
-            !        Write(*,*) ' Method is g+rmp, using g only to find xpoint'
-            Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
-          Elseif (bfield_method == 2) Then ! g+screening
-            !        Write(*,*) ' Method is g+screening, using g only to find xpoint'
+          If ( &
+               bfield_method == 0  .OR. & ! g only
+               bfield_method == 1  .OR. & ! g+rmp coils
+               bfield_method == 2  .OR. & ! g+screening
+               bfield_method == 3  .OR. & ! g+m3dc1
+               bfield_method == 7  .OR. & ! ipec eq only
+               bfield_method == 8  .OR. & ! ipec vac
+               bfield_method == 9  .OR. & ! ipec pert
+               bfield_method == 10 .OR. & ! xpand pert
+               bfield_method == 11      & ! xpand vac
+               ) Then      
             Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
 #ifdef HAVE_M3DC1
-          Elseif ( bfield_method ==  3) Then ! g + m3dc1
-            !        Write(*,*) ' Method is g+m3dc1, using g only to find xpoint'
-            Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
-          Elseif (bfield_method == 4) Then  ! m3dc1 total field
-            !        Write(*,*) ' Method is m3dc1 total field, using 2d only to find xpoint'
-            Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
-          Elseif (bfield_method == 5) Then  ! m3dc1 total field (AS only)
+          Elseif ( &
+               bfield_method == 4 .OR. & ! m3dc1 total field
+               bfield_method == 5      & ! m3dc1 total field (AS only)
+               ) Then 
             Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
 #endif          
           Else
@@ -519,22 +525,24 @@ Contains
           
           Do i = 1,n1 
             ztmp(:) = zt(i)
-            If (bfield_method == 0 ) Then      ! g only
-              Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
-            Elseif (bfield_method == 1) Then ! g+rmp coils
-              !          Write(*,*) ' Method is g+rmp, using g only to find xpoint'
-              Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
-            Elseif (bfield_method == 2) Then ! g+screening
-              !          Write(*,*) ' Method is g+screening, using g only to find xpoint'
+
+            If ( &
+                 bfield_method == 0  .OR. & ! g only
+                 bfield_method == 1  .OR. & ! g+rmp coils
+                 bfield_method == 2  .OR. & ! g+screening
+                 bfield_method == 3  .OR. & ! g+m3dc1
+                 bfield_method == 7  .OR. & ! ipec eq only
+                 bfield_method == 8  .OR. & ! ipec vac
+                 bfield_method == 9  .OR. & ! ipec pert
+                 bfield_method == 10 .OR. & ! xpand pert
+                 bfield_method == 11      & ! xpand vac
+                 ) Then      
               Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
 #ifdef HAVE_M3DC1
-            Elseif ( bfield_method ==  3) Then ! g + m3dc1
-              !          Write(*,*) ' Method is g+m3dc1, using g only to find xpoint'
-              Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
-            Elseif (bfield_method == 4) Then  ! m3dc1 total field
-              !          Write(*,*) ' Method is m3dc1 total field, using 2d only to find xpoint'
-              Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
-            Elseif (bfield_method == 5) Then  ! m3dc1 total field (AS only)
+            Elseif ( &
+                 bfield_method == 4 .OR. & ! m3dc1 total field
+                 bfield_method == 5      & ! m3dc1 total field (AS only)
+                 ) Then 
               Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
 #endif          
             Else

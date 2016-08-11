@@ -22,8 +22,10 @@
 !                     5 -- M3DC1 2D field only
 !                     6 -- Just coils
 !                     7 -- ipec eq only
-!                     8 -- ipec vac
+!                     8 -- ipec vacuum
 !                     9 -- ipec perturbed
+!                    10 -- xpand perturbed
+!                    11 -- xpand vacuum
 ! 
 !-----------------------------------------------------------------------------
 Module fieldline_follow_mod
@@ -498,6 +500,7 @@ Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
 Use bfield_module, Only : bfield_bs_cyl
 Use ipec_module, Only : bfield_ipec
+Use xpand_module, Only : bfield_xpand
 #ifdef HAVE_M3DC1
 Use m3dc1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
 #endif
@@ -575,7 +578,17 @@ Elseif (bfield_method == 9) Then  ! ipec pert
   Call bfield_ipec(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,2)
   Br   = bval(1,1)
   Bz   = bval(1,2)
-  Bphi = bval(1,3)  
+  Bphi = bval(1,3)
+Elseif (bfield_method == 10) Then  ! xpand pert
+  Call bfield_xpand(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,0)
+  Br   = bval(1,1)
+  Bz   = bval(1,2)
+  Bphi = bval(1,3)
+Elseif (bfield_method == 11) Then  ! xpand vac
+  Call bfield_xpand(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,1)
+  Br   = bval(1,1)
+  Bz   = bval(1,2)
+  Bphi = bval(1,3)      
 Else
   Write(*,*) 'Unknown bfield_method in fl_derivs_fun'
   stop

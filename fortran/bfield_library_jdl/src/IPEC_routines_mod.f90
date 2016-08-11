@@ -40,7 +40,7 @@ Use kind_mod, Only: int32
 Implicit None
 Character(len=*), Intent(In) :: fname
 Integer(int32), Intent(In) :: ifield
-Integer(int32) :: iocheck, ijunk,n,ind,nr,nz,field_size
+Integer(int32) :: iocheck, n,ind,nr,nz,field_size
 Character(len=100) :: sjunk
 Real(real64), Allocatable :: data(:,:)
 !- End of header -------------------------------------------------------------
@@ -169,13 +169,13 @@ Integer(int32), Intent(In) :: Npts, ifield_type
 Real(real64), Intent(Out), Dimension(Npts,3) :: Bout
 Integer(int32), Intent(Out) :: ierr
 ! Local variables
-Real(real64) :: x(3), dz_grid, dr_grid, dr1, dr2, dz1, dz2, QQ(2,2)
+Real(real64) :: dz_grid, dr_grid, dr1, dr2, dz1, dz2, QQ(2,2)
 Real(real64) :: breal, bimg, cosphi, sinphi
 Integer(int32) :: i, ir, iz
 ierr = 0
 Do i=1,Npts
-  If (r(i) .lt. ipec_r(1) .OR. r(i) .gt. ipec_r(ipec_nr) &
-       .OR. z(i) .lt. ipec_z(1) .OR. z(i) .gt. ipec_z(ipec_nz)) Then
+  If (r(i) .lt. ipec_r(1) .OR. r(i) .gt. ipec_r(ipec_nr-1) &
+       .OR. z(i) .lt. ipec_z(1) .OR. z(i) .gt. ipec_z(ipec_nz-1)) Then
     ierr = 1
     Bout(i,1:3) = 0._real64
     Cycle

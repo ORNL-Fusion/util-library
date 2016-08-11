@@ -57,7 +57,8 @@ MODS90 =
 .PHONY: debug all_tests
 .default: all_tests
 
-all_tests: test_int_two_lines.x test_int_curve_curve.x test_find_xpt_gonly.x test_bfield_rmp_d3d.x test_bfield_ipec_d3d.x
+all_tests: test_int_two_lines.x test_int_curve_curve.x test_find_xpt_gonly.x \
+test_bfield_rmp_d3d.x test_bfield_ipec_d3d.x test_bfield_xpand_d3d.x
 
 
 test_int_two_lines.x: test_int_two_lines.o $(LIBBJDL_DIR)/libbjdl.a 
@@ -94,6 +95,15 @@ test_bfield_ipec_d3d.o : %.o : %.f90
 test_bfield_ipec_d3d.x: %.x : %.o $(LIBBJDL_DIR)/libbjdl.a 
 	@echo "Creating "$@
 	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) $(INC)
+
+%.x : %.o $(LIBBJDL_DIR)/libbjdl.a 
+	@echo "Creating "$@
+	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) $(INC)
+
+
+%.o : %.f90 
+	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS)  $(INC) $<
+
 
 
 
