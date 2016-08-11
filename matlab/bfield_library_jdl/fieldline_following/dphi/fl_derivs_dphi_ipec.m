@@ -1,6 +1,5 @@
 function [df,ierr] = fl_derivs_dphi_ipec(phi,RZ,bfield,nowarn,field_choice)
-% field_choice == 1: equilibrium only
-% field_choice == 1: vacuum
+
 N = length(RZ);
 
 [Br,Bz,Bphi]=bfield_ipec(RZ(1:2:N-1),RZ(2:2:N),phi*ones(size(RZ(1:2:N-1))),bfield.ipec,nowarn,field_choice);

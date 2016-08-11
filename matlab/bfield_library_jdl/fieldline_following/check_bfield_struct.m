@@ -108,7 +108,19 @@ switch bfield.type
             fprintf([errstr,errstr2,'type structure must contain field "ipec.pert"\n'])
             ierr = 1;
             return;
-        end                  
+        end        
+    case {'xpand_pert','xpand_vac'}
+        errstr2 = 'for xpand ';
+        if ~isfield(bfield,'xpand')
+            fprintf([errstr,errstr2,'type structure must contain field "xpand"\n'])
+            ierr = 1;
+            return;
+        end         
+        if ~isfield(bfield.xpand,'Br')
+            fprintf([errstr,errstr2,'type structure must contain field "xpand.Br"\n'])
+            ierr = 1;
+            return;
+        end            
     otherwise
         fprintf([errstr,'Did not recognize bfield type\n'])
         fprintf('Supported types are:\n')
@@ -122,6 +134,8 @@ switch bfield.type
         fprintf('     ipec_pert\n')    
         fprintf('     ipec_vac_only\n')     
         fprintf('     ipec_pert_only\n')        
+        fprintf('     xpand_pert\n') 
+        fprintf('     xpand_vac\n') 
         error('Throwing error')
         ierr = 1;
         return;

@@ -22,6 +22,10 @@ switch bfield.type
         [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,3);                
     case 'ipec_pert_only'        
         [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,4);               
+    case 'xpand_pert'        
+        [dydx,ierr] = fl_derivs_dphi_xpand(x,y,bfield,nowarn,0);                
+    case 'xpand_vac'        
+        [dydx,ierr] = fl_derivs_dphi_xpand(x,y,bfield,nowarn,1);                        
     otherwise
         fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
@@ -34,6 +38,8 @@ switch bfield.type
         fprintf('     ipec_pert\n')
         fprintf('     ipec_vac_only\n')
         fprintf('     ipec_pert_only\n')        
+        fprintf('     xpand_vac\n')
+        fprintf('     xpand_pert\n')
         ierr = 1;
         return;
 end
