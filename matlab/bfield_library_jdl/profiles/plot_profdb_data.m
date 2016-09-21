@@ -84,8 +84,10 @@ if ~isempty(te_max)
     set(gca,'ylim',[0,te_max]);
 end
 if BIN_TS
+    plot(psiNbin+shift,tebin)
     errorbar(psiNbin+shift,tebin,teberr,col,'marker','none','linestyle','none')
 else
+    plot(profs.psi_te+shift,profs.tedat)
     errorbar(profs.psi_te+shift,profs.tedat,profs.te_err,col,'marker','none','linestyle','none')
 end
 plot(psiNfit+shift,tefit,[col,'-'],'linewidth',3)

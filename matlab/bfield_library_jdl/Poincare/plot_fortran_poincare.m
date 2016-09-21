@@ -5,78 +5,32 @@ plot_ece = 0;
 plot_glim = 0;
 
 fname_psimin = []; fname_psimin2 = [];
-% run_path = 'C:\Work\fortran\Poincare\';
-% fname = 'poincare_output_120.out';  mytitle = '\phi = 120 (t=3750)'; plot_ts = 1; plot_ece=0;
-% fname = 'poincare_output_120_n50.out';  mytitle = '\phi = 120 (t=3750)'; plot_ts = 1; plot_ece=0;
-% fname = 'poincare_output_300.out';  mytitle = '\phi = 120 (t=4250 eqv)'; plot_ts = 1; plot_ece=0;
-% fname = 'poincare_output_80.out';  mytitle = '\phi = 80 (t=3750)'; plot_ts = 0; plot_ece=1;
-% fname = 'poincare_output_260.out';  mytitle = '\phi = 80  (t=4250 eqv)'; plot_ts = 0; plot_ece=1;
-% fname = 'poincare_output_240.out';  mytitle = '\phi = -120 (t=3750)'; plot_ts = 1; plot_ece=0;
-% fname = 'poincare_output_60.out';  mytitle = '\phi = -120 (t=4250 eqv)'; plot_ts = 1; plot_ece=0;
-% fname = 'poincare_output_60_n25.out';  mytitle = '\phi = -120 (t=4250 eqv)'; plot_ts = 1; plot_ece=0; fname_psimin = 'psiN_min_output_60_n25.out';fname_psimin = [];
-% gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';
-
-% run_path = 'C:\Work\fortran\Poincare\148712_m3dc1_t1\'; fname = 'poincare_output_240.out';  mytitle = '\phi = 120'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g148712.04101';
-% run_path = 'C:\Work\fortran\Poincare\148712_m3dc1_t1\'; fname = 'poincare_output_240_along_TS.out';  mytitle = '\phi = 120'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g148712.04101';
-% run_path = 'C:\Work\fortran\Poincare\148712_m3dc1_t1\'; fname = 'poincare_output_240_more_R.out';  mytitle = '\phi = 120'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g148712.04101'; fname_psimin = 'psiN_min_output_240_more_R.out';
-% run_path = 'C:\Work\fortran\Poincare\148712_m3dc1_t1\'; fname = 'poincare_output_60.out';  mytitle = '\phi = 300'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g148712.04101';
-% run_path = 'C:\Work\fortran\Poincare\148712_m3dc1_t1\'; fname = 'poincare_output_60_more_R.out';  mytitle = '\phi = 300'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g148712.04101';
-% run_path = 'C:\Work\fortran\Poincare\148712_m3dc1_t1\'; fname = 'poincare_output.out';  mytitle = '\phi = 120'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g148712.04101';
-
-% run_path = 'C:\Work\fortran\Poincare\154929\rmp\';fname = 'poincare_output_60_n500.out';  fname2 = 'poincare_output2_60_n500.out';mytitle = '\phi = 60 (t=4250 eqv)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_60_n500.out';fname_psimin2 = 'psiN_min_output2_60_n500.out';shot = 154921;times = 4250;
-% run_path = 'C:\Work\fortran\Poincare\154929\rmp\';fname = 'poincare_output_60_n500_fake_diag.out';  fname2 = 'poincare_output2_60_n500_fake_diag.out';mytitle = '\phi = 60 (t=4250 eqv)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_60_n500_fake_diag.out';fname_psimin2 = 'psiN_min_output2_60_n500_fake_diag.out';shot = 154921;times = 4250;
-% run_path = 'C:\Work\fortran\Poincare\154929\rmp\';fname = 'poincare_output__60_n100_fake_diag2.out';  fname2 = 'poincare_output2__60_n100_fake_diag2.out';mytitle = '\phi = 60 (t=4250 eqv)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output__60_n100_fake_diag2.out';fname_psimin2 = 'psiN_min_output2__60_n100_fake_diag2.out';shot = 154921;times = 4250;
-% run_path = 'C:\Work\fortran\Poincare\154929\rmp\';fname = 'poincare_output_240_n500.out';  fname2 = 'poincare_output2_240_n500.out';mytitle = '\phi = -120 (t=3750)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_240_n500.out';fname_psimin2 = 'psiN_min_output2_240_n500.out';shot = 154921;times = 3750;
-% run_path = 'C:\Work\fortran\Poincare\154929\rmp\';fname = 'poincare_output_100_n500.out';  fname2 = 'poincare_output2_100_n500.out';mytitle = '\phi = 280 (t=4250 eqv)'; plot_ts = 0; plot_ece=1;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_100_n500.out';fname_psimin2 = 'psiN_min_output2_100_n500.out';shot = 154921;times = 4250;
-% run_path = 'C:\Work\fortran\Poincare\154929\rmp\';fname = 'poincare_output_280_n500.out';  fname2 = 'poincare_output2_280_n500.out';mytitle = '\phi = -80 (t=3750)'; plot_ts = 0; plot_ece=1;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_280_n500.out';fname_psimin2 = 'psiN_min_output2_280_n500.out';shot = 154921;times = 3750;
-
-% run_path = 'C:\Work\fortran\Poincare\154929/m3dc1_t1\';fname = 'poincare_output_240_n500.out';  fname2 = 'poincare_output2_240_n500.out';mytitle = '\phi = -120 (t=3750)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_240_n500.out';fname_psimin2 = 'psiN_min_output2_240_n500.out';shot = 154921;times = 3750;
-% run_path = 'C:\Work\fortran\Poincare\154929_m3dc1_t1\';fname = 'poincare_output_60_n500.out';  fname2 = 'poincare_output2_60_n500.out';mytitle = '\phi = 60 (t=4250 eqv)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_60_n500.out';fname_psimin2 = 'psiN_min_output2_60_n500.out';shot = 154921;times = 4250;
-% run_path = 'C:\Work\fortran\Poincare\154929\m3dc1_t1\';fname = 'poincare_output_100_n500.out';  fname2 = 'poincare_output2_100_n500.out';mytitle = '\phi = 280 (t=4250 eqv)'; plot_ts = 0; plot_ece=1;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_100_n500.out';fname_psimin2 = 'psiN_min_output2_100_n500.out';shot = 154921;times = 4250;
-
-% run_path = 'C:\Work\fortran\Poincare\154929_m3dc1_t1_fb\';fname = 'poincare_output_60_n500.out';  fname2 = 'poincare_output2_60_n500.out';mytitle = '\phi = 60 (t=4250 eqv)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_60_n500.out';fname_psimin2 = 'psiN_min_output2_60_n500.out';shot = 154921;times = 4250;
-% run_path = 'C:\Work\fortran\Poincare\154929_m3dc1_t1_fb\';fname = 'poincare_output_240_n500.out';  fname2 = 'poincare_output2_240_n500.out';mytitle = '\phi = -120 (t=3750)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_240_n500.out';fname_psimin2 = 'psiN_min_output2_240_n500.out';shot = 154921;times = 3750;
-
-% run_path = 'C:\Work\fortran\Poincare\154929\';fname = 'poincare_output_240AS.out';  fname2 = 'poincare_output2_240AS.out';mytitle = '\phi = -120 (t=3750)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_240AS.out';fname_psimin2 = 'psiN_min_output2_240AS.out';
-
-% run_path = 'C:\Work\fortran\Poincare\154929\';fname = 'poincare_output_240_n250.out';  fname2 = 'poincare_output2_240_n250.out';mytitle = '\phi = -120 (t=3750)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_240_n250.out';fname_psimin2 = 'psiN_min_output2_240_n250.out';shot = 154921;times = 3750;
-% run_path = 'C:\Work\fortran\Poincare\154929_current_scan\';fname = 'poincare_output_240_s1.25.out';  fname2 = 'poincare_output2_240_s1.25.out';mytitle = '\phi = -120 (t=3750)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_240_s1.25.out';fname_psimin2 = 'psiN_min_output2_240_s1.25.out';shot = 154921;times = 3750;
-% run_path = 'C:\Work\fortran\Poincare\154929_current_scan\';fname = 'poincare_output_240_s2.out';  fname2 = 'poincare_output2_240_s2.out';mytitle = '\phi = -120 (t=3750)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_240_s2.out';fname_psimin2 = 'psiN_min_output2_240_s2.out';shot = 154921;times = 3750;
-% run_path = 'C:\Work\fortran\Poincare\154929_current_scan\';fname = 'poincare_output_240_s4.out';  fname2 = 'poincare_output2_240_s4.out';mytitle = '\phi = -120 (t=3750)'; plot_ts = 1; plot_ece=0;gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';fname_psimin = 'psiN_min_output_240_s4.out';fname_psimin2 = 'psiN_min_output2_240_s4.out';shot = 154921;times = 3750;
-
-% run_path = 'C:\Work\fortran\Poincare\160884\04015\rmp\';suffix = 'dts';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\DIII-D\160884\g160884.04015_915';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-% run_path = 'C:\Work\fortran\Poincare\160884\04015\rmp\';suffix = 'Z0_fine';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\DIII-D\160884\g160884.04015_915';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-
-% run_path = 'C:\Work\fortran\Poincare\160884\03014\m3dc1_full\'; suffix = '0deg_n100_moreR';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-% run_path = 'C:\Work\fortran\Poincare\160884\03014\m3dc1_g+pert\'; suffix = '0deg_n100';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-% run_path = 'C:\Work\fortran\Poincare\160884\03014\g3d_as\'; suffix = '0deg_n100';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-% run_path = 'C:\Work\fortran\Poincare\160884\03014\m3dc1_as\'; suffix = '0deg_n100';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-% run_path = 'C:\Work\fortran\Poincare\160884\03014\m3dc1_g+pert_t0\'; suffix = '0deg_n100';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-
-% run_path = 'C:\Work\fortran\Poincare\160884\03014\m3dc1_as\'; suffix = '0deg_n100_0fac';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-% run_path = 'C:\Work\fortran\Poincare\160884\03014\m3dc1_g+pert_t0\'; suffix = '0deg_n100_0fac';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-
-% run_path = 'C:\Work\fortran\Poincare\160884\03014\m3dc1_g+pert\'; suffix = '0deg_n250';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-
-% run_path = 'C:\Work\fortran\Poincare\160884\5009\m3dc1_full\'; suffix = 'test';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\5000\g160884.05009_537';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-% run_path = 'C:\Work\fortran\Poincare\160884\5009\m3dc1_g+pert\'; suffix = 'test';fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;gfile_name = 'C:\Work\M3DC1\160884\5000\g160884.05009_537';fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
 
 
-% run_path = 'C:\Work\fortran\Poincare\160884_full_field\'; suffix = '2fl_250'; gfile_name = 'C:\Work\M3DC1\160884\3000\g160884.03014_251';;fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
 
-
-%------------ simplified lines
+if 1
+% 164723 <------------------------*********************--------------------
  gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410'; 
-run_path = 'C:\Work\fortran\test_poincare\164723\1FL_AS\'; suffix = '30deg2'; mytitle = '1FL \phi = 30';
+% run_path = 'C:\Work\fortran\test_poincare\164723\1FL_AS\'; suffix = '30deg2'; mytitle = '1FL \phi = 30';
 %  run_path = 'C:\Work\fortran\test_poincare\164723\1FL\'; suffix = '30deg'; mytitle = '1FL \phi = 30';
 % run_path = 'C:\Work\fortran\test_poincare\164723\2FL\'; suffix = '30deg'; mytitle = '2FL \phi = 30';
 % run_path = 'C:\Work\fortran\test_poincare\164723\AS\'; suffix = '0deg'; mytitle = 'AS \phi = 0';
-% run_path = 'C:\Work\fortran\test_poincare\164723\VAC\'; suffix = '-30deg';  mytitle = 'VAC \phi = -30';
+run_path = 'C:\Work\fortran\test_poincare\164723\VAC\'; suffix = '0deg';  mytitle = 'VAC \phi = 0';
 % run_path = 'C:\Work\fortran\test_poincare\164723\1FL_VAC\'; suffix = '30deg';  mytitle = '1FL VAC \phi = 30';
 % run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_eq\'; suffix = '0deg'; mytitle = 'IPEC eq \phi = 0';
 % run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_vac\'; suffix = '30deg'; mytitle = 'IPEC VAC \phi = 30';
 % run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_pert\'; suffix = '0deg'; mytitle = 'IPEC pert \phi = 0';
 % run_path = 'C:\Work\fortran\test_poincare\164723\gpec_high_pert\'; suffix = '0deg'; mytitle = 'GPEC pert \phi = 0';
+% run_path = 'C:\Work\fortran\test_poincare\164723\XPAND_pert\'; suffix = '0deg'; mytitle = 'XPAND pert \phi = 0';
+% run_path = 'C:\Work\fortran\test_poincare\164723\XPAND_vac\'; suffix = '0deg'; mytitle = 'XPAND vac \phi = 0';
+end
+
+if 0
+% 160884 <------------------------*********************--------------------
+gfile_name = 'C:\Work\DIII-D\160884\efits\g160884.05009_537';
+% run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC\'; suffix = '0deg';  mytitle = 'VAC \phi = 0';
+run_path = 'C:\Work\fortran\test_poincare\160884\5009\2FL\'; suffix = '30deg';  mytitle = '2FL \phi = 30';
+end
 
 % run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '-120'; gfile_name = 'C:\Work\DIII-D\165274\kinetic\g165274.02120'; mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;
 
@@ -107,7 +61,7 @@ for ifile = 1:max_file
     dat = sscanf(fgets(fid),'%f %i %i',3);
     phi_plot_deg = dat(1);
     numlines = dat(2);
-    num_pts = dat(3)  ;
+    num_pts = dat(3);
     
     rline{ifile} = zeros(numlines,num_pts);
     zline{ifile} = zeros(numlines,num_pts);
@@ -138,13 +92,13 @@ end
 if 1
     figure; hold on; box on;
     for ifile = 1:max_file
-        plot(rline{ifile},zline{ifile},'k.','markersize',2)
+        plot(rline{ifile},zline{ifile},'r.','markersize',2)
     end
     xlabel('R (m)','fontsize',12)
     ylabel('Z (m)','fontsize',12)
     set(gca,'fontsize',12)
     title(mytitle)
-    % contour(g.r,g.z,psiN_g.',[0.5,0.6,0.7,0.8,0.9,1.0],'linewidth',2);
+%     contour(g.r,g.z,psiN_g.',[0.5,0.6,0.7,0.8,0.9,1.0],'linewidth',2);
     if plot_ts
         R(1:40)=1.94;
         Z=[0.0430,0.1720,0.2810,0.3320,0.3590,0.3910,0.4210,0.4770,0.5310,0.5630,0.5790,0.5950,0.6080,0.6230,0.6350,0.6410,0.6480,0.6540,0.6610,0.6680,...
@@ -186,6 +140,21 @@ if 1
     title(mytitle)
     % contour(g.r,g.z,psiN_g.',[0.5,0.6,0.7,0.8,0.9,1.0],'linewidth',2);
     
+
+    figure; hold on; box on;
+    c = colormap(colorflipper(256,'jet'));    
+    for ifile = 1:max_file
+        for i = 1:size(tline{ifile},1)
+            cind = round(interp1([0,1],[1,size(c,1)],i/(size(tline{ifile},1)+1)));
+            plot(psiNline{ifile}(i,:),tline{ifile}(i,:)/pi,'.','markersize',2,'color',c(cind,:))
+        end
+    end
+    xlabel('\psi_N','fontsize',12)
+    ylabel('\theta (\pi rad.)','fontsize',12)
+    set(gca,'fontsize',12)
+    title(mytitle)
+
+
     if plot_ts
         R(1:40)=1.94;
         Z=[0.0430,0.1720,0.2810,0.3320,0.3590,0.3910,0.4210,0.4770,0.5310,0.5630,0.5790,0.5950,0.6080,0.6230,0.6350,0.6410,0.6480,0.6540,0.6610,0.6680,...

@@ -1,8 +1,8 @@
 clearvars;
 
 verbose = 1;
-
-gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';
+gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';
+% gfile_name = 'C:\Work\EMC3_revival\gfiles\DIII-D\g154929.03750';
 g=readg_g3d(gfile_name);
 psiN_g = (g.psirz-g.ssimag)/(g.ssibry-g.ssimag);
 
@@ -10,7 +10,7 @@ q = g.qpsi;
 pn = g.pn;
 
 
-nmax = 2;
+nvals = 3;
 mmax = 20;
 
 
@@ -24,10 +24,12 @@ plot(pn,q,'linewidth',2)
 ylim = get(gca,'ylim');
 ylab = (ylim(2)-ylim(1))*0.9 + ylim(1);
 
-pn_res_mat_mn = zeros(mmax,nmax);
+pn_res_mat_mn = zeros(mmax,length(nvals));
 
 for m = 1:mmax
-    for n = 1:nmax
+    ncount = 0;
+    for n = nvals
+        ncount = ncount + 1;
         qres = m/n;
         if verbose
             fprintf('Testing m = %2i, n=%2i, qres=%12.4f --> ',m,n,qres)
@@ -37,7 +39,7 @@ for m = 1:mmax
             if ~any(any(pn_res_mat_mn == pn_res))
                 text(pn_res,ylab,[num2str(m),'/',num2str(n)])
             end
-            pn_res_mat_mn(m,n) = pn_res;
+            pn_res_mat_mn(m,ncount) = pn_res;
             plot([1,1]*pn_res,ylim,'k')                            
             
             if verbose

@@ -1,4 +1,5 @@
 function xout = medflt1d_jl(x,m,pad,omitnan)
+% function xout = medflt1d_jl(x,m,pad,omitnan)
 % x is 1d array, m is number of points over which to apply median
 % end points are padded (or make pad = 'zero')
 

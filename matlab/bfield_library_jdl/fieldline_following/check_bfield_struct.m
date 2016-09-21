@@ -109,8 +109,25 @@ switch bfield.type
             ierr = 1;
             return;
         end        
-    case {'xpand_pert','xpand_vac'}
-        errstr2 = 'for xpand ';
+    case {'xpand_pert'}
+        errstr2 = 'for xpand_pert ';
+        if ~isfield(bfield,'xpand')
+            fprintf([errstr,errstr2,'type structure must contain field "xpand"\n'])
+            ierr = 1;
+            return;
+        end         
+        if ~isfield(bfield.xpand,'Br')
+            fprintf([errstr,errstr2,'type structure must contain field "xpand.Br"\n'])
+            ierr = 1;
+            return;
+        end            
+    case {'xpand_vac'}
+        errstr2 = 'for xpand_vac ';
+        if ~isfield(bfield,'xpand')
+            fprintf([errstr,errstr2,'type structure must contain field "g"\n'])
+            ierr = 1;
+            return;
+        end                
         if ~isfield(bfield,'xpand')
             fprintf([errstr,errstr2,'type structure must contain field "xpand"\n'])
             ierr = 1;

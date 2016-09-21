@@ -44,8 +44,8 @@ data = dlmread(fname,'',5,0);
 
 % Reshape array
 xpand.r = data(1:nr,1);
-xpand.z = data(1:nr:nz*nz,3);
-xpand.phi = data(1:nr*nz:nphi*nz*nz,2);
+xpand.z = data(1:nr:nr*nz,3);
+xpand.phi = data(1:nr*nz:nphi*nr*nz,2);
 
 xpand.nphi = nphi;
 xpand.nz = nz;

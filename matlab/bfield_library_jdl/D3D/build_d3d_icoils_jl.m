@@ -13,7 +13,7 @@ function rmp = build_d3d_icoils_jl(taper,ntorpts)
 %
 % Inputs:
 %	taper(1:12) -- Contains the coil current in Amps for the coils. This
-%                 value is multiplied by number of turns/coil.
+%                 value is multiplied by number of turns/coil (1).
 %	ntorpts    -- Number of toroidal cuts used to define each coil.  (default 6)
 %
 % Output:

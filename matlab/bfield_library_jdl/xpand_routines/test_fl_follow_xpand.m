@@ -3,10 +3,13 @@ clearvars;
 run_path = 'C:\Work\DIII-D\164723\VMEC_XPAND\3059\';
 fname = fullfile(run_path,'xpand_164723_3059.dat');
 
+gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';
+g = readg_g3d(gfile_name);
+
 xpand = read_xpand_field_file(fname);
 
 
-TEST = 1;
+TEST = 2;
 
 phistart = 0;
 Rstart = 2.2;
@@ -20,6 +23,7 @@ if TEST == 1
     bfield.type = 'xpand_pert'; 
 elseif TEST == 2
     bfield.type = 'xpand_vac'; 
+    bfield.g =  g;
 end
 bfield.xpand = xpand;
 

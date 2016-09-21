@@ -74,6 +74,12 @@ for i = 1:npts
         Bphi(i) = ...
             (1-phi_fac)*(QQ1(1,1)*dr2*dz2 + QQ1(2,1)*dr1*dz2 + QQ1(1,2)*dr2*dz1 + QQ1(2,2)*dr1*dz1)/(dr_grid*dz_grid) + ...
             phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);        
+        
+%         % Need to add EFIT?? 
+%         Bout = bfield_geq_bicub(field.g,R(i),Z(i),nowarn);
+%         Br(i) = Br(i) + Bout.br;
+%         Bphi(i) = Bphi(i) + Bout.bphi;
+%         Bz(i) = Bz(i) + Bout.bz;
     else
         error('bad field_choice')
     end

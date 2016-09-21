@@ -1,4 +1,5 @@
 function [s,ierr,i_last_good]=follow_fieldlines_rzphi_dphi(bfield,Rstart,Zstart,phistart,dphi,nsteps,nowarn)
+% [s,ierr,i_last_good]=follow_fieldlines_rzphi_dphi(bfield,Rstart,Zstart,phistart,dphi,nsteps,nowarn)
 % Rstart, Zstart in meters (can be arrays)
 % phistart in radians, must be scalar
 % dphi in radians
