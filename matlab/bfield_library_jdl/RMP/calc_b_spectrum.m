@@ -1,10 +1,11 @@
 % function calc_b_spectrum
 clearvars;
 
-XPLOT = 2; % 1 = psiN, 2 = sqrt(psiN)
+XPLOT = 1; % 1 = psiN, 2 = sqrt(psiN)
+INTERP = 0;
 
 mmax = 20;
-pnwant = linspace(0.1,0.998,100); %[0.99,0.995];
+pnwant = linspace(0.1,0.998,300); %[0.99,0.995];
 ntheta = 2*mmax;
 nn = 3;
 nphi = 8*nn;
@@ -14,8 +15,8 @@ nsurf = length(pnwant);
 %
 %  SET UP BFIELD
 % 
-% taper = 2900*[-1  1 -1  1 -1  1 -1  1 -1  1 -1  1]; % Even
-taper = 2900*[-1  1 -1  1 -1  1  1 -1  1 -1  1 -1]; % Odd
+taper = 2900*[-1  1 -1  1 -1  1 -1  1 -1  1 -1  1]; % Even
+% taper = 2900*[-1  1 -1  1 -1  1  1 -1  1 -1  1 -1]; % Odd
 rmp = build_d3d_icoils_jl(taper);
 gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';
 g = readg_g3d(gfile_name);
@@ -26,10 +27,11 @@ bfield.current = rmp.current;
 
 pest = get_pest_coords(g,pnwant,ntheta);
 
-theta = 2*pi*(0:ntheta-1)/ntheta;
 phi = 2*pi*(0:nphi-1)/nphi;
-dtheta = theta(2) - theta(1);
+theta = 2*pi*(0:ntheta-1)/ntheta;
 dphi = phi(2) - phi(1);
+dtheta = theta(2) - theta(1);
+
 
 marr = (0:2*mmax) - mmax;
 
@@ -56,14 +58,7 @@ for i = 1:nsurf
         phiarr(1,1:ntheta) = phi(k);
         [Bout,ierr] = bfield_general_rzphi(pest.r(i,:),pest.z(i,:),phiarr,bfield);
         bnorm{i}(:,k) = Bout.br.*rn(i,:).' + Bout.bz.*zn(i,:).';
-        
-%         figure;hold on;
-%         plot(pest.theta,Bout.br)
-%         plot(pest.theta,Bout.bz) %,plot(rn(i,:)),plot(zn(i,:))
-%         xlabel('\theta')
-%         ylabel('B')
-%         legend('B_r','B_z')
-%         figure; hold on; plot(Bout.br.*rn(i,:).'),plot(-Bout.bz.*zn(i,:).')
+        bnorm{i}(:,k) = bnorm{i}(:,k).*pest.jac(i,:).';
     end
 end
 
@@ -87,17 +82,24 @@ elseif XPLOT == 2
 end
 
 figure; hold on; box on;
-h = pcolor(marr-.5,yarr,br*1e4);
+if INTERP
+h = pcolor(marr,yarr,br*1e4);
+else
+    h = pcolor(marr-.5,yarr,br*1e4);
+end
 % h = surf(marr,xarr,br*1e4);
-% set(h,'edgecolor','none','facecolor','interp');
+
 set(h,'edgecolor','none');
-plot(-pest.q*nn,yarr,'w')
+if INTERP
+    set(h,'facecolor','interp');
+end
+plot(-pest.q*nn,yarr,'w--','linewidth',3)
 xlabel('Poloidal mode number m','fontsize',14)
 set(gca,'fontsize',14)
 ylabel(ylab,'fontsize',14)
 colorbar;
-title(sprintf('B_r_{(m,%d)} [Gauss]',nn))
-axis([-20,0,0.4,1])
+title(sprintf('B_r^{n=%d} [G]',nn))
+% axis([-20,0,0.4,1])
 colormap(colorflipper(1024,'jet_to_white'))
 % colormap(colorflipper(1024,'jet'))
 
@@ -118,4 +120,4 @@ colormap(colorflipper(1024,'jet_to_white'))
 % ylabel('\psi_N^{1/2}','fontsize',14)
 % colorbar;
 % title(sprintf('B_r_{(m,%d)} [Gauss]',nn))
-% axis([-20,0,0.7,1])
+axis([-20,0,0.7,1])
