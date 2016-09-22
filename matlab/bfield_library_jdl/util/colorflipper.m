@@ -1,4 +1,4 @@
-function cf = colorflipper(num_colors,cmap)
+function cf = colorflipper(num_colors,cmap,nscale)
 % cf = colorflipper(num_colors,cmap)
 % cf(num_colors,3)
 % Available options for cmap: 
@@ -24,7 +24,10 @@ function cf = colorflipper(num_colors,cmap)
         case {'jet','JET'}
             cmap = cmap_jet;
         case {'jet_to_white'}
-            cmap = cmap_jet_to_white;            
+            if nargin < 3
+                nscale = 6;
+            end
+            cmap = cmap_jet_to_white(nscale);            
         case {'parula','PARULA'}
             cmap = cmap_parula;            
         case {'hsv','HSV'}
@@ -1025,11 +1028,11 @@ cmap_jet = [         0         0    0.5625
 end
 
 
-function cmap = cmap_jet_to_white()
+function cmap = cmap_jet_to_white(nscale)
 cmap = cmap_jet;
-nset_r = 6;
-nset_g = 6;
-nset_b = 6;
+nset_r = nscale;
+nset_g = nscale;
+nset_b = nscale;
 
 tmp_r = linspace(1,0,nset_r);
 tmp_g = linspace(1,0,nset_g);

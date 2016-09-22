@@ -9,15 +9,15 @@ if nargin < 4
     quiet = 0;
 end
 
-if any(R1 < g.r(1) | R1 > g.r(end) | Z1 < g.z(1) | Z1 > g.z(end));    
+if any(R1 < g.r(1) | R1 > g.r(end) | Z1 < g.z(1) | Z1 > g.z(end))    
 %     warning(['Evalution point(s) off grid in get_psi_bicub: ',num2str(R1),num2str(Z1),']'])  
     if ~quiet
-        warning(['Evalution point(s) off grid in get_psi_bicub'])  
+        warning('Evalution point(s) off grid in get_psi_bicub')  
     end
     good_inds = find(R1 >= g.r(1) & R1 <= g.r(end) & Z1 >= g.z(1) & Z1 <= g.z(end));
     good_map = (R1 >= g.r(1) & R1 <= g.r(end) & Z1 >= g.z(1) & Z1 <= g.z(end));
 else
-    good_inds = [1:npts].';
+    good_inds = (1:npts).';
     good_map = good_inds;
 end
 
