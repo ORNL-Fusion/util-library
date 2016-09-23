@@ -13,7 +13,7 @@
 !
 !-----------------------------------------------------------------------------
 Module util_routines
-  Use bfield_typedef, Only : bfield_type
+  Use bfield, Only : bfield_type
   Implicit None
   Private
 
@@ -59,7 +59,6 @@ Contains
   Function get_psi_2d_array(bfield,r,z,Npts,ierr) &
        Result(psi)
     Use kind_mod, Only: int32, real64  
-    Use fieldline_follow_mod, Only: bfield_method
     Use g3d_module, Only: get_psi_bicub
 #ifdef HAVE_M3DC1
     Use m3dc1_routines_mod, Only: calc_psi_m3dc1_2d
@@ -72,25 +71,25 @@ Contains
     Real(real64), Dimension(Npts) :: psi
     Integer(int32) :: ierr_tmp
 
-    If ( (bfield_method == 0)  .OR. &    ! g only
-         (bfield_method == 1)  .OR. &    ! g+rmp coils
-         (bfield_method == 2)  .OR. &    ! g+screening
-         (bfield_method == 3)  .OR. &    ! g + m3dc1
-         (bfield_method == 7)  .OR. &    ! ipec
-         (bfield_method == 8)  .OR. &
-         (bfield_method == 9)  .OR. &
-         (bfield_method == 10) .OR. &    ! xpand
-         (bfield_method == 11) &         
+    If ( (bfield%method == 0)  .OR. &    ! g only
+         (bfield%method == 1)  .OR. &    ! g+rmp coils
+         (bfield%method == 2)  .OR. &    ! g+screening
+         (bfield%method == 3)  .OR. &    ! g + m3dc1
+         (bfield%method == 7)  .OR. &    ! ipec
+         (bfield%method == 8)  .OR. &
+         (bfield%method == 9)  .OR. &
+         (bfield%method == 10) .OR. &    ! xpand
+         (bfield%method == 11) &         
       ) Then    
       Call get_psi_bicub(bfield%g,r,z,Npts,psi,ierr_tmp)
 #ifdef HAVE_M3DC1
-    Elseif ( (bfield_method == 4) .OR. & ! m3dc1 total field
-         (bfield_method == 5) ) Then ! m3dc1 total field (AS only)  
+    Elseif ( (bfield%method == 4) .OR. & ! m3dc1 total field
+         (bfield%method == 5) ) Then ! m3dc1 total field (AS only)  
       Call calc_psi_m3dc1_2d(r,z,Npts,psi,ierr_tmp)
 #endif
     Else
-      Write(*,*) 'Bad value for bfield_method in get_psi_2d_array'
-      Write(*,*) 'bfield_method is',bfield_method
+      Write(*,*) 'Bad value for bfield%method in get_psi_2d_array'
+      Write(*,*) 'bfield%method is',bfield%method
       Stop
     Endif
     ierr = 0
@@ -118,7 +117,6 @@ Contains
   Function get_psiN_2d_array(bfield,r,z,Npts,ierr) &
        Result(psiN)
     Use kind_mod, Only: int32, real64  
-    Use fieldline_follow_mod, Only: bfield_method
     Use g3d_module, Only: get_psiN_bicub
 #ifdef HAVE_M3DC1
     Use m3dc1_routines_mod, Only: calc_psiN_m3dc1_2d
@@ -131,27 +129,27 @@ Contains
     Real(real64), Dimension(Npts) :: psiN
     Integer(int32) :: ierr_tmp
 
-    If ( (bfield_method == 0)  .OR. &    ! g only
-         (bfield_method == 1)  .OR. &    ! g+rmp coils
-         (bfield_method == 2)  .OR. &    ! g+screening
-         (bfield_method == 3)  .OR. &    ! g + m3dc1
-         (bfield_method == 7)  .OR. &    ! ipec
-         (bfield_method == 8)  .OR. &
-         (bfield_method == 9)  .OR. &
-         (bfield_method == 10) .OR. &   ! xpand      
-         (bfield_method == 11) &         
+    If ( (bfield%method == 0)  .OR. &    ! g only
+         (bfield%method == 1)  .OR. &    ! g+rmp coils
+         (bfield%method == 2)  .OR. &    ! g+screening
+         (bfield%method == 3)  .OR. &    ! g + m3dc1
+         (bfield%method == 7)  .OR. &    ! ipec
+         (bfield%method == 8)  .OR. &
+         (bfield%method == 9)  .OR. &
+         (bfield%method == 10) .OR. &   ! xpand      
+         (bfield%method == 11) &         
       ) Then          
       Call get_psiN_bicub(bfield%g,r,z,Npts,psiN,ierr_tmp)
 #ifdef HAVE_M3DC1
     Elseif ( &
-         (bfield_method == 4) .OR. & ! m3dc1 total field
-         (bfield_method == 5) &      ! m3dc1 total field (AS only)  
+         (bfield%method == 4) .OR. & ! m3dc1 total field
+         (bfield%method == 5) &      ! m3dc1 total field (AS only)  
          ) Then 
       Call calc_psiN_m3dc1_2d(r,z,Npts,psiN,ierr_tmp)
 #endif          
     Else
-      Write(*,*) 'Bad value for bfield_method in get_psiN_2d_array'
-      Write(*,*) 'bfield_method is',bfield_method
+      Write(*,*) 'Bad value for bfield%method in get_psiN_2d_array'
+      Write(*,*) 'bfield%method is',bfield%method
       Stop
     Endif
     ierr = 0
@@ -195,7 +193,7 @@ Contains
     ! Description:
     !  Calculates the separatrix curve(s) 
     !
-    !  bfield_method must be set first, and a gfile must also have been read
+    !  bfield%method must be set first, and a gfile must also have been read
     !
     ! Input:
     ! Output:
@@ -365,11 +363,10 @@ Contains
     ! Both cases require a gfile field for initial guess!!!
     Use kind_mod, Only: real64, int32
     Use math_geo_module, Only: rlinspace
-    Use fieldline_follow_mod, Only: bfield_method
 #ifdef HAVE_M3DC1
     Use m3dc1_routines_mod, Only: bfield_m3dc1, bfield_m3dc1_2d
 #endif
-    Use g3d_module, Only: bfield_geq_bicub, g_type
+    Use g3d_module, Only: bfield_geq_bicub
     Implicit None
     Type(bfield_type), Intent(In) :: bfield
     Logical, Intent(in) :: second, refine, quiet
@@ -452,27 +449,27 @@ Contains
         Do i = 1,n1 
           ztmp(:) = zt(i)
           If ( &
-               bfield_method == 0  .OR. & ! g only
-               bfield_method == 1  .OR. & ! g+rmp coils
-               bfield_method == 2  .OR. & ! g+screening
-               bfield_method == 3  .OR. & ! g+m3dc1
-               bfield_method == 7  .OR. & ! ipec eq only
-               bfield_method == 8  .OR. & ! ipec vac
-               bfield_method == 9  .OR. & ! ipec pert
-               bfield_method == 10 .OR. & ! xpand pert
-               bfield_method == 11      & ! xpand vac
+               bfield%method == 0  .OR. & ! g only
+               bfield%method == 1  .OR. & ! g+rmp coils
+               bfield%method == 2  .OR. & ! g+screening
+               bfield%method == 3  .OR. & ! g+m3dc1
+               bfield%method == 7  .OR. & ! ipec eq only
+               bfield%method == 8  .OR. & ! ipec vac
+               bfield%method == 9  .OR. & ! ipec pert
+               bfield%method == 10 .OR. & ! xpand pert
+               bfield%method == 11      & ! xpand vac
                ) Then      
             Call bfield_geq_bicub(bfield%g,rt,ztmp,n1,Bout,ierr)
 #ifdef HAVE_M3DC1
           Elseif ( &
-               bfield_method == 4 .OR. & ! m3dc1 total field
-               bfield_method == 5      & ! m3dc1 total field (AS only)
+               bfield%method == 4 .OR. & ! m3dc1 total field
+               bfield%method == 5      & ! m3dc1 total field (AS only)
                ) Then 
             Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
 #endif          
           Else
-            Write(*,*) 'Bad value for bfield_method in find_xpt_jdl'
-            Write(*,*) 'bfield_method is',bfield_method
+            Write(*,*) 'Bad value for bfield%method in find_xpt_jdl'
+            Write(*,*) 'bfield%method is',bfield%method
             Stop
           Endif
 
@@ -535,27 +532,27 @@ Contains
             ztmp(:) = zt(i)
 
             If ( &
-                 bfield_method == 0  .OR. & ! g only
-                 bfield_method == 1  .OR. & ! g+rmp coils
-                 bfield_method == 2  .OR. & ! g+screening
-                 bfield_method == 3  .OR. & ! g+m3dc1
-                 bfield_method == 7  .OR. & ! ipec eq only
-                 bfield_method == 8  .OR. & ! ipec vac
-                 bfield_method == 9  .OR. & ! ipec pert
-                 bfield_method == 10 .OR. & ! xpand pert
-                 bfield_method == 11      & ! xpand vac
+                 bfield%method == 0  .OR. & ! g only
+                 bfield%method == 1  .OR. & ! g+rmp coils
+                 bfield%method == 2  .OR. & ! g+screening
+                 bfield%method == 3  .OR. & ! g+m3dc1
+                 bfield%method == 7  .OR. & ! ipec eq only
+                 bfield%method == 8  .OR. & ! ipec vac
+                 bfield%method == 9  .OR. & ! ipec pert
+                 bfield%method == 10 .OR. & ! xpand pert
+                 bfield%method == 11      & ! xpand vac
                  ) Then      
               Call bfield_geq_bicub(bfield%g,rt,ztmp,n1,Bout,ierr)
 #ifdef HAVE_M3DC1
             Elseif ( &
-                 bfield_method == 4 .OR. & ! m3dc1 total field
-                 bfield_method == 5      & ! m3dc1 total field (AS only)
+                 bfield%method == 4 .OR. & ! m3dc1 total field
+                 bfield%method == 5      & ! m3dc1 total field (AS only)
                  ) Then 
               Call bfield_m3dc1_2d(rt,ztmp,n1,Bout,ierr)
 #endif          
             Else
-              Write(*,*) 'Bad value for bfield_method in find_xpt_jdl'
-              Write(*,*) 'bfield_method is',bfield_method
+              Write(*,*) 'Bad value for bfield%method in find_xpt_jdl'
+              Write(*,*) 'bfield%method is',bfield%method
               Stop
             Endif
 

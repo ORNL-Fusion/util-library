@@ -9,41 +9,11 @@
 !     Subroutine rk45_fixed_step_integrate
 !     Subroutine rk4_core
 !   
-!   Set bfield_method to control the fieldline deriviative calls.
-!   Appropriate loading must be done before calls to any fieldline following routine 
-!   (e.g., gfile loading, rmp coil generation)
-!
-!    bfield_method == 
-!                     0 -- gfile field only
-!                     1 -- gfile + rmp coil field
-!                     2 -- gfile + Pavel's screened fields with bspline interpolation (not fully implemented!)
-!                     3 -- gfile + M3DC1 perturbed field
-!                     4 -- M3DC1 total field
-!                     5 -- M3DC1 2D field only
-!                     6 -- Just coils
-!                     7 -- ipec eq only
-!                     8 -- ipec vacuum
-!                     9 -- ipec perturbed
-!                    10 -- xpand perturbed
-!                    11 -- xpand vacuum
-! 
 !-----------------------------------------------------------------------------
-Module bfield_typedef
-  Use kind_mod, Only : int32, real64
-  Use g_typedef, Only : g_type
-  Use coil_typedef, Only : coil_type
-  Implicit None
-  Private
-  Type, Public :: bfield_type
-    Integer(int32) :: method = 0
-    Type(g_type) :: g
-    Type(coil_type) :: coil
-  End Type bfield_type
-End Module bfield_typedef
 
 Module fieldline_follow_mod
   Use kind_mod, Only: int32
-  Use bfield_typedef, Only : bfield_type
+  Use bfield, Only : bfield_type
   Implicit None
   Private
   Save
@@ -63,8 +33,7 @@ Module fieldline_follow_mod
     Module Procedure follow_fieldlines_rzphi_Npts
     Module Procedure follow_fieldlines_rzphi_1pt
   End Interface follow_fieldlines_rzphi
-  
-  Integer(int32), Public :: bfield_method = 0 ! Used to select fl derivs
+ 
 Contains
 
 !-----------------------------------------------------------------------------
@@ -489,7 +458,7 @@ EndSubroutine follow_fieldlines_rzphi_dz_Npts
 Subroutine fl_derivs_fun(bfield,n,phi,RZ,df,ierr)
 !
 ! Description: 
-!  Evaluates field line deriviatives (based on bfield_method). Should be easy to generalize to different
+!  Evaluates field line deriviatives (based on bfield%method). Should be easy to generalize to different
 !  integration methods, but right now it is hard-coded to assume two simultaneous equations evaluated at 1 pt.
 !
 ! Input:
@@ -539,19 +508,19 @@ Real(real64) :: Bz, Br, Bphi, Br_rmp, Bphi_rmp, Bz_rmp, phi_tmp(Npts)
 bval = 0._real64
 ierr_b = 0
 ierr_rmp = 0
-If (bfield_method == 0) Then     ! gfile field only
+If (bfield%method == 0) Then     ! gfile field only
   Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
-Elseif (bfield_method == 1) Then ! g + rmp coils
+Elseif (bfield%method == 1) Then ! g + rmp coils
   Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
   Call bfield_bs_cyl(RZ(1),phi,RZ(2),bfield%coil,Br_rmp,Bphi_rmp,Bz_rmp)
   ierr_rmp = 0
   Br   = bval(1,1) + Br_rmp
   Bz   = bval(1,2) + Bz_rmp
   Bphi = bval(1,3) + Bphi_rmp
-Elseif (bfield_method == 2) Then ! g + screening B-spline
+Elseif (bfield%method == 2) Then ! g + screening B-spline
   Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)
   phi_tmp(1) = phi
   Call bfield_bspline(RZ(1),phi_tmp,RZ(2),Npts,bval_screened,ierr_rmp)
@@ -559,7 +528,7 @@ Elseif (bfield_method == 2) Then ! g + screening B-spline
   Bz   = bval(1,2) + bval_screened(1,2)
   Bphi = bval(1,3) + bval_screened(1,3)
 #ifdef HAVE_M3DC1
-Elseif (bfield_method == 3) Then  ! g + m3dc1 
+Elseif (bfield%method == 3) Then  ! g + m3dc1 
   phi_tmp(1) = phi
   bval_tmp =0.d0
   Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
@@ -569,47 +538,47 @@ Elseif (bfield_method == 3) Then  ! g + m3dc1
   Bz   = bval(1,2)
   Bphi = bval(1,3)
   ierr_rmp = ierr_b + ierr_rmp
-Elseif (bfield_method == 4) Then  ! m3dc1 total field
+Elseif (bfield%method == 4) Then  ! m3dc1 total field
   phi_tmp(1) = phi
   Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),Npts,bval,ierr_rmp)
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
-Elseif (bfield_method == 5) Then  ! m3dc1 2d field only
+Elseif (bfield%method == 5) Then  ! m3dc1 2d field only
   Call bfield_m3dc1_2d(RZ(1),RZ(2),Npts,bval,ierr_rmp)
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
 #endif
-Elseif (bfield_method == 6) Then     ! just coils
+Elseif (bfield%method == 6) Then     ! just coils
   Call bfield_bs_cyl(RZ(1),phi_tmp(1),RZ(2),bfield%coil,Br,Bphi,Bz)
-Elseif (bfield_method == 7) Then  ! ipec eq only
+Elseif (bfield%method == 7) Then  ! ipec eq only
   Call bfield_ipec(RZ(1),(/0.d0/),RZ(2),Npts,bval,ierr_rmp,0)
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
-Elseif (bfield_method == 8) Then  ! ipec vac
+Elseif (bfield%method == 8) Then  ! ipec vac
   Call bfield_ipec(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,1)
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
-Elseif (bfield_method == 9) Then  ! ipec pert
+Elseif (bfield%method == 9) Then  ! ipec pert
   Call bfield_ipec(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,2)
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
-Elseif (bfield_method == 10) Then  ! xpand pert
+Elseif (bfield%method == 10) Then  ! xpand pert
   Call bfield_xpand(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,0)
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
-Elseif (bfield_method == 11) Then  ! xpand vac
+Elseif (bfield%method == 11) Then  ! xpand vac
   Call bfield_xpand(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,1)
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)      
 Else
-  Write(*,*) 'Unknown bfield_method in fl_derivs_fun'
+  Write(*,*) 'Unknown bfield%method in fl_derivs_fun'
   stop
 Endif
 
@@ -632,7 +601,7 @@ End Subroutine fl_derivs_fun
 Subroutine fl_derivs_fun_dz(bfield,n,Z,RP,df,ierr)
 !
 ! Description: 
-!  Evaluates field line deriviatives (based on bfield_method). Should be easy to generalize to different
+!  Evaluates field line deriviatives (based on bfield%method). Should be easy to generalize to different
 !  integration methods, but right now it is hard-coded to assume two simultaneous equations evaluated at 1 pt.
 !
 ! Input:
@@ -670,10 +639,10 @@ Real(real64) :: Bz, Br, Bphi
 !- End of header -------------------------------------------------------------
 
 ierr = 0
-If (bfield_method == 6) Then     ! just coils
+If (bfield%method == 6) Then     ! just coils
   Call bfield_bs_cyl(RP(1),RP(2),Z,bfield%coil,Br,Bphi,Bz)
 Else
-  Write(*,*) 'Unknown bfield_method in fl_derivs_fun_dz'
+  Write(*,*) 'Unknown bfield%method in fl_derivs_fun_dz'
   Write(*,*) 'The following are supported'
   Write(*,*) '(6) just coils'
   stop
@@ -897,19 +866,19 @@ Do i=1,nsteps
   bval = 0._real64
   ierr_b = 0
   ierr_rmp = 0
-  If (bfield_method == 0) Then     ! gfile field only
+  If (bfield%method == 0) Then     ! gfile field only
     Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     !-- turn off verbose
     Br   = bval(1,1)
     Bz   = bval(1,2)
     Bphi = bval(1,3)
-  Elseif (bfield_method == 1) Then ! g + rmp coils
+  Elseif (bfield%method == 1) Then ! g + rmp coils
     Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
     Call bfield_bs_cyl(RZ(1),phi,RZ(2),bfield%coil,Br_rmp,Bphi_rmp,Bz_rmp)
     ierr_rmp = 0
     Br   = bval(1,1) + Br_rmp
     Bz   = bval(1,2) + Bz_rmp
     Bphi = bval(1,3) + Bphi_rmp
-  Elseif (bfield_method == 2) Then ! g + screening B-spline
+  Elseif (bfield%method == 2) Then ! g + screening B-spline
     Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
     phi_tmp(1) = phi
     Call bfield_bspline(RZ(1),phi_tmp,RZ(2),1,bval_screened,ierr_rmp)
@@ -917,7 +886,7 @@ Do i=1,nsteps
     Bz   = bval(1,2) + bval_screened(1,2)
     Bphi = bval(1,3) + bval_screened(1,3)
 #ifdef HAVE_M3DC1
-  Elseif (bfield_method == 3) Then  ! g+m3dc1 
+  Elseif (bfield%method == 3) Then  ! g+m3dc1 
     phi_tmp(1) = phi
     bval_tmp =0.d0
     Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
@@ -927,20 +896,20 @@ Do i=1,nsteps
     Bz   = bval(1,2)
     Bphi = bval(1,3)
     ierr_rmp = ierr_b + ierr_rmp
-  Elseif (bfield_method == 4) Then  ! m3dc1 total field
+  Elseif (bfield%method == 4) Then  ! m3dc1 total field
     phi_tmp(1) = phi
     Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),1,bval,ierr_rmp)
     Br   = bval(1,1)
     Bz   = bval(1,2)
     Bphi = bval(1,3)
-  Elseif (bfield_method == 5) Then  ! m3dc1 2d field only
+  Elseif (bfield%method == 5) Then  ! m3dc1 2d field only
     Call bfield_m3dc1_2d(RZ(1),RZ(2),1,bval,ierr_rmp)
     Br   = bval(1,1)
     Bz   = bval(1,2)
     Bphi = bval(1,3)
 #endif    
   Else
-    Write(*,*) 'Unknown bfield_method in rk45_fixed_step_integrate_diffuse'
+    Write(*,*) 'Unknown bfield%method in rk45_fixed_step_integrate_diffuse'
     stop
   Endif
   If ((ierr_b .ne. 0) .or. (ierr_rmp .ne. 0)) Then
