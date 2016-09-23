@@ -36,10 +36,10 @@ INC  = -I$(INCJDL_DIR)
 # External library paths and libraries for m3dc1
 ifeq ($(strip $(USE_M3DC1)),1)
   DEFINES = -DHAVE_M3DC1
-  LIBDIR_m3dc1 = $(FIO_INSTALL_DIR)/lib
+  LIBDIR_m3dc1 = -L$(FIO_INSTALL_DIR)/lib
   LIBS_m3dc1 = -lfusionio -lm3dc1_fortran -lm3dc1 -lstdc++ -lhdf5
 #  LIBS_m3dc1_full = libfusionio.a libm3dc1_fortran.a libm3dc1.a
-  INCLUDE_m3dc1 = $(FIO_INSTALL_DIR)/include
+  INCLUDE_m3dc1 = -I$(FIO_INSTALL_DIR)/include
 endif
 
 
@@ -58,7 +58,8 @@ MODS90 =
 .default: all_tests
 
 all_tests: test_int_two_lines.x test_int_curve_curve.x test_find_xpt_gonly.x \
-test_bfield_rmp_d3d.x test_bfield_ipec_d3d.x test_bfield_xpand_d3d.x
+test_bfield_rmp_d3d.x test_bfield_ipec_d3d.x test_bfield_xpand_d3d.x \
+test_m3dc1_bfield.x calc_psiN_m3dc1.x
 
 
 test_int_two_lines.x: test_int_two_lines.o $(LIBBJDL_DIR)/libbjdl.a 
@@ -98,12 +99,11 @@ test_bfield_ipec_d3d.x: %.x : %.o $(LIBBJDL_DIR)/libbjdl.a
 
 %.x : %.o $(LIBBJDL_DIR)/libbjdl.a 
 	@echo "Creating "$@
-	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) $(INC)
+	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) $(INC) $(INCLUDE_m3dc1) $(LIBDIR_m3dc1) $(LIBS_m3dc1)
 
 
 %.o : %.f90 
 	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS)  $(INC) $<
-
 
 
 

@@ -160,11 +160,11 @@ Contains
        Result(numl)
     Use kind_mod, Only :int32
     Implicit None
-    Character(Len=240), Intent(In) :: fname
+    Character(Len=*), Intent(In) :: fname
     Integer(int32) :: numl, iocheck
     Integer(int32), Parameter :: max_numl = 1000000
     !- End of header -------------------------------------------------------------
-    Open(99,file = fname,IOSTAT=iocheck)
+    Open(99,file = fname,IOSTAT=iocheck,STATUS="OLD")
     If (iocheck /= 0) Then
       Write(*,*) 'Error opening file: ', fname
       Stop 'Exiting: I/O error in function num_lines_file'
