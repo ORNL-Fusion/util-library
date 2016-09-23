@@ -376,7 +376,7 @@ Contains
 
     Real(real64), Allocatable :: rtmp(:), ztmp(:),Bout(:,:)
     Real(real64) :: bp(n1,n1), rg(n1,n1), zg(n1,n1), rt(n1), zt(n1)
-    Real(real64) :: bpx, err, de, bpx2, dx1_grid, dx2_grid
+    Real(real64) :: bpx, err, bpx2, dx1_grid, dx2_grid
     Real(real64) :: Rmin_eval, Rmax_eval, Zmin_eval, Zmax_eval, dx1_save, dx2_save
     Integer(int32) :: icount, i, npts_bdry, ierr, ix,ixjx(2), niter
     ! Local parameters               

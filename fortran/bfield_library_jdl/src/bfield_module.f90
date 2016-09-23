@@ -10,7 +10,7 @@
 Module bfield_module
   Implicit None
   Private
-  Public :: bfield_bs_cyl, bfield_bs_jdl_npts
+  Public :: bfield_bs_cyl
   Public :: bfield_bs_jdl
 
   Interface bfield_bs_cyl

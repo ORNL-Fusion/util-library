@@ -13,6 +13,8 @@
 !       Subroutine get_becub_mat
 !       Subroutine get_psi_bicub
 !       Subroutine get_psi_derivs_bicub
+!       Subroutine close_gfile
+!       Subroutine display_gfile
 !       Function psi_bi
 !       Function dsdr_bi
 !       Function dsdz_bi
@@ -58,11 +60,34 @@ End module gfile_var_pass
 !+ Module containing routines for gfile psi, B interpolation
 !-----------------------------------------------------------------------------
 Module g3d_module
+  Use kind_mod, Only : int32, real64
   Implicit None
   Private
   Public :: readg_g3d, close_gfile, get_psin_bicub, get_psi_bicub
-  Public :: bfield_geq_bicub, get_psi_derivs_bicub
+  Public :: bfield_geq_bicub, get_psi_derivs_bicub, display_gfile
+  Type, Public :: gdata
+    Integer(int32) :: mw, mh, nbdry, limitr
+    Character(Len=6) :: ecase
+    Real(real64) :: xdim, zdim, rzero, rgrid1, zmid, rmaxis, zmaxis, &
+         ssimag, ssibry, bcentr, cpasma, dr, dz, ip_sign
+    Real(real64), Allocatable, Dimension(:) :: fpol, pres, ffprim, &
+         pprime, qpsi, r, z, pn
+    Real(real64), Allocatable, Dimension(:,:) :: bdry, lim, psirz
+    ! Private
+    Real(real64), Private, Allocatable, Dimension(:) :: pnknot, fpol_bscoef    
+    Real(real64), Private, Allocatable, Dimension(:,:,:) :: bicub_coeffs
+  End Type gdata
 Contains
+
+  Subroutine calc_RZ_at_psiN_theta(psiN,theta_rad,npsiN,ntheta,rout,zout)
+    Use kind_mod, Only : int32, real64
+    Use gfile_var_pass
+    Implicit None
+    Real(real64), Intent(In) :: psiN(npsiN), theta_rad(ntheta)
+    Integer(int32), Intent(In) :: npsiN, ntheta
+    Real(real64), Intent(Out) :: rout(npsiN,ntheta), zout(npsiN,ntheta)
+
+  End Subroutine calc_RZ_at_psiN_theta
 
   !-----------------------------------------------------------------------------
   !+ returns Bcyl from gfile bfield at R,Z
@@ -185,17 +210,17 @@ Contains
     Implicit None
 
     ! Input/output                      !See above for descriptions
-    Character(len=100) :: filename
-
+    Character(len=*), Intent(In) :: filename
+!    Type(gdata), Intent(Out) :: g
+    
     ! Local scalars
     Integer(int32) :: iocheck,idum,i,j
     Real(real64) :: xdum
-    Logical,Parameter :: DIAGNO = .false.  ! screen output of read variables
 
     ! Local arrays (1D)
     Character(len=100) :: sjunk
 
-    Logical :: debug = .false.
+    Logical :: debug = .true.
     ! Allocatable arrays
 
     !- End of header -------------------------------------------------------------
@@ -210,9 +235,10 @@ Contains
     If (debug) Write(*,*) 'Debugging readg_g3d'
     Read(99,'(a8,a42,i3,2i4)') g_ecase,sjunk,idum,g_mw,g_mh
     If (debug) Then
-      Write(*,*) 'g_ecase',g_ecase
-      Write(*,*) 'g_mw,g_mh',g_mw,g_mh
+      Write(*,*) 'g_ecase: ',g_ecase
+      Write(*,*) 'g_mw,g_mh: ',g_mw,g_mh
     Endif
+
     Allocate(g_fpol(g_mw),g_pres(g_mw),g_ffprim(g_mw))
     Allocate(g_pprime(g_mw),g_psirz(g_mw,g_mh),g_qpsi(g_mw))
 
@@ -253,52 +279,6 @@ Contains
 
     Close(99)
 
-    If (DIAGNO .eqv. .true.) Then
-      Write(*,*) '------------------------------------------------------'
-      Write(*,*) '   DIAGNO is on in readg_g3d:'
-      Write(*,*) 'g_ecase:',g_ecase
-      Write(*,*) 'g_mw:',g_mw
-      Write(*,*) 'g_mh:',g_mh
-      Write(*,*) 'g_xdim',g_xdim
-      Write(*,*) 'g_zdim',g_zdim
-      Write(*,*) 'g_rzero',g_rzero
-      Write(*,*) 'g_rgrid1',g_rgrid1
-      Write(*,*) 'g_zmid',g_zmid
-      Write(*,*) 'g_rmaxis',g_rmaxis
-      Write(*,*) 'g_zmaxis',g_zmaxis
-      Write(*,*) 'g_ssimag',g_ssimag
-      Write(*,*) 'g_ssibry',g_ssibry
-      Write(*,*) 'g_bcentr',g_bcentr
-      Write(*,*) 'g_cpasma',g_cpasma
-      Write(*,*) 'g_fpol:'
-      Do i = 1,g_mw
-        Write(*,*) g_fpol(i)
-      Enddo
-      Write(*,*) 'g_pres:'
-      Do i = 1,g_mw
-        Write(*,*) g_pres(i)
-      Enddo
-      Write(*,*) 'g_ffprim:'
-      Do i = 1,g_mw
-        Write(*,*) g_ffprim(i)
-      Enddo
-      Write(*,*) 'g_pprime:'
-      Do i = 1,g_mw
-        Write(*,*) g_pprime(i)
-      Enddo
-      Write(*,*) 'g_psirz:'
-      Do i = 1,g_mw
-        Write(*,*) g_psirz(i,1:g_mh)
-      Enddo
-      Write(*,*) 'g_qpsi:'
-      Do i = 1,g_mw
-        Write(*,*) g_qpsi(i)
-      Enddo
-      Write(*,*) 'g_nbdry',g_nbdry
-      Write(*,*) 'g_limitr',g_limitr
-
-      Write(*,*) '------------------------------------------------------'
-    Endif
 
 
     !
@@ -332,6 +312,59 @@ Contains
 
   End Subroutine readg_g3d
 
+  Subroutine display_gfile()
+    Use gfile_var_pass
+    Implicit None
+    Integer :: i
+
+
+    Write(*,*) '------------------------------------------------------'
+    Write(*,*) 'g_ecase:',g_ecase
+    Write(*,*) 'g_mw:',g_mw
+    Write(*,*) 'g_mh:',g_mh
+    Write(*,*) 'g_xdim',g_xdim
+    Write(*,*) 'g_zdim',g_zdim
+    Write(*,*) 'g_rzero',g_rzero
+    Write(*,*) 'g_rgrid1',g_rgrid1
+    Write(*,*) 'g_zmid',g_zmid
+    Write(*,*) 'g_rmaxis',g_rmaxis
+    Write(*,*) 'g_zmaxis',g_zmaxis
+    Write(*,*) 'g_ssimag',g_ssimag
+    Write(*,*) 'g_ssibry',g_ssibry
+    Write(*,*) 'g_bcentr',g_bcentr
+    Write(*,*) 'g_cpasma',g_cpasma
+    Write(*,*) 'g_fpol:'
+    Do i = 1,g_mw
+      Write(*,*) g_fpol(i)
+    Enddo
+    Write(*,*) 'g_pres:'
+    Do i = 1,g_mw
+      Write(*,*) g_pres(i)
+    Enddo
+    Write(*,*) 'g_ffprim:'
+    Do i = 1,g_mw
+      Write(*,*) g_ffprim(i)
+    Enddo
+    Write(*,*) 'g_pprime:'
+    Do i = 1,g_mw
+      Write(*,*) g_pprime(i)
+    Enddo
+    Write(*,*) 'g_psirz:'
+    Do i = 1,g_mw
+      Write(*,*) g_psirz(i,1:g_mh)
+    Enddo
+    Write(*,*) 'g_qpsi:'
+    Do i = 1,g_mw
+      Write(*,*) g_qpsi(i)
+    Enddo
+    Write(*,*) 'g_nbdry',g_nbdry
+    Write(*,*) 'g_limitr',g_limitr
+
+    Write(*,*) '------------------------------------------------------'
+
+
+
+  End Subroutine display_gfile
 
   !-----------------------------------------------------------------------------
   !+ Returns array of coefficients for bicubic interpolation

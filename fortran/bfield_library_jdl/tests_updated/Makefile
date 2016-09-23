@@ -59,7 +59,7 @@ MODS90 =
 
 all_tests: test_int_two_lines.x test_int_curve_curve.x test_find_xpt_gonly.x \
 test_bfield_rmp_d3d.x test_bfield_ipec_d3d.x test_bfield_xpand_d3d.x \
-test_m3dc1_bfield.x calc_psiN_m3dc1.x
+test_m3dc1_bfield.x calc_psiN_m3dc1.x test_read_gfile.x
 
 
 test_int_two_lines.x: test_int_two_lines.o $(LIBBJDL_DIR)/libbjdl.a 
@@ -78,7 +78,7 @@ test_int_curve_curve.o : test_int_curve_curve.f90
 
 test_find_xpt_gonly.x: %.x :%.o $(LIBBJDL_DIR)/libbjdl.a 
 	@echo "Creating "$@
-	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) -L$(LIBDIR_m3dc1) $(LIBS_m3dc1) -I$(INCLUDE_m3dc1)  $(INC)
+	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS) $(LIBDIR_m3dc1) $(LIBS_m3dc1) -I$(INCLUDE_m3dc1)  $(INC)
 
 test_find_xpt_gonly.o : %.o : %.f90 
 	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS)  $(INC) $<
