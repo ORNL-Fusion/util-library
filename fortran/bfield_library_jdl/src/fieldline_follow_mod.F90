@@ -28,8 +28,20 @@
 !                    11 -- xpand vacuum
 ! 
 !-----------------------------------------------------------------------------
+Module bfield_typedef
+  Use kind_mod, Only : int32, real64
+  Use gdata_typedef
+  Implicit None
+  Private
+  Type, Public :: bfield_type
+    Integer(int32) :: method = 0
+    Type(gdata) :: g
+  End Type bfield_type
+End Module bfield_typedef
+
 Module fieldline_follow_mod
   Use kind_mod, Only: int32
+  Use bfield_typedef, Only : bfield_type
   Implicit None
   Private
   Save
@@ -56,7 +68,7 @@ Contains
 !-----------------------------------------------------------------------------
 !+ Follows fieldlines in cylindrical coords --> Assuming an axisymmetric field!
 !-----------------------------------------------------------------------------
-Subroutine follow_fieldlines_rzphi_AS(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good)
+Subroutine follow_fieldlines_rzphi_AS(bfield,rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good)
 !
 ! Description: 
 !  Follows fieldlines by integrating along toroidal angle in cylindrical coordinates. This version
@@ -92,6 +104,7 @@ Use g3d_module, Only : bfield_geq_bicub
 Implicit None
 
 ! Input/output                !See above for descriptions
+Type(bfield_type), Intent(In) :: bfield
 Integer(int32),Intent(in) :: Npts, nsteps
 Real(real64),Intent(in),Dimension(Npts) :: & 
   rstart(Npts),zstart(Npts),phistart(Npts)
@@ -119,7 +132,7 @@ Do ipt = 1,Npts
 
     R1 = r(ipt,ii-1)
     Z1 = z(ipt,ii-1)
-    Call bfield_geq_bicub(R1,Z1,1,Bval,ierr_b)     
+    Call bfield_geq_bicub(bfield%g,R1,Z1,1,Bval,ierr_b)     
     br = Bval(1,1)
     bz = Bval(1,2)
     bphi = Bval(1,3)
@@ -134,7 +147,7 @@ Do ipt = 1,Npts
     
     R1 = r(ipt,ii-1) + 0.5_real64*k1r
     Z1 = z(ipt,ii-1) + 0.5_real64*k1z
-    Call bfield_geq_bicub(R1,Z1,1,Bval,ierr_b)     
+    Call bfield_geq_bicub(bfield%g,R1,Z1,1,Bval,ierr_b)     
     br = Bval(1,1)
     bz = Bval(1,2)
     bphi = Bval(1,3)
@@ -149,7 +162,7 @@ Do ipt = 1,Npts
 
     R1 = r(ipt,ii-1) + 0.5_real64*k2r
     Z1 = z(ipt,ii-1) + 0.5_real64*k2z
-    Call bfield_geq_bicub(R1,Z1,1,Bval,ierr_b)     
+    Call bfield_geq_bicub(bfield%g,R1,Z1,1,Bval,ierr_b)     
     br = Bval(1,1)
     bz = Bval(1,2)
     bphi = Bval(1,3)
@@ -165,7 +178,7 @@ Do ipt = 1,Npts
 
     R1 = r(ipt,ii-1) + k3r
     Z1 = z(ipt,ii-1) + k3z
-    Call bfield_geq_bicub(R1,Z1,1,Bval,ierr_b)     
+    Call bfield_geq_bicub(bfield%g,R1,Z1,1,Bval,ierr_b)     
     br = Bval(1,1)
     bz = Bval(1,2)
     bphi = Bval(1,3)  
@@ -189,7 +202,7 @@ EndSubroutine follow_fieldlines_rzphi_AS
 !-----------------------------------------------------------------------------
 !+ Follows fieldlines in cylindrical coords with diffusion
 !-----------------------------------------------------------------------------
-Subroutine follow_fieldlines_rzphi_diffuse(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good,dmag)
+Subroutine follow_fieldlines_rzphi_diffuse(bfield,rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good,dmag)
 !
 ! Description: 
 !  Follows fieldlines by integrating along toroidal angle in cylindrical coordinates. 
@@ -219,13 +232,14 @@ Subroutine follow_fieldlines_rzphi_diffuse(rstart,zstart,phistart,Npts,dphi,nste
 ! Author(s): J.D Lore - 04/20/2011
 !
 ! Modules used:
-Use kind_mod, Only: real64, int32
-Implicit None
-! Input/output                      !See above for descriptions
-Integer(int32),Intent(in) :: Npts, nsteps
-Real(real64),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
-Real(real64),Intent(in) :: dphi, dmag
-
+  Use kind_mod, Only: real64, int32
+  Implicit None
+  ! Input/output                      !See above for descriptions
+  Type(bfield_type), Intent(In) :: bfield
+  Integer(int32),Intent(in) :: Npts, nsteps
+  Real(real64),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
+  Real(real64),Intent(in) :: dphi, dmag
+  
 Real(real64),Intent(out),Dimension(Npts,nsteps+1) :: r,z,phi
 Integer(int32),Intent(out) :: ierr(Npts), i_last_good(Npts)
 ! Local variables
@@ -243,7 +257,7 @@ Do ipt = 1,Npts
   y(1) = rstart(ipt)
   y(2) = zstart(ipt)
   x = phistart(ipt)
-  Call rk45_fixed_step_integrate_diffuse(y,n,x,dx,nsteps,fl_derivs_fun,yout,xout,ierr_rk45,i_last_good_rk45,dmag)
+  Call rk45_fixed_step_integrate_diffuse(bfield,y,n,x,dx,nsteps,fl_derivs_fun,yout,xout,ierr_rk45,i_last_good_rk45,dmag)
   r(ipt,1:nsteps+1)   = yout(1,1:nsteps+1)
   z(ipt,1:nsteps+1)   = yout(2,1:nsteps+1)
   phi(ipt,1:nsteps+1) = xout
@@ -256,14 +270,14 @@ EndSubroutine follow_fieldlines_rzphi_diffuse
 !-----------------------------------------------------------------------------
 !+ Follows fieldlines in cylindrical coords (from one point)
 !-----------------------------------------------------------------------------
-Subroutine follow_fieldlines_rzphi_1pt(rstart,zstart,phistart,dphi,nsteps,r,z,phi,ierr,i_last_good)
-Use kind_mod, Only: real64, int32
+Subroutine follow_fieldlines_rzphi_1pt(bfield,rstart,zstart,phistart,dphi,nsteps,r,z,phi,ierr,i_last_good)
+  Use kind_mod, Only: real64, int32
 Implicit None
-! Input/output                      !See above for descriptions
+! Input/output
+  Type(bfield_type), Intent(In) :: bfield
 Integer(int32),Intent(in) :: nsteps
 Real(real64),Intent(in) :: rstart,zstart,phistart
 Real(real64),Intent(in) :: dphi
-
 Real(real64),Intent(out),Dimension(nsteps+1) :: r,z,phi
 Integer(int32),Intent(out) :: ierr, i_last_good
 
@@ -279,7 +293,7 @@ dx = dphi
 y(1) = rstart
 y(2) = zstart
 x = phistart
-Call rk45_fixed_step_integrate(y,n,x,dx,nsteps,fl_derivs_fun,yout,xout,ierr_rk45,i_last_good_rk45)
+Call rk45_fixed_step_integrate(bfield,y,n,x,dx,nsteps,fl_derivs_fun,yout,xout,ierr_rk45,i_last_good_rk45)
 r(1:nsteps+1)   = yout(1,1:nsteps+1)
 z(1:nsteps+1)   = yout(2,1:nsteps+1)
 phi(1:nsteps+1) = xout
@@ -291,10 +305,11 @@ End Subroutine follow_fieldlines_rzphi_1pt
 !-----------------------------------------------------------------------------
 !+ Follows fieldlines in cylindrical coords (from one point)
 !-----------------------------------------------------------------------------
-Subroutine follow_fieldlines_rzphi_dz_1pt(rstart,zstart,phistart,dz,nsteps,r,z,phi,ierr,i_last_good)
-Use kind_mod, Only: real64, int32
-Implicit None
-! Input/output                      !See above for descriptions
+Subroutine follow_fieldlines_rzphi_dz_1pt(bfield,rstart,zstart,phistart,dz,nsteps,r,z,phi,ierr,i_last_good)
+  Use kind_mod, Only: real64, int32
+  Implicit None
+  ! Input/output 
+  Type(bfield_type), Intent(In) :: bfield
 Integer(int32),Intent(in) :: nsteps
 Real(real64),Intent(in) :: rstart,zstart,phistart
 Real(real64),Intent(in) :: dz
@@ -314,7 +329,7 @@ dx = dz
 y(1) = rstart
 y(2) = phistart
 x = zstart
-Call rk45_fixed_step_integrate(y,n,x,dx,nsteps,fl_derivs_fun_dz,yout,xout,ierr_rk45,i_last_good_rk45)
+Call rk45_fixed_step_integrate(bfield,y,n,x,dx,nsteps,fl_derivs_fun_dz,yout,xout,ierr_rk45,i_last_good_rk45)
 r(1:nsteps+1)   = yout(1,1:nsteps+1)
 phi(1:nsteps+1) = yout(2,1:nsteps+1)
 z(1:nsteps+1)   = xout
@@ -326,7 +341,7 @@ End Subroutine follow_fieldlines_rzphi_dz_1pt
 !-----------------------------------------------------------------------------
 !+ Follows fieldlines dphi in cylindrical coords (from multiple points)
 !-----------------------------------------------------------------------------
-Subroutine follow_fieldlines_rzphi_Npts(rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good,verbose)
+Subroutine follow_fieldlines_rzphi_Npts(bfield,rstart,zstart,phistart,Npts,dphi,nsteps,r,z,phi,ierr,i_last_good,verbose)
 !
 ! Description: 
 !  Follows fieldlines by integrating along toroidal angle in cylindrical coordinates. 
@@ -359,6 +374,7 @@ Subroutine follow_fieldlines_rzphi_Npts(rstart,zstart,phistart,Npts,dphi,nsteps,
 Use kind_mod, Only: real64, int32
 Implicit None
 ! Input/output                      !See above for descriptions
+  Type(bfield_type), Intent(In) :: bfield
 Integer(int32),Intent(in) :: Npts, nsteps
 Real(real64),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
 Real(real64),Intent(in) :: dphi
@@ -384,7 +400,7 @@ Do ipt = 1,Npts
   y(1) = rstart(ipt)
   y(2) = zstart(ipt)
   x = phistart(ipt)
-  Call rk45_fixed_step_integrate(y,n,x,dx,nsteps,fl_derivs_fun,yout,xout,ierr_rk45,i_last_good_rk45)
+  Call rk45_fixed_step_integrate(bfield,y,n,x,dx,nsteps,fl_derivs_fun,yout,xout,ierr_rk45,i_last_good_rk45)
   r(ipt,1:nsteps+1)   = yout(1,1:nsteps+1)
   z(ipt,1:nsteps+1)   = yout(2,1:nsteps+1)
   phi(ipt,1:nsteps+1) = xout
@@ -397,8 +413,8 @@ EndSubroutine follow_fieldlines_rzphi_Npts
 !-----------------------------------------------------------------------------
 !+ Follows fieldlines dz in cylindrical coords (from multiple points)
 !-----------------------------------------------------------------------------
-Subroutine follow_fieldlines_rzphi_dz_Npts(rstart,zstart,phistart,Npts,dz,nsteps,r,z,phi,ierr,i_last_good,verbose)
-!
+Subroutine follow_fieldlines_rzphi_dz_Npts(bfield,rstart,zstart,phistart,Npts,dz,nsteps,r,z,phi,ierr,i_last_good,verbose)
+  !
 ! Description: 
 !  Follows fieldlines by integrating along toroidal angle in cylindrical coordinates. 
 !
@@ -430,6 +446,7 @@ Subroutine follow_fieldlines_rzphi_dz_Npts(rstart,zstart,phistart,Npts,dz,nsteps
 Use kind_mod, Only: real64, int32
 Implicit None
 ! Input/output                      !See above for descriptions
+Type(bfield_type), Intent(In) :: bfield
 Integer(int32),Intent(in) :: Npts, nsteps
 Real(real64),Intent(in),Dimension(Npts) :: rstart(Npts),zstart(Npts),phistart(Npts)
 Real(real64),Intent(in) :: dz
@@ -454,7 +471,7 @@ Do ipt = 1,Npts
   y(1) = rstart(ipt)
   y(2) = phistart(ipt)
   x = zstart(ipt)
-  Call rk45_fixed_step_integrate(y,n,x,dx,nsteps,fl_derivs_fun_dz,yout,xout,ierr_rk45,i_last_good_rk45)
+  Call rk45_fixed_step_integrate(bfield,y,n,x,dx,nsteps,fl_derivs_fun_dz,yout,xout,ierr_rk45,i_last_good_rk45)
   r(ipt,1:nsteps+1)   = yout(1,1:nsteps+1)
   phi(ipt,1:nsteps+1) = yout(2,1:nsteps+1)
   z(ipt,1:nsteps+1)   = xout
@@ -467,7 +484,7 @@ EndSubroutine follow_fieldlines_rzphi_dz_Npts
 !-----------------------------------------------------------------------------
 !+ Routines field line equation derivatives (dphi)
 !-----------------------------------------------------------------------------
-Subroutine fl_derivs_fun(n,phi,RZ,df,ierr)
+Subroutine fl_derivs_fun(bfield,n,phi,RZ,df,ierr)
 !
 ! Description: 
 !  Evaluates field line deriviatives (based on bfield_method). Should be easy to generalize to different
@@ -505,6 +522,7 @@ Use xpand_module, Only : bfield_xpand
 Use m3dc1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
 #endif
 Implicit None
+Type(bfield_type), Intent(In) :: bfield
 Real(real64), Intent(In) :: phi
 Integer(int32), Intent(In) :: n
 Integer(int32), Intent(Out) :: ierr
@@ -521,19 +539,19 @@ bval = 0._real64
 ierr_b = 0
 ierr_rmp = 0
 If (bfield_method == 0) Then     ! gfile field only
-  Call bfield_geq_bicub(RZ(1),RZ(2),Npts,bval,ierr_b)     
+  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
   Br   = bval(1,1)
   Bz   = bval(1,2)
   Bphi = bval(1,3)
 Elseif (bfield_method == 1) Then ! g + rmp coils
-  Call bfield_geq_bicub(RZ(1),RZ(2),Npts,bval,ierr_b)     
+  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
   Call bfield_bs_cyl(RZ(1),phi,RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
   ierr_rmp = 0
   Br   = bval(1,1) + Br_rmp
   Bz   = bval(1,2) + Bz_rmp
   Bphi = bval(1,3) + Bphi_rmp
 Elseif (bfield_method == 2) Then ! g + screening B-spline
-  Call bfield_geq_bicub(RZ(1),RZ(2),Npts,bval,ierr_b)
+  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)
   phi_tmp(1) = phi
   Call bfield_bspline(RZ(1),phi_tmp,RZ(2),Npts,bval_screened,ierr_rmp)
   Br   = bval(1,1) + bval_screened(1,1)
@@ -543,7 +561,7 @@ Elseif (bfield_method == 2) Then ! g + screening B-spline
 Elseif (bfield_method == 3) Then  ! g + m3dc1 
   phi_tmp(1) = phi
   bval_tmp =0.d0
-  Call bfield_geq_bicub(RZ(1),RZ(2),Npts,bval,ierr_b)     
+  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
   Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),Npts,bval_tmp,ierr_rmp)
   bval = bval + bval_tmp
   Br   = bval(1,1)
@@ -610,7 +628,7 @@ End Subroutine fl_derivs_fun
 !-----------------------------------------------------------------------------
 !+ Routines field line equation derivatives (dz)
 !-----------------------------------------------------------------------------
-Subroutine fl_derivs_fun_dz(n,Z,RP,df,ierr)
+Subroutine fl_derivs_fun_dz(bfield,n,Z,RP,df,ierr)
 !
 ! Description: 
 !  Evaluates field line deriviatives (based on bfield_method). Should be easy to generalize to different
@@ -641,6 +659,7 @@ Use kind_mod, Only: real64, int32
 Use bfield_module, Only : bfield_bs_cyl
 Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Implicit None
+Type(bfield_type), Intent(In) :: bfield
 Real(real64), Intent(In) :: Z
 Integer(int32), Intent(In) :: n
 Integer(int32), Intent(Out) :: ierr
@@ -668,7 +687,7 @@ End Subroutine fl_derivs_fun_dz
 !-----------------------------------------------------------------------------
 !+ Main routine for RK45 fixed step integration
 !-----------------------------------------------------------------------------
-Subroutine rk45_fixed_step_integrate(y0,n,x0,dx,nsteps,odefun,yout,xout,ierr,i_last_good)
+Subroutine rk45_fixed_step_integrate(bfield,y0,n,x0,dx,nsteps,odefun,yout,xout,ierr,i_last_good)
 !
 ! Description: 
 !  Should be a general implementation of RK45 fixed step integration
@@ -701,6 +720,7 @@ Subroutine rk45_fixed_step_integrate(y0,n,x0,dx,nsteps,odefun,yout,xout,ierr,i_l
 ! Modules used:
 Use kind_mod, Only: real64, int32
 Implicit None
+Type(bfield_type), Intent(In) :: bfield
 Real(real64), Intent(In), Dimension(n) :: y0
 Integer(int32), Intent(In) :: n, nsteps
 Real(real64), Intent(In) :: x0, dx
@@ -713,8 +733,10 @@ Real(real64), Dimension(n) :: y, dydx, ytmp
 Real(real64) :: x
 
 Interface
-  Subroutine odefun(n,x,y,dydx,ierr)
+  Subroutine odefun(bfield,n,x,y,dydx,ierr)
     Use kind_mod, Only: int32, real64
+    Use bfield_typedef, Only : bfield_type
+    Type(bfield_type), Intent(In) :: bfield
     Real(real64), Intent(In) :: x
     Integer(int32), Intent(In) :: n
     Integer(int32), Intent(Out) :: ierr
@@ -735,13 +757,13 @@ x = x0
 ierr = 0
 i_last_good = nsteps+1
 Do i=1,nsteps
-  Call odefun(n,x,y,dydx,ierr_odefun)
+  Call odefun(bfield,n,x,y,dydx,ierr_odefun)
   If (ierr_odefun == 1) Then
     ierr = 1
     i_last_good = i
     Return
   Endif
-  Call rk4_core(y,dydx,n,x,dx,odefun,ytmp,ierr_rk4core)
+  Call rk4_core(bfield,y,dydx,n,x,dx,odefun,ytmp,ierr_rk4core)
   If (ierr_rk4core == 1) Then
     ierr = 1
     i_last_good = i
@@ -760,7 +782,7 @@ End Subroutine rk45_fixed_step_integrate
 !-----------------------------------------------------------------------------
 !+ Main routine for RK45 fixed step integration with diffusion
 !-----------------------------------------------------------------------------
-Subroutine rk45_fixed_step_integrate_diffuse(y0,n,x0,dx,nsteps,odefun,yout,xout,ierr,i_last_good,dmag)
+Subroutine rk45_fixed_step_integrate_diffuse(bfield,y0,n,x0,dx,nsteps,odefun,yout,xout,ierr,i_last_good,dmag)
 !
 ! Description: 
 !  Should be a general implementation of RK45 fixed step integration
@@ -794,10 +816,10 @@ Subroutine rk45_fixed_step_integrate_diffuse(y0,n,x0,dx,nsteps,odefun,yout,xout,
 ! Modules used:
 Use kind_mod, Only: real64, int32
 Use g3d_module, Only : bfield_geq_bicub
-Use gfile_var_pass, Only : g_rmaxis, g_zmaxis
 Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
 Use bfield_module, Only : bfield_bs_cyl
+
 #ifdef HAVE_M3DC1
 Use m3dc1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
 #endif
@@ -811,6 +833,7 @@ Real(real64), Parameter :: nfac_diff = 3.d0
 Real(real64), Parameter :: sigtheta = 20.d0*3.1415d0/180.d0
 Real(real64)  :: theta, phi_factor, pol_factor
 
+Type(bfield_type), Intent(In) :: bfield
 Real(real64), Intent(In), Dimension(n) :: y0
 Integer(int32), Intent(In) :: n, nsteps
 Real(real64), Intent(In) :: x0, dx, dmag
@@ -826,8 +849,10 @@ Integer(int32) :: ierr_b, ierr_rmp
 Real(real64) :: Bz, Br, Bphi, Br_rmp, Bphi_rmp, Bz_rmp
 
 Interface
-  Subroutine odefun(n,x,y,dydx,ierr)
+  Subroutine odefun(bfield,n,x,y,dydx,ierr)
     Use kind_mod, Only: int32, real64
+    Use bfield_typedef, Only : bfield_type
+    Type(bfield_type), Intent(In) :: bfield
     Real(real64), Intent(In) :: x
     Integer(int32), Intent(In) :: n
     Integer(int32), Intent(Out) :: ierr
@@ -848,13 +873,13 @@ x = x0
 ierr = 0
 i_last_good = nsteps+1
 Do i=1,nsteps
-  Call odefun(n,x,y,dydx,ierr_odefun)
+  Call odefun(bfield,n,x,y,dydx,ierr_odefun)
   If (ierr_odefun == 1) Then
     ierr = 1
     i_last_good = i
     Return
   Endif
-  Call rk4_core(y,dydx,n,x,dx,odefun,ytmp,ierr_rk4core)
+  Call rk4_core(bfield,y,dydx,n,x,dx,odefun,ytmp,ierr_rk4core)
   If (ierr_rk4core == 1) Then
     ierr = 1
     i_last_good = i
@@ -874,19 +899,19 @@ Do i=1,nsteps
   ierr_b = 0
   ierr_rmp = 0
   If (bfield_method == 0) Then     ! gfile field only
-    Call bfield_geq_bicub(RZ(1),RZ(2),1,bval,ierr_b,verbose)     !-- turn off verbose
+    Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     !-- turn off verbose
     Br   = bval(1,1)
     Bz   = bval(1,2)
     Bphi = bval(1,3)
   Elseif (bfield_method == 1) Then ! g + rmp coils
-    Call bfield_geq_bicub(RZ(1),RZ(2),1,bval,ierr_b,verbose)     
+    Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
     Call bfield_bs_cyl(RZ(1),phi,RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
     ierr_rmp = 0
     Br   = bval(1,1) + Br_rmp
     Bz   = bval(1,2) + Bz_rmp
     Bphi = bval(1,3) + Bphi_rmp
   Elseif (bfield_method == 2) Then ! g + screening B-spline
-    Call bfield_geq_bicub(RZ(1),RZ(2),1,bval,ierr_b,verbose)     
+    Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
     phi_tmp(1) = phi
     Call bfield_bspline(RZ(1),phi_tmp,RZ(2),1,bval_screened,ierr_rmp)
     Br   = bval(1,1) + bval_screened(1,1)
@@ -896,7 +921,7 @@ Do i=1,nsteps
   Elseif (bfield_method == 3) Then  ! g+m3dc1 
     phi_tmp(1) = phi
     bval_tmp =0.d0
-    Call bfield_geq_bicub(RZ(1),RZ(2),1,bval,ierr_b,verbose)     
+    Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
     Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),1,bval_tmp,ierr_rmp)
     bval = bval + bval_tmp
     Br   = bval(1,1)
@@ -948,10 +973,10 @@ Do i=1,nsteps
   
   phi_factor = 1 + diff_mag*cos(nfac_diff*x)
 
-!  theta = atan2(ytmp(1)-g_rmaxis,ytmp(2)-g_zmaxis)*180.d0/3.14159d0
+!  theta = atan2(ytmp(1)-bfield%g%rmaxis,ytmp(2)-bfield%g%zmaxis)*180.d0/3.14159d0
 !  pol_factor = (1/(2.506628274631*sigtheta))*exp(-theta**2/(2*sigtheta**2))*250.d0
 
-  theta = atan2(ytmp(2)-g_zmaxis,ytmp(1)-g_rmaxis)
+  theta = atan2(ytmp(2)-bfield%g%zmaxis,ytmp(1)-bfield%g%rmaxis)
   pol_factor = (1/(2.506628274631*sigtheta))*exp(-theta**2/(2*sigtheta**2))
 
   
@@ -982,13 +1007,14 @@ End Subroutine rk45_fixed_step_integrate_diffuse
 !-----------------------------------------------------------------------------
 !+ RK4 stepper
 !-----------------------------------------------------------------------------
-Subroutine rk4_core(y,dydx_in,n,x,dx,odefun,yout,ierr)
+Subroutine rk4_core(bfield,y,dydx_in,n,x,dx,odefun,yout,ierr)
 ! Advance y(x) to yout=y(x+dx) given dydx(x) using 
 ! the RK4 method. y, dydx_in are vectors of length n, 
 ! function odefun(n,x,y,dxdy) returns dydx. 
 ! JDL 5/2012 
 Use kind_mod, Only: real64, int32
 Implicit None
+Type(bfield_type), Intent(In) :: bfield
 Real(real64), Intent(In), Dimension(n) :: y, dydx_in
 Real(real64), Intent(Out), Dimension(n) :: yout
 Real(real64), Intent(In) :: x, dx
@@ -1001,8 +1027,10 @@ Integer(int32) :: ierr_odefun
 Real(real64), Dimension(n) :: d1,d2,d3,d4,dydx
 
 Interface
-  Subroutine odefun(n,x,y,dydx,ierr)
+  Subroutine odefun(bfield,n,x,y,dydx,ierr)
     Use kind_mod, Only: int32, real64
+    Use bfield_typedef, Only : bfield_type
+    Type(bfield_type), Intent(In) :: bfield
     Real(real64), Intent(In) :: x
     Integer(int32), Intent(In) :: n
     Integer(int32), Intent(Out) :: ierr
@@ -1017,7 +1045,7 @@ dydx = dydx_in ! Do not want to overwrite input
 d1 = dx*dydx
 ierr = 0
 ! Second step
-Call odefun(n,x+dx/TWO,y+d1/TWO,dydx,ierr_odefun)
+Call odefun(bfield,n,x+dx/TWO,y+d1/TWO,dydx,ierr_odefun)
 If (ierr_odefun == 1) Then
   ierr = 1
   yout = 0._real64
@@ -1026,7 +1054,7 @@ Endif
 d2 = dx*dydx
 
 ! Third step
-Call odefun(n,x+dx/TWO,y+d2/TWO,dydx,ierr_odefun)
+Call odefun(bfield,n,x+dx/TWO,y+d2/TWO,dydx,ierr_odefun)
 If (ierr_odefun == 1) Then
   ierr = 1
   yout = 0._real64
@@ -1035,7 +1063,7 @@ Endif
 d3 = dx*dydx
 
 ! Fourth step
-Call odefun(n,x+dx,y+d3,dydx,ierr_odefun)
+Call odefun(bfield,n,x+dx,y+d3,dydx,ierr_odefun)
 If (ierr_odefun == 1) Then
   ierr = 1
   yout = 0._real64

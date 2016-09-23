@@ -3,9 +3,6 @@
 !   Routines/modules related to g3d/efit
 !    --> Mostly ported from Canik's idl routines
 !
-!   Contains:
-!     Module gfile_var_pass
-!
 !     Module g3d_module
 !       Subroutine bfield_geq_bicub
 !       Subroutine readg_g3d
@@ -20,51 +17,11 @@
 !       Function dsdz_bi
 !-----------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
-!+ Module for variables read from gfile
-!-----------------------------------------------------------------------------
-Module gfile_var_pass
-  !
-  ! Description:
-  !
-  ! History:
-  ! Version   Date      Comment
-  ! -------   ----      -------
-  !  1.0     04/14/2011   Original Code.  JDL
-  ! 
-  ! Author(s): J.D. Lore 4/14/2011
-  !
-  ! Modules used:
-  Use kind_mod, Only: real64, int32
-
-  Implicit none
-  Public
-  Save
-  Integer, Parameter :: g_bspl_ord = 3
-  Integer(int32):: &
-       g_mw,g_mh,g_nbdry,g_limitr
-  Character(len=6) :: g_ecase
-  Real(real64) :: g_xdim,g_zdim,g_rzero,g_rgrid1,g_zmid, &
-       g_rmaxis,g_zmaxis,g_ssimag,g_ssibry,g_bcentr,g_cpasma, &
-       g_dr,g_dz,g_ip_sign
-  Real(real64), Allocatable :: g_fpol(:), &
-       g_pres(:), g_ffprim(:), g_pprime(:), g_psirz(:,:), &
-       g_qpsi(:), g_bdry(:,:),g_lim(:,:),g_r(:),g_z(:),g_pn(:), &
-       g_bicub_coeffs(:,:,:),g_pnknot(:),g_fpol_bscoef(:)    
-
-End module gfile_var_pass
-
-
-
-!-----------------------------------------------------------------------------
-!+ Module containing routines for gfile psi, B interpolation
-!-----------------------------------------------------------------------------
-Module g3d_module
+Module gdata_typedef
   Use kind_mod, Only : int32, real64
   Implicit None
   Private
-  Public :: readg_g3d, close_gfile, get_psin_bicub, get_psi_bicub
-  Public :: bfield_geq_bicub, get_psi_derivs_bicub, display_gfile
+  Public :: get_g_bspl_ord
   Type, Public :: gdata
     Integer(int32) :: mw, mh, nbdry, limitr
     Character(Len=6) :: ecase
@@ -73,26 +30,47 @@ Module g3d_module
     Real(real64), Allocatable, Dimension(:) :: fpol, pres, ffprim, &
          pprime, qpsi, r, z, pn
     Real(real64), Allocatable, Dimension(:,:) :: bdry, lim, psirz
+    Real(real64), Allocatable, Dimension(:) :: pnknot, fpol_bscoef    
+    Real(real64), Allocatable, Dimension(:,:,:) :: bicub_coeffs
     ! Private
-    Real(real64), Private, Allocatable, Dimension(:) :: pnknot, fpol_bscoef    
-    Real(real64), Private, Allocatable, Dimension(:,:,:) :: bicub_coeffs
+    Integer, Private :: bspl_ord = 3
   End Type gdata
+
 Contains
 
-  Subroutine calc_RZ_at_psiN_theta(psiN,theta_rad,npsiN,ntheta,rout,zout)
-    Use kind_mod, Only : int32, real64
-    Use gfile_var_pass
+  Function get_g_bspl_ord(g) Result(bspl_ord)
+    Use kind_mod, Only : int32
     Implicit None
-    Real(real64), Intent(In) :: psiN(npsiN), theta_rad(ntheta)
-    Integer(int32), Intent(In) :: npsiN, ntheta
-    Real(real64), Intent(Out) :: rout(npsiN,ntheta), zout(npsiN,ntheta)
+    Type(gdata), Intent(In) :: g
+    Integer(int32) :: bspl_ord
+    bspl_ord = g%bspl_ord
+  End Function get_g_bspl_ord
+End Module gdata_typedef
+!-----------------------------------------------------------------------------
+!+ Module containing routines for gfile psi, B interpolation
+!-----------------------------------------------------------------------------
+Module g3d_module
+  Use kind_mod, Only : int32, real64
+  Use gdata_typedef, Only : gdata, get_g_bspl_ord
+  Implicit None
+  Private
+  Public :: readg_g3d, close_gfile, get_psin_bicub, get_psi_bicub
+  Public :: bfield_geq_bicub, get_psi_derivs_bicub, display_gfile
 
-  End Subroutine calc_RZ_at_psiN_theta
+Contains
+
+!  Subroutine calc_RZ_at_psiN_theta(psiN,theta_rad,npsiN,ntheta,rout,zout)
+!    Use kind_mod, Only : int32, real64
+!    Implicit None
+!    Real(real64), Intent(In) :: psiN(npsiN), theta_rad(ntheta)
+!    Integer(int32), Intent(In) :: npsiN, ntheta
+!    Real(real64), Intent(Out) :: rout(npsiN,ntheta), zout(npsiN,ntheta)
+!  End Subroutine calc_RZ_at_psiN_theta
 
   !-----------------------------------------------------------------------------
   !+ returns Bcyl from gfile bfield at R,Z
   !-----------------------------------------------------------------------------
-  Subroutine bfield_geq_bicub(R1,Z1,Npts,Bout,ierr,verbose)
+  Subroutine bfield_geq_bicub(g,R1,Z1,Npts,Bout,ierr,verbose)
     ! Description: 
     !  
     ! Output:
@@ -108,11 +86,11 @@ Contains
     !
     ! Modules used:
     Use kind_mod, Only : int32, real64
-    Use gfile_var_pass
     Use bspline, Only : dbsval
     Implicit None
 
     ! Input/output                      !See above for descriptions
+    Type(gdata), Intent(In) :: g
     Integer(int32),Intent(in) :: Npts
     Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
     Real(real64),Dimension(Npts,3),Intent(out) :: Bout(Npts,3)
@@ -130,7 +108,7 @@ Contains
       myverbose = verbose
     Endif
 
-    !If (.not. Allocated(g_r) ) Then
+    !If (.not. Allocated(g%r) ) Then
     !  Write(*,*) 'G VARIABLES NOT ALLOCATED, EXITING FROM bfield_geq_bicub!'
     !  Stop
     !Endif
@@ -139,46 +117,46 @@ Contains
     Do ii = 1,Npts 
 
       ! update for vec.
-      ir = Floor( (R1(ii)-g_r(1))/g_dr ) + 1
-      iz = Floor( (Z1(ii)-g_z(1))/g_dz ) + 1
+      ir = Floor( (R1(ii)-g%r(1))/g%dr ) + 1
+      iz = Floor( (Z1(ii)-g%z(1))/g%dz ) + 1
 
       ! Check for points off grid
-      If ( (ir .le. 2) .or. (ir .ge. g_mw - 1) ) Then
+      If ( (ir .le. 2) .or. (ir .ge. g%mw - 1) ) Then
         If (myverbose) &
              Write(*,'(3(a,f12.3),a)') 'bfield_geq: Point off grid in R: R = ',R1(ii), &
-             '. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
+             '. [Rmin,Rmax] = [',g%r(1),',',g%r(g%mw),']'
         ierr = 1
         Bout = 0.d0
         return
       Endif
-      If ( (iz .le. 1) .or. (iz .ge. g_mh - 1) ) Then
+      If ( (iz .le. 1) .or. (iz .ge. g%mh - 1) ) Then
         If (myverbose) &
              Write(*,'(3(a,f12.3),a)') 'bfield_geq: Point off grid in Z: Z = ',Z1(ii), &
-             '. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
+             '. [Zmin,Zmax] = [',g%z(1),',',g%z(g%mh),']'
         ierr = 1
         Bout = 0.d0
         return
       Endif
 
-      dir = (R1(ii) - g_r(ir))/g_dr
-      diz = (Z1(ii) - g_z(iz))/g_dz
+      dir = (R1(ii) - g%r(ir))/g%dr
+      diz = (Z1(ii) - g%z(iz))/g%dz
 
-      index = iz + g_mh*(ir-1)
-      psi1 = psi_bi(index,dir,diz)
-      dsdr1 = dsdr_bi(index,dir,diz)
-      dsdz1 = dsdz_bi(index,dir,diz)
+      index = iz + g%mh*(ir-1)
+      psi1 = psi_bi(g,index,dir,diz)
+      dsdr1 = dsdr_bi(g,index,dir,diz)
+      dsdz1 = dsdz_bi(g,index,dir,diz)
 
       br1 = -dsdz1/R1(ii)
       bz1 =  dsdr1/R1(ii)
 
-      psiN = (psi1*g_ip_sign - g_ssimag)/(g_ssibry-g_ssimag)
+      psiN = (psi1*g%ip_sign - g%ssimag)/(g%ssibry-g%ssimag)
 
       ! Toroidal field
       If (psiN .ge. 0._real64 .AND. psiN .le. 1._real64) Then 
-        fpol = dbsval(psiN,g_bspl_ord,g_pnknot,g_mw,g_fpol_bscoef)
+        fpol = dbsval(psiN,get_g_bspl_ord(g),g%pnknot,g%mw,g%fpol_bscoef)
         bt1 = fpol/R1(ii)
       Else
-        bt1 = g_bcentr*g_rzero/R1(ii)
+        bt1 = g%bcentr*g%rzero/R1(ii)
       Endif
 
       Bout(ii,1) = br1
@@ -191,7 +169,7 @@ Contains
   !-----------------------------------------------------------------------------
   !+ reads a g file
   !-----------------------------------------------------------------------------
-  Subroutine readg_g3d(filename)
+  Subroutine readg_g3d(filename,g)
     !
     ! Description: 
     !  Abbreviated function to read gfiles.  Assumes formatted file
@@ -205,13 +183,12 @@ Contains
     !
     ! Modules used:
     Use kind_mod, Only: real64, int32
-    Use gfile_var_pass
     Use bspline
     Implicit None
 
     ! Input/output                      !See above for descriptions
     Character(len=*), Intent(In) :: filename
-!    Type(gdata), Intent(Out) :: g
+    Type(gdata), Intent(Out) :: g
     
     ! Local scalars
     Integer(int32) :: iocheck,idum,i,j
@@ -233,49 +210,49 @@ Contains
       Stop 'Exiting: I/O Error in subroutine readg_g3d'
     Endif
     If (debug) Write(*,*) 'Debugging readg_g3d'
-    Read(99,'(a8,a42,i3,2i4)') g_ecase,sjunk,idum,g_mw,g_mh
+    Read(99,'(a8,a42,i3,2i4)') g%ecase,sjunk,idum,g%mw,g%mh
     If (debug) Then
-      Write(*,*) 'g_ecase: ',g_ecase
-      Write(*,*) 'g_mw,g_mh: ',g_mw,g_mh
+      Write(*,*) 'g%ecase: ',g%ecase
+      Write(*,*) 'g%mw,g%mh: ',g%mw,g%mh
     Endif
 
-    Allocate(g_fpol(g_mw),g_pres(g_mw),g_ffprim(g_mw))
-    Allocate(g_pprime(g_mw),g_psirz(g_mw,g_mh),g_qpsi(g_mw))
+    Allocate(g%fpol(g%mw),g%pres(g%mw),g%ffprim(g%mw))
+    Allocate(g%pprime(g%mw),g%psirz(g%mw,g%mh),g%qpsi(g%mw))
 
-    read(99,'(5e16.9)') g_xdim,g_zdim,g_rzero,g_rgrid1,g_zmid
+    read(99,'(5e16.9)') g%xdim,g%zdim,g%rzero,g%rgrid1,g%zmid
     If (debug) Then
-      Write(*,*) 'g_xdim',g_xdim
-      Write(*,*) 'g_zdim',g_zdim
-      Write(*,*) 'g_rzero',g_rzero
-      Write(*,*) 'g_rgrid1',g_rgrid1
-      Write(*,*) 'g_zmid',g_zmid
+      Write(*,*) 'g%xdim',g%xdim
+      Write(*,*) 'g%zdim',g%zdim
+      Write(*,*) 'g%rzero',g%rzero
+      Write(*,*) 'g%rgrid1',g%rgrid1
+      Write(*,*) 'g%zmid',g%zmid
     Endif
-    read(99,'(5e16.9)') g_rmaxis,g_zmaxis,g_ssimag,g_ssibry,g_bcentr
+    read(99,'(5e16.9)') g%rmaxis,g%zmaxis,g%ssimag,g%ssibry,g%bcentr
     If (debug) Then
-      Write(*,*) 'g_rmaxis',g_rmaxis
-      Write(*,*) 'g_zmaxis',g_zmaxis
-      Write(*,*) 'g_ssimag',g_ssimag
-      Write(*,*) 'g_ssibry',g_ssibry
-      Write(*,*) 'g_bcentr',g_bcentr
+      Write(*,*) 'g%rmaxis',g%rmaxis
+      Write(*,*) 'g%zmaxis',g%zmaxis
+      Write(*,*) 'g%ssimag',g%ssimag
+      Write(*,*) 'g%ssibry',g%ssibry
+      Write(*,*) 'g%bcentr',g%bcentr
     Endif
-    read(99,'(1e16.9)') g_cpasma
-    If (debug) Write(*,*) 'g_cpasma',g_cpasma
+    read(99,'(1e16.9)') g%cpasma
+    If (debug) Write(*,*) 'g%cpasma',g%cpasma
     read(99,'(5e16.9)') xdum
 
-    read(99,'(5e16.9)') (g_fpol(i),i=1,g_mw)
-    If (debug) Write(*,*) 'g_fpol([1,g_mw])',g_fpol(1),g_fpol(g_mw)
-    read(99,'(5e16.9)') (g_pres(i),i=1,g_mw)
-    read(99,'(5e16.9)') (g_ffprim(i),i=1,g_mw)
-    read(99,'(5e16.9)') (g_pprime(i),i=1,g_mw)
+    read(99,'(5e16.9)') (g%fpol(i),i=1,g%mw)
+    If (debug) Write(*,*) 'g%fpol([1,g%mw])',g%fpol(1),g%fpol(g%mw)
+    read(99,'(5e16.9)') (g%pres(i),i=1,g%mw)
+    read(99,'(5e16.9)') (g%ffprim(i),i=1,g%mw)
+    read(99,'(5e16.9)') (g%pprime(i),i=1,g%mw)
 
-    read(99,'(5e16.9)') ((g_psirz(i,j),i=1,g_mw),j=1,g_mh)
-    read(99,'(5e16.9)') (g_qpsi(i),i=1,g_mw)
-    read(99,'(2i5)')    g_nbdry,g_limitr
+    read(99,'(5e16.9)') ((g%psirz(i,j),i=1,g%mw),j=1,g%mh)
+    read(99,'(5e16.9)') (g%qpsi(i),i=1,g%mw)
+    read(99,'(2i5)')    g%nbdry,g%limitr
 
-    Allocate(g_bdry(2,g_nbdry))
-    Allocate(g_lim(2,g_limitr))
-    read(99,'(5e16.9)') ((g_bdry(i,j),i=1,2),j=1,g_nbdry)
-    read(99,'(5e16.9)') ((g_lim(i,j),i=1,2),j=1,g_limitr)
+    Allocate(g%bdry(2,g%nbdry))
+    Allocate(g%lim(2,g%limitr))
+    read(99,'(5e16.9)') ((g%bdry(i,j),i=1,2),j=1,g%nbdry)
+    read(99,'(5e16.9)') ((g%lim(i,j),i=1,2),j=1,g%limitr)
 
     Close(99)
 
@@ -285,80 +262,80 @@ Contains
     ! Postprocessing
     !
 
-    g_dR = g_xdim/(g_mw-1)
-    g_dZ = g_zdim/(g_mh-1)
+    g%dR = g%xdim/(g%mw-1)
+    g%dZ = g%zdim/(g%mh-1)
 
-    Allocate(g_r(g_mw),g_z(g_mh),g_pn(g_mw))
+    Allocate(g%r(g%mw),g%z(g%mh),g%pn(g%mw))
 
-    Do i=0,g_mw-1
-      g_r(i+1) = g_rgrid1 + g_dR*i
-      g_pn(i+1) = Real(i,real64)/(g_mw-1)
+    Do i=0,g%mw-1
+      g%r(i+1) = g%rgrid1 + g%dR*i
+      g%pn(i+1) = Real(i,real64)/(g%mw-1)
     Enddo
 
-    Do i=0,g_mh-1
-      g_z(i+1) = g_zmid - 0.5_real64*g_zdim + g_dZ*i
+    Do i=0,g%mh-1
+      g%z(i+1) = g%zmid - 0.5_real64*g%zdim + g%dZ*i
     Enddo
 
-    g_ip_sign = -g_cpasma/dabs(g_cpasma)
+    g%ip_sign = -g%cpasma/abs(g%cpasma)
 
-    Allocate(g_bicub_coeffs(g_mw*g_mh,4,4))
-    g_bicub_coeffs = get_psi_bicub_coeffs()
+    Allocate(g%bicub_coeffs(g%mw*g%mh,4,4))
+    g%bicub_coeffs = get_psi_bicub_coeffs(g)
 
     ! B-Spline fit poloidal current function
-    Allocate(g_pnknot(g_bspl_ord+g_mw))
-    Allocate(g_fpol_bscoef(g_mw))
-    Call dbsnak(g_mw,g_pn,g_bspl_ord,g_pnknot)
-    Call dbsint(g_mw,g_pn,g_fpol,g_bspl_ord,g_pnknot,g_fpol_bscoef)
+    Allocate(g%pnknot(get_g_bspl_ord(g)+g%mw))
+    Allocate(g%fpol_bscoef(g%mw))
+    Call dbsnak(g%mw,g%pn,get_g_bspl_ord(g),g%pnknot)
+    Call dbsint(g%mw,g%pn,g%fpol,get_g_bspl_ord(g),g%pnknot,g%fpol_bscoef)
 
   End Subroutine readg_g3d
 
-  Subroutine display_gfile()
-    Use gfile_var_pass
+  Subroutine display_gfile(g)
     Implicit None
+    Type(gdata), Intent(In) :: g
     Integer :: i
 
 
     Write(*,*) '------------------------------------------------------'
-    Write(*,*) 'g_ecase:',g_ecase
-    Write(*,*) 'g_mw:',g_mw
-    Write(*,*) 'g_mh:',g_mh
-    Write(*,*) 'g_xdim',g_xdim
-    Write(*,*) 'g_zdim',g_zdim
-    Write(*,*) 'g_rzero',g_rzero
-    Write(*,*) 'g_rgrid1',g_rgrid1
-    Write(*,*) 'g_zmid',g_zmid
-    Write(*,*) 'g_rmaxis',g_rmaxis
-    Write(*,*) 'g_zmaxis',g_zmaxis
-    Write(*,*) 'g_ssimag',g_ssimag
-    Write(*,*) 'g_ssibry',g_ssibry
-    Write(*,*) 'g_bcentr',g_bcentr
-    Write(*,*) 'g_cpasma',g_cpasma
-    Write(*,*) 'g_fpol:'
-    Do i = 1,g_mw
-      Write(*,*) g_fpol(i)
+    Write(*,*) 'g%ecase:',g%ecase
+    Write(*,*) 'g%mw:',g%mw
+    Write(*,*) 'g%mh:',g%mh
+    Write(*,*) 'g%xdim',g%xdim
+    Write(*,*) 'g%zdim',g%zdim
+    Write(*,*) 'g%rzero',g%rzero
+    Write(*,*) 'g%rgrid1',g%rgrid1
+    Write(*,*) 'g%zmid',g%zmid
+    Write(*,*) 'g%rmaxis',g%rmaxis
+    Write(*,*) 'g%zmaxis',g%zmaxis
+    Write(*,*) 'g%ssimag',g%ssimag
+    Write(*,*) 'g%ssibry',g%ssibry
+    Write(*,*) 'g%bcentr',g%bcentr
+    Write(*,*) 'g%cpasma',g%cpasma
+    Write(*,*) 'g%fpol:'
+    Do i = 1,g%mw
+      Write(*,*) g%fpol(i)
     Enddo
-    Write(*,*) 'g_pres:'
-    Do i = 1,g_mw
-      Write(*,*) g_pres(i)
+    Write(*,*) 'g%pres:'
+    Do i = 1,g%mw
+      Write(*,*) g%pres(i)
     Enddo
-    Write(*,*) 'g_ffprim:'
-    Do i = 1,g_mw
-      Write(*,*) g_ffprim(i)
+    Write(*,*) 'g%ffprim:'
+    Do i = 1,g%mw
+      Write(*,*) g%ffprim(i)
     Enddo
-    Write(*,*) 'g_pprime:'
-    Do i = 1,g_mw
-      Write(*,*) g_pprime(i)
+    Write(*,*) 'g%pprime:'
+    Do i = 1,g%mw
+      Write(*,*) g%pprime(i)
     Enddo
-    Write(*,*) 'g_psirz:'
-    Do i = 1,g_mw
-      Write(*,*) g_psirz(i,1:g_mh)
+    Write(*,*) 'g%psirz:'
+    Do i = 1,g%mw
+      Write(*,*) g%psirz(i,1:g%mh)
     Enddo
-    Write(*,*) 'g_qpsi:'
-    Do i = 1,g_mw
-      Write(*,*) g_qpsi(i)
+    Write(*,*) 'g%qpsi:'
+    Do i = 1,g%mw
+      Write(*,*) g%qpsi(i)
     Enddo
-    Write(*,*) 'g_nbdry',g_nbdry
-    Write(*,*) 'g_limitr',g_limitr
+    Write(*,*) 'g%nbdry',g%nbdry
+    Write(*,*) 'g%limitr',g%limitr
 
     Write(*,*) '------------------------------------------------------'
 
@@ -369,7 +346,7 @@ Contains
   !-----------------------------------------------------------------------------
   !+ Returns array of coefficients for bicubic interpolation
   !-----------------------------------------------------------------------------
-  Function get_psi_bicub_coeffs()  &
+  Function get_psi_bicub_coeffs(g)  &
        Result(psi_bicub_coeffs)
     !
     ! Description: 
@@ -387,18 +364,16 @@ Contains
     !
     ! Modules used:
     Use kind_mod, Only: real64, int32
-    Use gfile_var_pass, Only : &
-         g_dr,g_dz,g_mw,g_mh,g_ip_sign,g_psirz
 
     Implicit None
 
     ! Input/output                      !See above for descriptions
-    Real(real64),dimension(g_mw*g_mh,4,4)   :: psi_bicub_coeffs
-
+    Type(gdata), Intent(In) :: g
+    Real(real64),dimension(g%mw*g%mh,4,4)   :: psi_bicub_coeffs
     ! Local Scalars
     Integer(int32) :: nr,nz,ir,iz,index,inv_err
     ! Local arrays 
-    Real(real64),dimension(g_mw,g_mh) :: psi2d,dsdr,dsdz,d2sdrdz
+    Real(real64),dimension(g%mw,g%mh) :: psi2d,dsdr,dsdz,d2sdrdz
     Real(real64),dimension(16,16) :: bicub_mat,bicub_mat_fac
     Real(real64),dimension(16) :: b
     Integer(int32),dimension(16) :: ipiv
@@ -422,16 +397,16 @@ Contains
 
     !- End of header -------------------------------------------------------------
 
-    nr = g_mw
-    nz = g_mh
-    psi2d = g_ip_sign * g_psirz
+    nr = g%mw
+    nz = g%mh
+    psi2d = g%ip_sign * g%psirz
 
-    dsdr = (cshift(psi2d,shift=1,dim=1) - cshift(psi2d,shift=-1,dim=1))/(2._real64*g_dr)
-    dsdz = (cshift(psi2d,shift=1,dim=2) - cshift(psi2d,shift=-1,dim=2))/(2._real64*g_dz)
+    dsdr = (cshift(psi2d,shift=1,dim=1) - cshift(psi2d,shift=-1,dim=1))/(2._real64*g%dr)
+    dsdz = (cshift(psi2d,shift=1,dim=2) - cshift(psi2d,shift=-1,dim=2))/(2._real64*g%dz)
     d2sdrdz = (cshift(cshift(psi2d,shift=1,dim=1),shift=1,dim=2) & 
          - cshift(cshift(psi2d,shift=-1,dim=1),shift=1,dim=2) &
          - cshift(cshift(psi2d,shift=1,dim=1),shift=-1,dim=2) &
-         + cshift(cshift(psi2d,shift=-1,dim=1),shift=-1,dim=2))/(4._real64*g_dr*g_dz)
+         + cshift(cshift(psi2d,shift=-1,dim=1),shift=-1,dim=2))/(4._real64*g%dr*g%dz)
 
     bicub_mat = get_bicub_mat()
 
@@ -446,9 +421,9 @@ Contains
     Do ir = 1,nr-1
       Do iz = 1,nz-1
         b = (/psi2d(ir,iz),            psi2d(ir+1,iz),            psi2d(ir,iz+1),            psi2d(ir+1,iz+1),     &
-             dsdr(ir,iz)*g_dr,        dsdr(ir+1,iz)*g_dr,        dsdr(ir,iz+1)*g_dr,        dsdr(ir+1,iz+1)*g_dr, &
-             dsdz(ir,iz)*g_dz,        dsdz(ir+1,iz)*g_dz,        dsdz(ir,iz+1)*g_dz,        dsdz(ir+1,iz+1)*g_dz, &
-             d2sdrdz(ir,iz)*g_dr*g_dz,d2sdrdz(ir+1,iz)*g_dr*g_dz,d2sdrdz(ir,iz+1)*g_dr*g_dz,d2sdrdz(ir+1,iz+1)*g_dr*g_dz/)
+             dsdr(ir,iz)*g%dr,        dsdr(ir+1,iz)*g%dr,        dsdr(ir,iz+1)*g%dr,        dsdr(ir+1,iz+1)*g%dr, &
+             dsdz(ir,iz)*g%dz,        dsdz(ir+1,iz)*g%dz,        dsdz(ir,iz+1)*g%dz,        dsdz(ir+1,iz+1)*g%dz, &
+             d2sdrdz(ir,iz)*g%dr*g%dz,d2sdrdz(ir+1,iz)*g%dr*g%dz,d2sdrdz(ir,iz+1)*g%dr*g%dz,d2sdrdz(ir+1,iz+1)*g%dr*g%dz/)
         ! Solve Ax=B
         Call DGETRS('N',16,1,bicub_mat_fac,16,ipiv,b,16,inv_err)
         If (inv_err .ne. 0) Then
@@ -490,7 +465,7 @@ Contains
 
     ! Input/output                      !See above for descriptions
     Real(real64),dimension(16,16)        :: bicub_mat
-
+    
     ! Local Parameters
     Real(real64), Parameter :: One   = 1._real64, &
          Two   = 2._real64, &
@@ -542,13 +517,13 @@ Contains
   !-----------------------------------------------------------------------------
   !+ returns psiN from gfile bfield at R,Z
   !-----------------------------------------------------------------------------
-  Subroutine get_psiN_bicub(R1,Z1,Npts,psiNout,ierr)
+  Subroutine get_psiN_bicub(g,R1,Z1,Npts,psiNout,ierr)
     Use kind_mod, Only: real64, int32
-    Use gfile_var_pass, Only : g_ssimag, g_ssibry
     Use bspline
     Implicit None
 
     ! Input/output                      !See above for descriptions
+    Type(gdata), Intent(In) :: g
     Integer(int32),Intent(in) :: Npts
     Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
     Real(real64),Dimension(Npts),Intent(out) :: psiNout
@@ -558,32 +533,20 @@ Contains
     Integer(int32) :: ierr_tmp
 
     ierr = 0
-    Call get_psi_bicub(R1,Z1,Npts,psi,ierr_tmp)
-    psiNout = (psi - g_ssimag)/(g_ssibry-g_ssimag)
+    Call get_psi_bicub(g,R1,Z1,Npts,psi,ierr_tmp)
+    psiNout = (psi - g%ssimag)/(g%ssibry-g%ssimag)
   End Subroutine get_psiN_bicub
 
   !-----------------------------------------------------------------------------
   !+ returns psi from gfile bfield at R,Z
   !-----------------------------------------------------------------------------
-  Subroutine get_psi_bicub(R1,Z1,Npts,psiout,ierr)
-    ! Description: 
-    !  
-    ! Output:
-    !         
-    ! History:
-    !  Version   Date      Comment
-    !  -------   ----      -------
-    !  1.0     04/14/2011  Ported from Canik's idl routines.  JDL
-    ! 
-    ! Author(s): J.D. Lore 04/14/2011 
-    !
-    ! Modules used:
+  Subroutine get_psi_bicub(g,R1,Z1,Npts,psiout,ierr)
     Use kind_mod, Only: real64, int32
-    Use gfile_var_pass, Only : g_ip_sign, g_r, g_z, g_dr, g_dz, g_mw, g_mh
     Use bspline
     Implicit None
 
     ! Input/output                      !See above for descriptions
+    Type(gdata), Intent(In) :: g
     Integer(int32),Intent(in) :: Npts
     Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
     Real(real64),Dimension(Npts),Intent(out) :: psiout
@@ -595,7 +558,7 @@ Contains
 
     !- End of header -------------------------------------------------------------
 
-    If (.not. Allocated(g_r) ) Then
+    If (.not. Allocated(g%r) ) Then
       Write(*,*) 'G VARIABLES NOT ALLOCATED, EXITING FROM get_psi_bicub!'
       Stop
     Endif
@@ -604,28 +567,28 @@ Contains
     Do ii = 1,Npts 
 
       ! update for vec.
-      ir = Floor( (R1(ii)-g_r(1))/g_dr ) + 1
-      iz = Floor( (Z1(ii)-g_z(1))/g_dz ) + 1
+      ir = Floor( (R1(ii)-g%r(1))/g%dr ) + 1
+      iz = Floor( (Z1(ii)-g%z(1))/g%dz ) + 1
 
       ! Check for points off grid
-      If ( (ir .le. 2) .or. (ir .ge. g_mw - 1) ) Then
+      If ( (ir .le. 2) .or. (ir .ge. g%mw - 1) ) Then
         Write(*,'(3(a,f12.3),a)') 'psi_geq: Point off grid in R: R = ',R1(ii),&
-             '. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
+             '. [Rmin,Rmax] = [',g%r(1),',',g%r(g%mw),']'
         ierr = 1
         psiout(ii:Npts) = 0.d0
         return
       Endif
-      If ( (iz .le. 1) .or. (iz .ge. g_mh - 1) ) Then
+      If ( (iz .le. 1) .or. (iz .ge. g%mh - 1) ) Then
         Write(*,'(3(a,f12.3),a)') 'psi_geq: Point off grid in Z: Z = ',Z1(ii),&
-             '. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
+             '. [Zmin,Zmax] = [',g%z(1),',',g%z(g%mh),']'
         ierr = 1
         psiout(ii:Npts) = 0.d0
         return
       Endif
 
-      dir = (R1(ii) - g_r(ir))/g_dr
-      diz = (Z1(ii) - g_z(iz))/g_dz
-      psiout(ii) = g_ip_sign*psi_bi(iz + g_mh*(ir-1),dir,diz)
+      dir = (R1(ii) - g%r(ir))/g%dr
+      diz = (Z1(ii) - g%z(iz))/g%dz
+      psiout(ii) = g%ip_sign*psi_bi(g,iz + g%mh*(ir-1),dir,diz)
 
 
     Enddo
@@ -635,24 +598,12 @@ Contains
   !-----------------------------------------------------------------------------
   !+ returns psi and derivatives from gfile bfield at R,Z
   !-----------------------------------------------------------------------------
-  Subroutine get_psi_derivs_bicub(R1,Z1,Npts,psiout,dpsidr,dpsidz,ierr)
-    ! Description: 
-    !  
-    ! Output:
-    !         
-    ! History:
-    !  Version   Date      Comment
-    !  -------   ----      -------
-    !  1.0     04/14/2011  Ported from Canik's idl routines.  JDL
-    ! 
-    ! Author(s): J.D. Lore 04/14/2011 
-    !
-    ! Modules used:
+  Subroutine get_psi_derivs_bicub(g,R1,Z1,Npts,psiout,dpsidr,dpsidz,ierr)
     Use kind_mod, Only: real64, int32
-    Use gfile_var_pass
     Implicit None
 
     ! Input/output                      !See above for descriptions
+    Type(gdata), Intent(In) :: g
     Integer(int32),Intent(in) :: Npts
     Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
     Real(real64),Dimension(Npts),Intent(out) :: psiout, dpsidr, dpsidz
@@ -664,7 +615,7 @@ Contains
 
     !- End of header -------------------------------------------------------------
 
-    If (.not. Allocated(g_r) ) Then
+    If (.not. Allocated(g%r) ) Then
       Write(*,*) 'G VARIABLES NOT ALLOCATED, EXITING FROM get_psi_derivs_bicub!'
       Stop
     Endif
@@ -673,31 +624,31 @@ Contains
     Do ii = 1,Npts 
 
       ! update for vec.
-      ir = Floor( (R1(ii)-g_r(1))/g_dr ) + 1
-      iz = Floor( (Z1(ii)-g_z(1))/g_dz ) + 1
+      ir = Floor( (R1(ii)-g%r(1))/g%dr ) + 1
+      iz = Floor( (Z1(ii)-g%z(1))/g%dz ) + 1
 
       ! Check for points off grid
-      If ( (ir .le. 2) .or. (ir .ge. g_mw - 1) ) Then
+      If ( (ir .le. 2) .or. (ir .ge. g%mw - 1) ) Then
         Write(*,'(3(a,f12.3),a)') 'psi deriv: Point off grid in R: R = ',R1(ii),&
-             '. [Rmin,Rmax] = [',g_r(1),',',g_r(g_mw),']'
+             '. [Rmin,Rmax] = [',g%r(1),',',g%r(g%mw),']'
         ierr = 1
         psiout = 0.d0
         return
       Endif
-      If ( (iz .le. 1) .or. (iz .ge. g_mh - 1) ) Then
+      If ( (iz .le. 1) .or. (iz .ge. g%mh - 1) ) Then
         Write(*,'(3(a,f12.3),a)') 'psi deriv: Point off grid in Z: Z = ',Z1(ii),&
-             '. [Zmin,Zmax] = [',g_z(1),',',g_z(g_mh),']'
+             '. [Zmin,Zmax] = [',g%z(1),',',g%z(g%mh),']'
         ierr = 1
         psiout = 0.d0
         return
       Endif
 
-      dir = (R1(ii) - g_r(ir))/g_dr
-      diz = (Z1(ii) - g_z(iz))/g_dz
-      index = iz + g_mh*(ir-1)
-      psiout(ii) = psi_bi(index,dir,diz)
-      dpsidr(ii) = dsdr_bi(index,dir,diz)
-      dpsidz(ii) = dsdz_bi(index,dir,diz)
+      dir = (R1(ii) - g%r(ir))/g%dr
+      diz = (Z1(ii) - g%z(iz))/g%dz
+      index = iz + g%mh*(ir-1)
+      psiout(ii) = psi_bi(g,index,dir,diz)
+      dpsidr(ii) = dsdr_bi(g,index,dir,diz)
+      dpsidz(ii) = dsdz_bi(g,index,dir,diz)
     Enddo
 
   End Subroutine get_psi_derivs_bicub
@@ -707,77 +658,77 @@ Contains
   !-----------------------------------------------------------------------------
   !+ 
   !-----------------------------------------------------------------------------
-  Function psi_bi(index,dir,diz)
+  Function psi_bi(g,index,dir,diz)
     Use kind_mod, Only: real64, int32
-    Use gfile_var_pass, Only : g_bicub_coeffs
     Implicit None
+    Type(gdata), Intent(In) :: g
     Integer(int32), Intent(In) :: index
     Real(real64), Intent(In) :: dir, diz
     Real(real64) :: psi_bi
-    psi_bi = g_bicub_coeffs(index,1,1)   + g_bicub_coeffs(index,2,1)*dir       + &
-         g_bicub_coeffs(index,3,1)*dir*dir       + g_bicub_coeffs(index,4,1)*dir*dir*dir      + &
-         g_bicub_coeffs(index,1,2)*diz   + g_bicub_coeffs(index,2,2)*dir*diz   + &
-         g_bicub_coeffs(index,3,2)*dir*dir*diz   + g_bicub_coeffs(index,4,2)*dir*dir*dir*diz  + &
-         g_bicub_coeffs(index,1,3)*diz*diz  + g_bicub_coeffs(index,2,3)*dir*diz*diz  + &
-         g_bicub_coeffs(index,3,3)*dir*dir*diz*diz  + g_bicub_coeffs(index,4,3)*dir*dir*dir*diz*diz + &
-         g_bicub_coeffs(index,1,4)*diz*diz*diz  + g_bicub_coeffs(index,2,4)*dir*diz*diz*diz  + &
-         g_bicub_coeffs(index,3,4)*dir*dir*diz*diz*diz  + g_bicub_coeffs(index,4,4)*dir*dir*dir*diz*diz*diz
+    psi_bi = g%bicub_coeffs(index,1,1)   + g%bicub_coeffs(index,2,1)*dir       + &
+         g%bicub_coeffs(index,3,1)*dir*dir       + g%bicub_coeffs(index,4,1)*dir*dir*dir      + &
+         g%bicub_coeffs(index,1,2)*diz   + g%bicub_coeffs(index,2,2)*dir*diz   + &
+         g%bicub_coeffs(index,3,2)*dir*dir*diz   + g%bicub_coeffs(index,4,2)*dir*dir*dir*diz  + &
+         g%bicub_coeffs(index,1,3)*diz*diz  + g%bicub_coeffs(index,2,3)*dir*diz*diz  + &
+         g%bicub_coeffs(index,3,3)*dir*dir*diz*diz  + g%bicub_coeffs(index,4,3)*dir*dir*dir*diz*diz + &
+         g%bicub_coeffs(index,1,4)*diz*diz*diz  + g%bicub_coeffs(index,2,4)*dir*diz*diz*diz  + &
+         g%bicub_coeffs(index,3,4)*dir*dir*diz*diz*diz  + g%bicub_coeffs(index,4,4)*dir*dir*dir*diz*diz*diz
   End Function psi_bi
 
 
   !-----------------------------------------------------------------------------
   !+ 
   !-----------------------------------------------------------------------------
-  Function dsdr_bi(index,dir,diz)
+  Function dsdr_bi(g,index,dir,diz)
     Use kind_mod, Only: real64, int32
-    Use gfile_var_pass, Only : g_bicub_coeffs, g_dr
     Implicit None
+    Type(gdata), Intent(In) :: g
     Integer(int32), Intent(In) :: index
     Real(real64), Intent(In) :: dir, diz
     Real(real64) :: dsdr_bi
     Real(real64), Parameter :: TWO = 2._real64, THREE = 3._real64  
-    dsdr_bi = (g_bicub_coeffs(index,2,1)       + TWO*g_bicub_coeffs(index,3,1)*dir +    &
-         THREE*g_bicub_coeffs(index,4,1)*dir*dir      + &
-         g_bicub_coeffs(index,2,2)*diz   + TWO*g_bicub_coeffs(index,3,2)*dir*diz   + &
-         THREE*g_bicub_coeffs(index,4,2)*dir*dir*diz  + &
-         g_bicub_coeffs(index,2,3)*diz*diz  + TWO*g_bicub_coeffs(index,3,3)*dir*diz*diz  + &
-         THREE*g_bicub_coeffs(index,4,3)*dir*dir*diz*diz + &
-         g_bicub_coeffs(index,2,4)*diz*diz*diz  + TWO*g_bicub_coeffs(index,3,4)*dir*diz*diz*diz + &
-         THREE*g_bicub_coeffs(index,4,4)*dir*dir*diz*diz*diz)/g_dr
+    dsdr_bi = (g%bicub_coeffs(index,2,1)       + TWO*g%bicub_coeffs(index,3,1)*dir +    &
+         THREE*g%bicub_coeffs(index,4,1)*dir*dir      + &
+         g%bicub_coeffs(index,2,2)*diz   + TWO*g%bicub_coeffs(index,3,2)*dir*diz   + &
+         THREE*g%bicub_coeffs(index,4,2)*dir*dir*diz  + &
+         g%bicub_coeffs(index,2,3)*diz*diz  + TWO*g%bicub_coeffs(index,3,3)*dir*diz*diz  + &
+         THREE*g%bicub_coeffs(index,4,3)*dir*dir*diz*diz + &
+         g%bicub_coeffs(index,2,4)*diz*diz*diz  + TWO*g%bicub_coeffs(index,3,4)*dir*diz*diz*diz + &
+         THREE*g%bicub_coeffs(index,4,4)*dir*dir*diz*diz*diz)/g%dr
   End Function dsdr_bi
 
 
   !-----------------------------------------------------------------------------
   !+ 
   !-----------------------------------------------------------------------------
-  Function dsdz_bi(index,dir,diz)
+  Function dsdz_bi(g,index,dir,diz)
     Use kind_mod, Only : int32, real64
-    Use gfile_var_pass, Only : g_bicub_coeffs, g_dz
     Implicit None
+    Type(gdata), Intent(In) :: g
     Integer(int32), Intent(In) :: index
     Real(real64), Intent(In) :: dir, diz
     Real(real64) :: dsdz_bi
     Real(real64), Parameter :: TWO = 2._real64, THREE = 3._real64  
-    dsdz_bi = (g_bicub_coeffs(index,1,2)                 + g_bicub_coeffs(index,2,2)*dir       + &
-         g_bicub_coeffs(index,3,2)*dir*dir            + g_bicub_coeffs(index,4,2)*dir*dir*dir      + &
-         TWO*g_bicub_coeffs(index,1,3)*diz         + TWO*g_bicub_coeffs(index,2,3)*dir*diz   + &
-         TWO*g_bicub_coeffs(index,3,3)*dir*dir*diz    + TWO*g_bicub_coeffs(index,4,3)*dir*dir*dir*diz  + &
-         THREE*g_bicub_coeffs(index,1,4)*diz*diz      + THREE*g_bicub_coeffs(index,2,4)*dir*diz*diz  + &
-         THREE*g_bicub_coeffs(index,3,4)*dir*dir*diz*diz + THREE*g_bicub_coeffs(index,4,4)*dir*dir*dir*diz*diz)/g_dz
+    dsdz_bi = (g%bicub_coeffs(index,1,2)                 + g%bicub_coeffs(index,2,2)*dir                 + &
+               g%bicub_coeffs(index,3,2)*dir*dir         + g%bicub_coeffs(index,4,2)*dir*dir*dir         + &
+           TWO*g%bicub_coeffs(index,1,3)*diz             + TWO*g%bicub_coeffs(index,2,3)*dir*diz         + &
+           TWO*g%bicub_coeffs(index,3,3)*dir*dir*diz     + TWO*g%bicub_coeffs(index,4,3)*dir*dir*dir*diz + &
+         THREE*g%bicub_coeffs(index,1,4)*diz*diz         + THREE*g%bicub_coeffs(index,2,4)*dir*diz*diz   + &
+         THREE*g%bicub_coeffs(index,3,4)*dir*dir*diz*diz + THREE*g%bicub_coeffs(index,4,4)*dir*dir*dir*diz*diz)/g%dz
   End Function dsdz_bi
 
-  Subroutine close_gfile
-    Use gfile_var_pass
+  Subroutine close_gfile(g)
     Implicit None
+    Type(gdata), Intent(InOut) :: g
     Write(*,*) 'Deallocating gfile variables'
-    Deallocate(g_fpol,g_pres,g_ffprim)
-    Deallocate(g_pprime,g_psirz,g_qpsi)
-    Deallocate(g_bdry)
-    Deallocate(g_lim)
-    Deallocate(g_r,g_z,g_pn)
-    Deallocate(g_bicub_coeffs)
-    Deallocate(g_pnknot)
-    Deallocate(g_fpol_bscoef)
+    Deallocate(g%fpol,g%pres,g%ffprim)
+    Deallocate(g%pprime,g%psirz,g%qpsi)
+    Deallocate(g%bdry)
+    Deallocate(g%lim)
+    Deallocate(g%r,g%z,g%pn)
+    Deallocate(g%bicub_coeffs)
+    Deallocate(g%pnknot)
+    Deallocate(g%fpol_bscoef)
   End Subroutine close_gfile
 
 End Module g3d_module

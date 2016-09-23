@@ -41,7 +41,7 @@ Real(real64),dimension(npts_line+1) :: rout,zout,phiout
 
 gfilename = './g160884.03014_251'
 
-Call readg_g3d(gfilename)
+Call readg_g3d(gfilename,g)
 
 call etime(tarray,tres)
 print *,'Time: ',tres
