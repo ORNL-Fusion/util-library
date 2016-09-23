@@ -13,6 +13,7 @@
 !
 !-----------------------------------------------------------------------------
 Module util_routines
+  Use bfield_typedef, Only : bfield_type
   Implicit None
   Private
 
@@ -34,18 +35,20 @@ Module util_routines
 
 Contains
 
+  
 
   !-----------------------------------------------------------------------------
   !+ Scalar procedure for get_psi_2d
   !-----------------------------------------------------------------------------  
-  Function get_psi_2d_scalar(r,z,ierr) &
+  Function get_psi_2d_scalar(bfield,r,z,ierr) &
        Result(psi)
     Use kind_mod, Only : int32, real64
     Implicit None
+    Type(bfield_type), Intent(In) :: bfield
     Real(real64), Intent(In) :: r,z
     Integer(int32), Intent(Out) :: ierr
     Real(real64) :: psi, psi_tmp(1)
-    psi_tmp = get_psi_2d_array([r],[z],1,ierr)
+    psi_tmp = get_psi_2d_array(bfield,[r],[z],1,ierr)
     psi = psi_tmp(1)
   End Function get_psi_2d_scalar
 
@@ -53,7 +56,7 @@ Contains
   !-----------------------------------------------------------------------------
   !+ Array procedure for get_psi_2d
   !-----------------------------------------------------------------------------  
-  Function get_psi_2d_array(r,z,Npts,ierr) &
+  Function get_psi_2d_array(bfield,r,z,Npts,ierr) &
        Result(psi)
     Use kind_mod, Only: int32, real64  
     Use fieldline_follow_mod, Only: bfield_method
@@ -62,6 +65,7 @@ Contains
     Use m3dc1_routines_mod, Only: calc_psi_m3dc1_2d
 #endif
     Implicit None
+    Type(bfield_type), Intent(In) :: bfield
     Real(real64), Dimension(Npts), Intent(In) :: r,z
     Integer(int32), Intent(In) :: Npts
     Integer(int32), Intent(Out) :: ierr
@@ -78,7 +82,7 @@ Contains
          (bfield_method == 10) .OR. &    ! xpand
          (bfield_method == 11) &         
       ) Then    
-      Call get_psi_bicub(r,z,Npts,psi,ierr_tmp)
+      Call get_psi_bicub(bfield%g,r,z,Npts,psi,ierr_tmp)
 #ifdef HAVE_M3DC1
     Elseif ( (bfield_method == 4) .OR. & ! m3dc1 total field
          (bfield_method == 5) ) Then ! m3dc1 total field (AS only)  
@@ -96,21 +100,22 @@ Contains
   !-----------------------------------------------------------------------------
   !+ Scalar procedure for get_psiN_2d_scalar
   !-----------------------------------------------------------------------------  
-  Function get_psiN_2d_scalar(r,z,ierr) &
+  Function get_psiN_2d_scalar(bfield,r,z,ierr) &
        Result(psiN)
     Use kind_mod, Only : int32, real64
     Implicit None
+    Type(bfield_type), Intent(In) :: bfield
     Real(real64), Intent(In) :: r,z
     Integer(int32), Intent(Out) :: ierr
     Real(real64) :: psiN, psiN_tmp(1)
-    psiN_tmp = get_psiN_2d_array([r],[z],1,ierr)
+    psiN_tmp = get_psiN_2d_array(bfield,[r],[z],1,ierr)
     psiN = psiN_tmp(1)
   End Function get_psiN_2d_scalar  
   
   !-----------------------------------------------------------------------------
   !+ Array procedure for get_psiN_2d
   !-----------------------------------------------------------------------------    
-  Function get_psiN_2d_array(r,z,Npts,ierr) &
+  Function get_psiN_2d_array(bfield,r,z,Npts,ierr) &
        Result(psiN)
     Use kind_mod, Only: int32, real64  
     Use fieldline_follow_mod, Only: bfield_method
@@ -119,6 +124,7 @@ Contains
     Use m3dc1_routines_mod, Only: calc_psiN_m3dc1_2d
 #endif
     Implicit None
+    Type(bfield_type), Intent(In) :: bfield
     Real(real64), Dimension(Npts), Intent(In) :: r,z
     Integer(int32), Intent(In) :: Npts
     Integer(int32), Intent(Out) :: ierr
@@ -135,7 +141,7 @@ Contains
          (bfield_method == 10) .OR. &   ! xpand      
          (bfield_method == 11) &         
       ) Then          
-      Call get_psiN_bicub(r,z,Npts,psiN,ierr_tmp)
+      Call get_psiN_bicub(bfield%g,r,z,Npts,psiN,ierr_tmp)
 #ifdef HAVE_M3DC1
     Elseif ( &
          (bfield_method == 4) .OR. & ! m3dc1 total field
@@ -184,7 +190,7 @@ Contains
   !-----------------------------------------------------------------------------
   !+ Calculates approximate curve(s) for the sepatrix
   !-----------------------------------------------------------------------------
-  Subroutine calc_sep(second_sep,fname_out)
+  Subroutine calc_sep(bfield,second_sep,fname_out)
     !
     ! Description:
     !  Calculates the separatrix curve(s) 
@@ -203,11 +209,11 @@ Contains
     ! Author(s): J.D. Lore 
     Use kind_mod, Only: int32, real64
     Use fieldline_follow_mod, Only: follow_fieldlines_rzphi
-    Use gfile_var_pass, Only: g_ip_sign,g_lim,g_limitr,g_r,g_z,g_mw,g_mh
     Use math_geo_module, Only : inside_poly
     Use phys_const, Only: pi
     Implicit None
     !Input/output
+    Type(bfield_type), Intent(In) :: bfield
     Logical, Intent(In) :: second_sep
     Character(Len=120),Intent(In) :: fname_out
     ! Local Variables
@@ -237,15 +243,15 @@ Contains
 
     ! Set up boundaries to search
     ! 1) gfile lim
-    Allocate(lim_r(g_limitr))
-    Allocate(lim_z(g_limitr))
+    Allocate(lim_r(bfield%g%limitr))
+    Allocate(lim_z(bfield%g%limitr))
     ! Throw away zero points 
     nlim = 0
-    Do i = 1,g_limitr
-      If (g_lim(1,i) > 1.d-4) Then
+    Do i = 1,bfield%g%limitr
+      If (bfield%g%lim(1,i) > 1.d-4) Then
         nlim = nlim + 1
-        lim_r(nlim) = g_lim(1,i)
-        lim_z(nlim) = g_lim(2,i)
+        lim_r(nlim) = bfield%g%lim(1,i)
+        lim_z(nlim) = bfield%g%lim(2,i)
       Endif
     Enddo
     If (nlim == 0) Then
@@ -255,13 +261,13 @@ Contains
     ! 2) box based on gfile domain size
     nbox = 4
     Allocate(box_r(nbox),box_z(nbox))
-    box_r = (/g_r(1),g_r(g_mw),g_r(g_mw),g_r(1)/)
-    box_z = (/g_z(1),g_z(1),g_z(g_mh),g_z(g_mh)/)
+    box_r = (/bfield%g%r(1),bfield%g%r(bfield%g%mw),bfield%g%r(bfield%g%mw),bfield%g%r(1)/)
+    box_z = (/bfield%g%z(1),bfield%g%z(1),bfield%g%z(bfield%g%mh),bfield%g%z(bfield%g%mh)/)
 
 
-    Call find_xpt_jdl(.true.,.true.,1.d-8,.false.,rx,zx,rx2,zx2)
+    Call find_xpt_jdl(bfield,.true.,.true.,1.d-8,.false.,rx,zx,rx2,zx2)
 
-    dphi_fl = g_ip_sign*0.1d0*pi/180.d0
+    dphi_fl = bfield%g%ip_sign*0.1d0*pi/180.d0
     nsteps_fl = Floor(0.3d0*pi/Abs(dphi_fl))  ! Factor of 0.x to stop from leaving grid
     write(*,*) dphi_fl,nsteps_fl
     maxtries = 1000
@@ -285,7 +291,7 @@ Contains
         Endif
 
         Do ii = 1,maxtries
-          Call follow_fieldlines_rzphi(rstart,zstart,phistart,1,dphi_fl*idir,nsteps_fl,fl_r,fl_z,fl_p,fl_ierr,ilg)
+          Call follow_fieldlines_rzphi(bfield,rstart,zstart,phistart,1,dphi_fl*idir,nsteps_fl,fl_r,fl_z,fl_p,fl_ierr,ilg)
           Allocate(rsep0(nsteps_fl*ii),zsep0(nsteps_fl*ii))
           If ( ii .gt. 1) Then
             rsep0 = [rsep0_tmp,fl_r(1,2:nsteps_fl+1)]
@@ -353,19 +359,19 @@ Contains
   !-----------------------------------------------------------------------------
   !+ Find x-point(s) from gfile or m3dc1 field
   !-----------------------------------------------------------------------------
-  Subroutine find_xpt_jdl(second,refine,tol,quiet,rx,zx,rx2,zx2,dx)
+  Subroutine find_xpt_jdl(bfield,second,refine,tol,quiet,rx,zx,rx2,zx2,dx)
     ! tol is magnitude of bp at xpt
     ! phi_eval_deg only used for m3dc1 fields
     ! Both cases require a gfile field for initial guess!!!
     Use kind_mod, Only: real64, int32
-    Use gfile_var_pass, Only: g_bdry, g_r, g_z, g_mh, g_mw
     Use math_geo_module, Only: rlinspace
     Use fieldline_follow_mod, Only: bfield_method
 #ifdef HAVE_M3DC1
     Use m3dc1_routines_mod, Only: bfield_m3dc1, bfield_m3dc1_2d
 #endif
-    Use g3d_module, Only: bfield_geq_bicub
+    Use g3d_module, Only: bfield_geq_bicub, g_type
     Implicit None
+    Type(bfield_type), Intent(In) :: bfield
     Logical, Intent(in) :: second, refine, quiet
     Real(real64), Intent(in) :: tol
     Real(real64), Intent(in), Optional :: dx
@@ -383,17 +389,17 @@ Contains
     !- End of header -------------------------------------------------------------
 
     ! Always start by guessing xpt from Bpmin in gfile bdry
-    npts_bdry = Size(g_bdry,2)
+    npts_bdry = Size(bfield%g%bdry,2)
     Allocate(rtmp(npts_bdry))
     Allocate(ztmp(npts_bdry))
 
     ! Throw away zero points (should not be any here anyway)
     icount = 0
     Do i = 1,npts_bdry
-      If (g_bdry(1,i) > 1.d-4) Then
+      If (bfield%g%bdry(1,i) > 1.d-4) Then
         icount = icount + 1
-        rtmp(icount) = g_bdry(1,i)
-        ztmp(icount) = g_bdry(2,i)
+        rtmp(icount) = bfield%g%bdry(1,i)
+        ztmp(icount) = bfield%g%bdry(2,i)
       Endif
     Enddo
     If (icount == 0) Then
@@ -402,8 +408,8 @@ Contains
     Endif
 
     ! set search area based on grid size
-    dx1_grid = (g_r(g_mw) - g_r(1))*.05  ! These seem to work ok, really should make sure 
-    dx2_grid = (g_z(g_mh) - g_z(1))*.05  ! boundary not exceeded by these guesses
+    dx1_grid = (bfield%g%r(bfield%g%mw) - bfield%g%r(1))*.05  ! These seem to work ok, really should make sure 
+    dx2_grid = (bfield%g%z(bfield%g%mh) - bfield%g%z(1))*.05  ! boundary not exceeded by these guesses
     If (present(dx)) Then
       dx1_grid=dx
       dx2_grid=dx
@@ -412,15 +418,15 @@ Contains
     dx1_save = dx1_grid
     dx2_save = dx2_grid
 
-    Rmin_eval = g_r(3) + 1.d-3
-    Zmin_eval = g_z(3) + 1.d-3
-    Rmax_eval = g_r(g_mw-2) - 1.d-3
-    Zmax_eval = g_z(g_mh-2) - 1.d-3
+    Rmin_eval = bfield%g%r(3) + 1.d-3
+    Zmin_eval = bfield%g%z(3) + 1.d-3
+    Rmax_eval = bfield%g%r(bfield%g%mw-2) - 1.d-3
+    Zmax_eval = bfield%g%z(bfield%g%mh-2) - 1.d-3
 
     Allocate(Bout(icount,3))
 
     ! Get minimum poloidal field on boundary (initial guess, still just gfile here)
-    Call bfield_geq_bicub(rtmp(1:icount),ztmp(1:icount),icount,Bout,ierr)
+    Call bfield_geq_bicub(bfield%g,rtmp(1:icount),ztmp(1:icount),icount,Bout,ierr)
     Bout(:,1) = Sqrt( Bout(:,1)**2 + Bout(:,2)**2 )
     bpx = Minval(Bout(:,1))
     ix  = Minloc(Bout(:,1),1)
@@ -456,7 +462,7 @@ Contains
                bfield_method == 10 .OR. & ! xpand pert
                bfield_method == 11      & ! xpand vac
                ) Then      
-            Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
+            Call bfield_geq_bicub(bfield%g,rt,ztmp,n1,Bout,ierr)
 #ifdef HAVE_M3DC1
           Elseif ( &
                bfield_method == 4 .OR. & ! m3dc1 total field
@@ -506,7 +512,7 @@ Contains
       rx2 = rx
       zx2 = -zx
       Allocate(Bout(1,3))
-      Call bfield_geq_bicub((/rx2/),(/zx2/),1,Bout,ierr)
+      Call bfield_geq_bicub(bfield%g,(/rx2/),(/zx2/),1,Bout,ierr)
       bpx2 = Sqrt( Bout(1,1)**2 + Bout(1,2)**2 )
       err = bpx2
       Deallocate(Bout)
@@ -539,7 +545,7 @@ Contains
                  bfield_method == 10 .OR. & ! xpand pert
                  bfield_method == 11      & ! xpand vac
                  ) Then      
-              Call bfield_geq_bicub(rt,ztmp,n1,Bout,ierr)
+              Call bfield_geq_bicub(bfield%g,rt,ztmp,n1,Bout,ierr)
 #ifdef HAVE_M3DC1
             Elseif ( &
                  bfield_method == 4 .OR. & ! m3dc1 total field

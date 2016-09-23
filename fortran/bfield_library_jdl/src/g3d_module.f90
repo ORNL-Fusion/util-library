@@ -17,12 +17,12 @@
 !       Function dsdz_bi
 !-----------------------------------------------------------------------------
 
-Module gdata_typedef
+Module g_typedef
   Use kind_mod, Only : int32, real64
   Implicit None
   Private
   Public :: get_g_bspl_ord
-  Type, Public :: gdata
+  Type, Public :: g_type
     Integer(int32) :: mw, mh, nbdry, limitr
     Character(Len=6) :: ecase
     Real(real64) :: xdim, zdim, rzero, rgrid1, zmid, rmaxis, zmaxis, &
@@ -34,26 +34,28 @@ Module gdata_typedef
     Real(real64), Allocatable, Dimension(:,:,:) :: bicub_coeffs
     ! Private
     Integer, Private :: bspl_ord = 3
-  End Type gdata
+  End Type g_type
 
 Contains
 
   Function get_g_bspl_ord(g) Result(bspl_ord)
     Use kind_mod, Only : int32
     Implicit None
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Integer(int32) :: bspl_ord
     bspl_ord = g%bspl_ord
   End Function get_g_bspl_ord
-End Module gdata_typedef
+End Module g_typedef
+
 !-----------------------------------------------------------------------------
 !+ Module containing routines for gfile psi, B interpolation
 !-----------------------------------------------------------------------------
 Module g3d_module
   Use kind_mod, Only : int32, real64
-  Use gdata_typedef, Only : gdata, get_g_bspl_ord
+  Use g_typedef, Only : g_type, get_g_bspl_ord
   Implicit None
   Private
+  Public :: g_type
   Public :: readg_g3d, close_gfile, get_psin_bicub, get_psi_bicub
   Public :: bfield_geq_bicub, get_psi_derivs_bicub, display_gfile
 
@@ -90,7 +92,7 @@ Contains
     Implicit None
 
     ! Input/output                      !See above for descriptions
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Integer(int32),Intent(in) :: Npts
     Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
     Real(real64),Dimension(Npts,3),Intent(out) :: Bout(Npts,3)
@@ -188,7 +190,7 @@ Contains
 
     ! Input/output                      !See above for descriptions
     Character(len=*), Intent(In) :: filename
-    Type(gdata), Intent(Out) :: g
+    Type(g_type), Intent(Out) :: g
     
     ! Local scalars
     Integer(int32) :: iocheck,idum,i,j
@@ -291,7 +293,7 @@ Contains
 
   Subroutine display_gfile(g)
     Implicit None
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Integer :: i
 
 
@@ -368,7 +370,7 @@ Contains
     Implicit None
 
     ! Input/output                      !See above for descriptions
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Real(real64),dimension(g%mw*g%mh,4,4)   :: psi_bicub_coeffs
     ! Local Scalars
     Integer(int32) :: nr,nz,ir,iz,index,inv_err
@@ -523,7 +525,7 @@ Contains
     Implicit None
 
     ! Input/output                      !See above for descriptions
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Integer(int32),Intent(in) :: Npts
     Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
     Real(real64),Dimension(Npts),Intent(out) :: psiNout
@@ -546,7 +548,7 @@ Contains
     Implicit None
 
     ! Input/output                      !See above for descriptions
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Integer(int32),Intent(in) :: Npts
     Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
     Real(real64),Dimension(Npts),Intent(out) :: psiout
@@ -603,7 +605,7 @@ Contains
     Implicit None
 
     ! Input/output                      !See above for descriptions
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Integer(int32),Intent(in) :: Npts
     Real(real64),Dimension(Npts),Intent(in)  :: R1,Z1
     Real(real64),Dimension(Npts),Intent(out) :: psiout, dpsidr, dpsidz
@@ -661,7 +663,7 @@ Contains
   Function psi_bi(g,index,dir,diz)
     Use kind_mod, Only: real64, int32
     Implicit None
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Integer(int32), Intent(In) :: index
     Real(real64), Intent(In) :: dir, diz
     Real(real64) :: psi_bi
@@ -682,7 +684,7 @@ Contains
   Function dsdr_bi(g,index,dir,diz)
     Use kind_mod, Only: real64, int32
     Implicit None
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Integer(int32), Intent(In) :: index
     Real(real64), Intent(In) :: dir, diz
     Real(real64) :: dsdr_bi
@@ -704,7 +706,7 @@ Contains
   Function dsdz_bi(g,index,dir,diz)
     Use kind_mod, Only : int32, real64
     Implicit None
-    Type(gdata), Intent(In) :: g
+    Type(g_type), Intent(In) :: g
     Integer(int32), Intent(In) :: index
     Real(real64), Intent(In) :: dir, diz
     Real(real64) :: dsdz_bi
@@ -719,7 +721,7 @@ Contains
 
   Subroutine close_gfile(g)
     Implicit None
-    Type(gdata), Intent(InOut) :: g
+    Type(g_type), Intent(InOut) :: g
     Write(*,*) 'Deallocating gfile variables'
     Deallocate(g%fpol,g%pres,g%ffprim)
     Deallocate(g%pprime,g%psirz,g%qpsi)

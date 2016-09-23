@@ -30,12 +30,14 @@
 !-----------------------------------------------------------------------------
 Module bfield_typedef
   Use kind_mod, Only : int32, real64
-  Use gdata_typedef
+  Use g_typedef, Only : g_type
+  Use coil_typedef, Only : coil_type
   Implicit None
   Private
   Type, Public :: bfield_type
     Integer(int32) :: method = 0
-    Type(gdata) :: g
+    Type(g_type) :: g
+    Type(coil_type) :: coil
   End Type bfield_type
 End Module bfield_typedef
 
@@ -513,9 +515,8 @@ Subroutine fl_derivs_fun(bfield,n,phi,RZ,df,ierr)
 ! Modules used:
 Use kind_mod, Only: real64, int32
 Use g3d_module, Only : bfield_geq_bicub
-Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
-Use bfield_module, Only : bfield_bs_cyl
+Use rmpcoil_module, Only : bfield_bs_cyl
 Use ipec_module, Only : bfield_ipec
 Use xpand_module, Only : bfield_xpand
 #ifdef HAVE_M3DC1
@@ -545,7 +546,7 @@ If (bfield_method == 0) Then     ! gfile field only
   Bphi = bval(1,3)
 Elseif (bfield_method == 1) Then ! g + rmp coils
   Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
-  Call bfield_bs_cyl(RZ(1),phi,RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
+  Call bfield_bs_cyl(RZ(1),phi,RZ(2),bfield%coil,Br_rmp,Bphi_rmp,Bz_rmp)
   ierr_rmp = 0
   Br   = bval(1,1) + Br_rmp
   Bz   = bval(1,2) + Bz_rmp
@@ -581,7 +582,7 @@ Elseif (bfield_method == 5) Then  ! m3dc1 2d field only
   Bphi = bval(1,3)
 #endif
 Elseif (bfield_method == 6) Then     ! just coils
-  Call bfield_bs_cyl(RZ(1),phi_tmp(1),RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br,Bphi,Bz)
+  Call bfield_bs_cyl(RZ(1),phi_tmp(1),RZ(2),bfield%coil,Br,Bphi,Bz)
 Elseif (bfield_method == 7) Then  ! ipec eq only
   Call bfield_ipec(RZ(1),(/0.d0/),RZ(2),Npts,bval,ierr_rmp,0)
   Br   = bval(1,1)
@@ -656,8 +657,7 @@ Subroutine fl_derivs_fun_dz(bfield,n,Z,RP,df,ierr)
 !
 ! Modules used:
 Use kind_mod, Only: real64, int32
-Use bfield_module, Only : bfield_bs_cyl
-Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
+Use biotsavart_module, Only : bfield_bs_cyl
 Implicit None
 Type(bfield_type), Intent(In) :: bfield
 Real(real64), Intent(In) :: Z
@@ -671,7 +671,7 @@ Real(real64) :: Bz, Br, Bphi
 
 ierr = 0
 If (bfield_method == 6) Then     ! just coils
-  Call bfield_bs_cyl(RP(1),RP(2),Z,rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br,Bphi,Bz)
+  Call bfield_bs_cyl(RP(1),RP(2),Z,bfield%coil,Br,Bphi,Bz)
 Else
   Write(*,*) 'Unknown bfield_method in fl_derivs_fun_dz'
   Write(*,*) 'The following are supported'
@@ -816,9 +816,8 @@ Subroutine rk45_fixed_step_integrate_diffuse(bfield,y0,n,x0,dx,nsteps,odefun,you
 ! Modules used:
 Use kind_mod, Only: real64, int32
 Use g3d_module, Only : bfield_geq_bicub
-Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts
 Use screening_module, Only : bfield_bspline
-Use bfield_module, Only : bfield_bs_cyl
+Use biotsavart_module, Only : bfield_bs_cyl
 
 #ifdef HAVE_M3DC1
 Use m3dc1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
@@ -905,7 +904,7 @@ Do i=1,nsteps
     Bphi = bval(1,3)
   Elseif (bfield_method == 1) Then ! g + rmp coils
     Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
-    Call bfield_bs_cyl(RZ(1),phi,RZ(2),rmp_coil,rmp_coil_current,rmp_ncoil_pts,Br_rmp,Bphi_rmp,Bz_rmp)
+    Call bfield_bs_cyl(RZ(1),phi,RZ(2),bfield%coil,Br_rmp,Bphi_rmp,Bz_rmp)
     ierr_rmp = 0
     Br   = bval(1,1) + Br_rmp
     Bz   = bval(1,2) + Bz_rmp
