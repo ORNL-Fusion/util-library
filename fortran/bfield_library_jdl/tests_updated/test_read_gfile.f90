@@ -15,25 +15,14 @@ Program test_read_gfile
 ! Author(s): J. Lore - current
 
 Use kind_mod                     ! Import rknd, iknd specifications
-Use gfile_var_pass
 Use g3d_module
-Use bspline
-!Use g3df_functions_mod, Only : &
-!  bfield_geq_bicub
 Implicit None
 
 ! Local variables (scalar)
-Real(real64) :: Btest(2,3)
 Real  :: tarray(2),tres
-Real(real64) :: tmp,pn_test(100),fp_test(100)
-Type(gdata) :: g
+Type(g_type) :: g
 ! Local variables (array)
 Character(Len=100) :: gfilename
-
-Integer(int32),parameter :: npts_line  = 10000
-Integer :: i
-
-Real(real64),dimension(npts_line+1) :: rout,zout,phiout
 
 !- End of header -------------------------------------------------------------
 
@@ -48,7 +37,7 @@ print *,'Time: ',tres
 
 !Call display_gfile
 
-Call close_gfile
+Call close_gfile(g)
 Write(*,*) 'Done with test_read_gfile'
 
 

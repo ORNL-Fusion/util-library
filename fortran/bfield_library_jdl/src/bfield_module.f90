@@ -33,9 +33,11 @@ End Module bfield_typedef
 
 Module bfield
   Use bfield_typedef, Only : bfield_type
+  Use coil_typedef, Only : coil_type
+  Use g3d_module, Only : g_type
   Implicit None
   Private
-  Public :: bfield_type
+  Public :: bfield_type, coil_type, g_type
   
 End Module bfield
 

@@ -199,7 +199,7 @@ Contains
     ! Local arrays (1D)
     Character(len=100) :: sjunk
 
-    Logical :: debug = .true.
+    Logical :: debug = .false.
     ! Allocatable arrays
 
     !- End of header -------------------------------------------------------------

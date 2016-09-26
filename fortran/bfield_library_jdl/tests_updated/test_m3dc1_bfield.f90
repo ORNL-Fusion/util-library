@@ -1,6 +1,4 @@
 Program test_m3dc1_bfield
-
-Use fieldline_follow_mod, Only: bfield_method
 Use kind_mod
 Use m3dc1_routines_mod
 Implicit None
@@ -14,7 +12,6 @@ m3dc1_nsets = 2  ! MUST EQUAL LENGTH OF FILENAMES AND SCALE_FACTORS!!
 m3dc1_filenames(1) = '/home/jjl/m3dc1/164723/03059/n=3/eb1_2f_iu/C1.h5'
 m3dc1_filenames(2) = '/home/jjl/m3dc1/164723/03059/n=3/eb1_2f_il/C1.h5'
 
-bfield_method = 4
 m3dc1_itime = 1
 m3dc1_factors(1) = 3.69
 m3dc1_factors(2) = 3.69
