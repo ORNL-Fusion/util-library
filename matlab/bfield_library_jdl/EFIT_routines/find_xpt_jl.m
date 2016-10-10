@@ -108,7 +108,7 @@ if refine == 1
            
     rx = rg(ix,jx);
     zx = zg(ix,jx);
-    plot(rx,zx,'k.')
+
     niter = niter + 1;    
     if niter >= niter_max
         warning('niter_max exceeded for 1st x-point')

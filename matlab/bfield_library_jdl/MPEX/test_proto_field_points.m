@@ -1,7 +1,8 @@
 % function test_proto_field_points
 clearvars;
 
-[nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils;
+% [nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils;
+[nturns,nlayers,rr1,rr2,cl,z0] = define_proto_coil_filaments;
 
 rmax = 0.1;
 zmax = 5;

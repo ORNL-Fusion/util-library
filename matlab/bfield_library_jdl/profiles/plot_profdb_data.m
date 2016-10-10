@@ -40,7 +40,6 @@ binright=1.1;
 dbin = 0.005;
 
 psiNfit = linspace(0.85,1.1,100);
-
 xrange = psin_range;
 
 

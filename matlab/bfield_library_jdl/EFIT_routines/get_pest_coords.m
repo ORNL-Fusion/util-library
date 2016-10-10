@@ -49,7 +49,7 @@ f.theta(f.theta<0) = f.theta(f.theta<0)+2*pi;
 
 
 
-
+theta_pest = zeros(npsin,ntheta);
 for i = 1:npsin
     % Get one period in theta: 0:2*pi
     if f.theta(2,i) < f.theta(1,i) 
@@ -78,8 +78,7 @@ for i = 1:npsin
     b = bfield_geq_bicub(g,rpest(i,:),zpest(i,:));
     bpol = sqrt(b.br.^2 + b.bz.^2).';
     jac(i,:) = abs(qpsi(i)/(g.rzero*g.bcentr))*bpol.*rpest(i,:).^3;
-    
-%     a = 1;
+
 end
 
 pest.psiN = pnwant;

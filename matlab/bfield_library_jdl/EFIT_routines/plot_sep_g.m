@@ -1,4 +1,5 @@
 function sep = plot_sep_g(g,plotit,newfig)
+% function sep = plot_sep_g(g,plotit,newfig)
 if nargin < 2
     plotit = 1;
 end
