@@ -49,7 +49,7 @@ poincare_driver_2d.o
 MODS90 = 
 
 #-----------------------------------------------------------------------
-all: $(EXEC) $(EXEC2)
+all: $(EXEC) #$(EXEC2)
 
 $(EXEC): $(OBJS90) $(LIBBJDL_DIR)/libbjdl.a 
 	@echo "Creating "$@" in directory "$(BIN_DIR)

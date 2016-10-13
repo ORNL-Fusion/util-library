@@ -7,17 +7,17 @@ Program poincare_driver
 !
 ! Modules used:
 Use kind_mod, Only: int32, real64
-Use rmpcoil_module, Only : rmp_coil, rmp_coil_current, rmp_ncoil_pts,bfield_bs_cyl,build_d3d_ccoils_jl,&
-  build_d3d_icoils_jl
+Use rmpcoil_module, Only : build_d3d_ccoils_jl, build_d3d_icoils_jl
 Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factors, m3dc1_itime, m3dc1_toroidal_on_err,bfield_m3dc1, &
      m3dc1_field_type
-Use g3d_module, Only : readg_g3d, bfield_geq_bicub, get_psi_bicub
+Use g3d_module, Only : readg_g3d, get_psi_bicub
 Use math_geo_module, Only : rlinspace
-Use fieldline_follow_mod, Only: bfield_method, follow_fieldlines_rzphi
+Use fieldline_follow_mod, Only: follow_fieldlines_rzphi
 Use util_routines, Only: get_psin_2d
 Use phys_const, Only: pi
 Use ipec_module, Only: open_ipec_fields
 Use xpand_module, Only: open_xpand_fields
+Use bfield, Only : bfield_type, coil_type, g_type
 Implicit none
 
 Logical, Parameter :: m3dc1_toroidal_off_grid = .true.
@@ -33,6 +33,9 @@ character(10) :: junk
 Real(Kind=4)  :: tarray(2),tres,tres0
 Logical :: calc_psiN_min = .false., follow_both_ways = .false.
 Integer(int32), parameter :: max_m3dc1_files = 10
+Type(bfield_type) :: bfield
+Type(g_type) :: g
+Type(coil_type) :: coil
 !---------------------------------------------------------------------------
 ! Namelist variables:
 Real(real64) :: &
@@ -90,30 +93,26 @@ Close(99)
 Select Case (rmp_type)
   Case ('g3d')
     Write(*,'(a)') '-----> BFIELD METHOD IS G3D'
-    bfield_method = 0
-    Call readg_g3d(gfile_name)
+    bfield%method    = 0
+    bfield%method_2d = 0
+    Call readg_g3d(gfile_name,g)
+    bfield%g = g
   Case ('g3d+rmpcoil')
     Write(*,'(a)') '-----> BFIELD METHOD IS G3D+RMPCOIL'
-    bfield_method = 1
-    Call readg_g3d(gfile_name)
+    bfield%method = 1
+    bfield%method_2d = 0
+    Call readg_g3d(gfile_name,g)
+    bfield%g = g
     ! load rmp coil    
     Select Case (rmp_coil_type)
       Case ('d3d_ccoils')
         Write(*,'(a)') '-----> Rmp coils are DIII-D C coils'
         Write(*,'(a,6f12.3)') ' Coil currents: ', rmp_current(1:6)
-        ntor_pts_coil = 4
-        rmp_ncoil_pts = 6*(2*ntor_pts_coil+1)
-        Allocate(rmp_coil(rmp_ncoil_pts,3))
-        Allocate(rmp_coil_current(rmp_ncoil_pts))
-        Call build_d3d_ccoils_jl(rmp_current(1:6),ntor_pts_coil,rmp_coil,rmp_coil_current,rmp_ncoil_pts)
+        Call build_d3d_ccoils_jl(coil,rmp_current(1:6))
       Case ('d3d_icoils')
         Write(*,'(a)') '----->  Rmp coils are DIII-D I coils'
         Write(*,'(a,12f12.3)') ' Coil currents: ', rmp_current(1:12)
-        ntor_pts_coil = 6
-        rmp_ncoil_pts = 12*(2*ntor_pts_coil+1)
-        Allocate(rmp_coil(rmp_ncoil_pts,3))
-        Allocate(rmp_coil_current(rmp_ncoil_pts))
-        Call build_d3d_icoils_jl(rmp_current(1:12),ntor_pts_coil,rmp_coil,rmp_coil_current,rmp_ncoil_pts)
+        Call build_d3d_icoils_jl(coil,rmp_current(1:12))
       Case Default
         Write(*,*) 'Error!  Unknown rmp_coil_type'
         Write(*,*) 'Current options are:'
@@ -121,10 +120,13 @@ Select Case (rmp_type)
         Write(*,*) '''d3d_icoils'''        
         Stop
       End Select
+      bfield%coil = coil
   Case ('g3d+m3dc1')
     Write(*,'(a)') '-----> BFIELD METHOD IS G3D+M3DC1'
-    bfield_method = 3
-    Call readg_g3d(gfile_name)
+    bfield%method    = 3
+    bfield%method_2d = 0
+    Call readg_g3d(gfile_name,g)
+    bfield%g = g
     ! Setup field    
     If (m3dc1_time .eq. -1) Then
       Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
@@ -140,7 +142,8 @@ Select Case (rmp_type)
     If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
   Case ('m3dc1_full_field')
     Write(*,'(a)') '-----> BFIELD METHOD IS M3DC1_FULL_FIELD'
-    bfield_method = 4
+    bfield%method    = 4
+    bfield%method_2d = 5
     ! Setup field    
     If (m3dc1_time .eq. -1) Then
       Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
@@ -156,7 +159,8 @@ Select Case (rmp_type)
     If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
   Case ('m3dc1_as')
     Write(*,'(a)') '-----> BFIELD METHOD IS m3dc1_as'
-    bfield_method = 5
+    bfield%method    = 5
+    bfield%method_2d = 5
     ! Setup field    
     If (m3dc1_time .eq. -1) Then
       Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
@@ -175,31 +179,38 @@ Select Case (rmp_type)
     Write(*,'(a,i0)') '-----> ipec_field_eval_type is: ',ipec_field_eval_type
     If (ipec_field_eval_type .eq. 0) Then
       Write(*,'(a)') '-----> Evaluating IPEC fields as EQUILIBRIUM ONLY!'
-      bfield_method = 7
+      bfield%method = 7
+      bfield%method_2d = 0
     Elseif (ipec_field_eval_type .eq. 1) Then
       Write(*,'(a)') '-----> Evaluating IPEC fields as EQ + VACUUM!'
-      bfield_method = 8
+      bfield%method = 8
+      bfield%method_2d = 0
     Elseif (ipec_field_eval_type .eq. 2) Then
       Write(*,'(a)') '-----> Evaluating IPEC fields as EQ + PERT!'
-      bfield_method = 9
+      bfield%method = 9
+      bfield%method_2d = 0
     Else
       Stop "Did not recognize ipec_field_eval_type"
     Endif
-    Call readg_g3d(gfile_name)
+    Call readg_g3d(gfile_name,g)
+    bfield%g = g
     Call open_ipec_fields(ipec_run_path)
   Case ('xpand')
     Write(*,'(a)') '-----> BFIELD METHOD IS XPAND'
     Write(*,'(a,i0)') '-----> xpand_field_eval_type is: ',xpand_field_eval_type
     If (xpand_field_eval_type .eq. 0) Then
       Write(*,'(a)') '-----> Evaluating XPAND fields as PERTURBED!'
-      bfield_method = 10
+      bfield%method = 10
+      bfield%method_2d = 0
     Elseif (xpand_field_eval_type .eq. 1) Then
       Write(*,'(a)') '-----> Evaluating XPAND fields as VACUUM!'
-      bfield_method = 11
+      bfield%method = 11
+      bfield%method_2d = 0
     Else
       Stop "Did not recognize xpand_field_eval_type"
     Endif
-    Call readg_g3d(gfile_name)
+    Call readg_g3d(gfile_name,g)
+    bfield%g = g
     Call open_xpand_fields(xpand_fname)    
   Case Default
     Write(*,*) 'Unknown rmp_type in poincare_driver!'
@@ -251,13 +262,13 @@ Allocate(fl_r(nstart_fl,nsteps+1),fl_z(nstart_fl,nsteps+1),fl_p(nstart_fl,nsteps
 fl_r = 0.d0; fl_z = 0.d0; fl_p = 0.d0
 phistart_arr = phistart_deg*pi/180.d0
 
-Call follow_fieldlines_rzphi(r1d,z1d,phistart_arr,nstart_fl, dphi_line,nsteps,fl_r,fl_z,fl_p,fl_ierr,ilg)
+Call follow_fieldlines_rzphi(bfield,r1d,z1d,phistart_arr,nstart_fl, dphi_line,nsteps,fl_r,fl_z,fl_p,fl_ierr,ilg)
 
 If (follow_both_ways) Then
   Allocate(ilg2(nstart_fl),fl_ierr2(nstart_fl))
   Allocate(fl_r2(nstart_fl,nsteps+1),fl_z2(nstart_fl,nsteps+1),fl_p2(nstart_fl,nsteps+1))
   fl_r2 = 0.d0; fl_z2 = 0.d0; fl_p2 = 0.d0 
-  Call follow_fieldlines_rzphi(r1d,z1d,phistart_arr,nstart_fl,-dphi_line,nsteps,fl_r2,fl_z2,fl_p2,fl_ierr2,ilg2)
+  Call follow_fieldlines_rzphi(bfield,r1d,z1d,phistart_arr,nstart_fl,-dphi_line,nsteps,fl_r2,fl_z2,fl_p2,fl_ierr2,ilg2)
 Endif
   
 Open(99,file="poincare_output.out",status="unknown",form="formatted",iostat=iocheck)
@@ -310,7 +321,7 @@ If (calc_psiN_min) Then
   Do i = 1,nstart_fl
     
     !Call get_psi_bicub(fl_r(i,:),fl_z(i,:),nsteps+1,psiout,psiNout,ierr)
-    psiNout = get_psiN_2d(fl_r(i,:),fl_z(i,:),nsteps+1,ierr)
+    psiNout = get_psiN_2d(bfield,fl_r(i,:),fl_z(i,:),nsteps+1,ierr)
     
     Where (psiNout < 1.e-3) psiNout = 1000000.d0
     Write(99,*) Minval(psiNout)
@@ -334,8 +345,7 @@ If (follow_both_ways) Then
     Write(99,*) nstart_fl
     
     Do i = 1,nstart_fl
-      psiNout = get_psiN_2d(fl_r2(i,:),fl_z2(i,:),nsteps+1,ierr)
-!      Call get_psi_bicub(fl_r2(i,:),fl_z2(i,:),nsteps+1,psiout,psiNout,ierr)      
+      psiNout = get_psiN_2d(bfield,fl_r2(i,:),fl_z2(i,:),nsteps+1,ierr)
       Where (psiNout < 1.e-3) psiNout = 1000000.d0
       Write(99,*) Minval(psiNout)
     Enddo
