@@ -4,12 +4,13 @@
 !   
 !-----------------------------------------------------------------------------
 Module NSTX_routines_mod
+  Use coil_typedef, Only : coil_type, allocate_coiltype
   Implicit None
   Private
   Public :: build_nstx_rwmcoils_jl
 Contains
 
-Subroutine build_nstx_rwmcoils_jl(taper,ntorpts,coil,current,ncoil_pts)
+Subroutine build_nstx_rwmcoils_jl(coil,taper,ntorpts)
 ! Builds the coil geometry and sets the current (in Amp-turns) for 
 ! the 6 NSTX RWM coils. A single loop is returned for each entire 
 ! coil set, with one turn per RWM coil.
@@ -44,48 +45,61 @@ Use kind_mod, Only: real64, int32
 Use phys_const, Only : pi
 Implicit None
 
-Real(real64), Intent(in) :: taper(6)
-Integer(int32), Intent(in) :: ntorpts
-Integer(int32), Intent(out) :: ncoil_pts  
-Real(real64),Intent(out) :: coil(6*(2*ntorpts+1),3),current(6*(2*ntorpts+1))
+Integer, Parameter :: nc = 6
+Real(real64), Intent(in) :: taper(nc)
+Integer(int32), Intent(in), Optional :: ntorpts
+Type(coil_type), Intent(out) :: coil
 
-Integer(int32) :: npts,nturn,i,j
-Real(real64) :: phicens(6),phiext,R(2),Z(2),phi(ntorpts),taper2(6)
+Integer(int32) :: npts,nturn,i,j,myntorpts
+Real(real64) :: phicens(nc),phiext,R(2),Z(2),taper2(nc)
+Real(real64), Allocatable :: phi(:)
+!- End of header -------------------------------------------------------------
 
-npts = 2*ntorpts + 1
-ncoil_pts = 6*npts
+If (Present(ntorpts)) Then
+  myntorpts = ntorpts
+Else
+  myntorpts = 5
+Endif
 
+Call allocate_coiltype(nc,myntorpts,coil)
+
+! -------------------------------------------------------------------------------------------
+! -------------------------------------------------------------------------------------------
+!             COIL DATA
+! -------------------------------------------------------------------------------------------
+! -------------------------------------------------------------------------------------------
 ! Coils are approximately rectangular.
 phicens = (/0.d0,300.d0,240.d0,180.d0,120.d0,60.d0/)  ! Center of each coil
 phicens = phicens*pi/180.d0
 phiext = 56.d0*pi/180.d0               ! Toroidal extent of each coil
-R = (/1.76d0,1.76d0/)                          ! Major radius of coil
-Z = (/0.4826d0,-0.4826d0/)                     ! Vertical extent of coil.
+R = (/1.76d0,1.76d0/)                  ! Major radius of coil
+Z = (/0.4826d0,-0.4826d0/)             ! Vertical extent of coil.
 nturn = 2
-
-coil = 0.d0
-current = 0.d0
+! -------------------------------------------------------------------------------------------
+! -------------------------------------------------------------------------------------------
 
 taper2 = -Real(nturn,real64)*taper;  ! Minus sign accounts for the handedness of the coils as I have 
                        ! defined them relative to the 'real' orientation described above.
 		       ! I.e., the returned coils are CW as viewed from outside NSTX.
 
+Allocate(phi(myntorpts))
+npts = coil%ncoil_pts/coil%num_coils
+
 Do i = 0,5
-  Do j = 1,ntorpts
-    phi(j) = phiext*real(j-1,real64)/real(ntorpts-1,real64) + phicens(i+1) - phiext/2.d0
+  Do j = 1,myntorpts
+    phi(j) = phiext*real(j-1,real64)/real(myntorpts-1,real64) + phicens(i+1) - phiext/2.d0
   Enddo
-
-    coil(i*npts+1:i*npts+ntorpts,1) = R(1)*cos(phi)
-    coil(i*npts+1:i*npts+ntorpts,2) = R(1)*sin(phi)
-    coil(i*npts+1:i*npts+ntorpts,3) = Z(1)
-    coil(i*npts+ntorpts+1:i*npts+2*ntorpts,1) = R(2)*cos(phi(ntorpts:1:-1))
-    coil(i*npts+ntorpts+1:i*npts+2*ntorpts,2) = R(2)*sin(phi(ntorpts:1:-1))
-    coil(i*npts+ntorpts+1:i*npts+2*ntorpts,3) = Z(2)
-    coil((i+1)*npts,:) = coil(i*npts+1,:)
-    current(i*npts+1:(i+1)*npts) = taper2(i+1)
-    current((i+1)*npts) = 0.0   ! Sticks connecting the coils have no current.
+  coil%coilxyz(i*npts+1:i*npts+myntorpts,1) = R(1)*cos(phi)
+  coil%coilxyz(i*npts+1:i*npts+myntorpts,2) = R(1)*sin(phi)
+  coil%coilxyz(i*npts+1:i*npts+myntorpts,3) = Z(1)
+  coil%coilxyz(i*npts+myntorpts+1:i*npts+2*myntorpts,1) = R(2)*cos(phi(myntorpts:1:-1))
+  coil%coilxyz(i*npts+myntorpts+1:i*npts+2*myntorpts,2) = R(2)*sin(phi(myntorpts:1:-1))
+  coil%coilxyz(i*npts+myntorpts+1:i*npts+2*myntorpts,3) = Z(2)
+  coil%coilxyz((i+1)*npts,:) = coil%coilxyz(i*npts+1,:)
+  coil%current(i*npts+1:(i+1)*npts) = taper2(i+1)
+  coil%current((i+1)*npts) = 0.0   ! Sticks connecting the coils have no current.
 Enddo
-
+Deallocate(phi)
 End Subroutine build_nstx_rwmcoils_jl
 
 End Module NSTX_routines_mod

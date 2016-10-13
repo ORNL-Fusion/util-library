@@ -7,7 +7,10 @@ Module bfield_typedef
   Type, Public :: bfield_type
     Integer(int32) :: method = 0
     Type(g_type) :: g
-    Type(coil_type) :: coil    
+    Type(coil_type) :: coil
+    Integer(int32) :: method_2d = 0
+    Integer(int32) :: method_save = 0
+    Logical :: method_switched = .false.
   End Type bfield_type
 End Module bfield_typedef
 
@@ -38,6 +41,29 @@ Module bfield
   Implicit None
   Private
   Public :: bfield_type, coil_type, g_type
+  Public :: set_bfield_2d, reset_bfield
+
+Contains
+
+  Subroutine set_bfield_2d(bfield)
+    Implicit None
+    Type(bfield_type), Intent(InOut) :: bfield
+    If (.NOT. bfield%method_switched) Then
+      bfield%method_save = bfield%method
+      bfield%method      = bfield%method_2d
+      bfield%method_switched = .true.
+    Endif
+  End Subroutine set_bfield_2d
+
+  Subroutine reset_bfield(bfield)
+    Implicit None
+    Type(bfield_type), Intent(InOut) :: bfield
+    If (bfield%method_switched) Then
+      bfield%method = bfield%method_save
+      bfield%method_switched = .false.
+    Endif
+  End Subroutine reset_bfield
+  
   
 End Module bfield
 
