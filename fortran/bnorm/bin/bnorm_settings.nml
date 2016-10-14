@@ -1,0 +1,37 @@
+&settings_nml
+
+!**************************************************************************
+! 1) Magnetic equilibrium data
+!**************************************************************************
+
+
+
+!rmp_type = 'g3d+rmpcoil' ! options: 'g3d', 'g3d+rmpcoil', 'm3dc1_full_field', 'g3d+m3dc1'
+!m3dc1_filename = '/home/jjl/m3dc1/160884/3000/n=3_2f_odd/C1.h5'
+!m3dc1_scale_factor = 5.09296d0
+!m3dc1_time = 1
+
+
+rmp_type = 'g3d+rmpcoil'
+gfile_name = '/home/jjl/gfiles/DIII-D/g160884.05009_537'
+rmp_coil_type = 'd3d_icoils'
+rmp_current  = -3826.d0 3826.d0 -3826.d0 3826.d0 -3826.d0 3826.d0 3826.d0 -3826.d0 3826.d0 -3826.d0 3826.d0 -3826.d0    ! Amps!
+
+!**************************************************************************
+! 2) Bnorm settings
+!**************************************************************************
+
+nres = 3
+nphi = 30  ! Maybe 8*nres?
+mmax = 20   
+ntheta = 2000  ! Maybe 100*mmax?
+
+pnmin = 0.1
+pnmax = 0.998
+numpn = 10
+
+
+
+
+
+/

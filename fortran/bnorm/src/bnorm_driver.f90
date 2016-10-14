@@ -1,19 +1,18 @@
 !-----------------------------------------------------------------------------
-!+ Program to make poincare plots using jdl bfield library
+!+ Program to make bnorm plots
 !-----------------------------------------------------------------------------
-Program poincare_driver
+Program bnorm_driver
 !
-! Author(s): J.D. Lore - 02/20/2014
+! Author(s): J.D. Lore - 10/13/2016
 !
 ! Modules used:
 Use kind_mod, Only: int32, real64
 Use rmpcoil_module, Only : build_d3d_ccoils_jl, build_d3d_icoils_jl
 Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factors, m3dc1_itime, m3dc1_toroidal_on_err,bfield_m3dc1, &
      m3dc1_field_type
-Use g3d_module, Only : readg_g3d, get_psi_bicub
+Use g3d_module, Only : readg_g3d
+Use bnorm_routines, Only : get_pest_coords
 Use math_geo_module, Only : rlinspace
-Use fieldline_follow_mod, Only: follow_fieldlines_rzphi
-Use util_routines, Only: get_psin_2d
 Use phys_const, Only: pi
 Use ipec_module, Only: open_ipec_fields
 Use xpand_module, Only: open_xpand_fields
@@ -23,25 +22,24 @@ Implicit none
 Logical, Parameter :: m3dc1_toroidal_off_grid = .true.
 Integer(int32), parameter :: max_rmp_coils       = 12
 
-Integer(int32) :: ntor_pts_coil, i, nstart_fl, nsteps
+Integer(int32) :: nstart_fl, nsteps
 Integer(int32) :: iocheck, itest, ierr_b, ind_poin, ierr
-Real(real64), Allocatable :: r1d(:), z1d(:),phistart_arr(:), fl_r(:,:), fl_z(:,:), fl_p(:,:), &
-     psiout(:), psiNout(:), fl_r2(:,:), fl_z2(:,:), fl_p2(:,:)
-Integer(int32), Allocatable :: ilg(:), fl_ierr(:), ilg2(:), fl_ierr2(:)
-Real(real64) :: dphi_line, Adphirat
-character(10) :: junk
 Real(Kind=4)  :: tarray(2),tres,tres0
-Logical :: calc_psiN_min = .false., follow_both_ways = .false.
 Integer(int32), parameter :: max_m3dc1_files = 10
 Type(bfield_type) :: bfield
 Type(g_type) :: g
 Type(coil_type) :: coil
+
+Real(real64) :: dphi, dtheta
+Real(real64), Allocatable :: pnwant(:), phi(:), theta(:)
+Real(real64), Allocatable :: rpest(:,:), zpest(:,:), jpest(:,:)
 !---------------------------------------------------------------------------
 ! Namelist variables:
 Real(real64) :: &
  rmp_current(max_rmp_coils) = 0.d0, &
  m3dc1_scale_factors(max_m3dc1_files) = 0.d0, &
- phistart_deg, rstart, rend, zstart, zend, dphi_line_deg
+ pnmin = 0.d0, &
+ pnmax = 0.d0 
 
 Character(Len=120) :: &
  rmp_type = 'none',  &
@@ -59,13 +57,24 @@ Integer(int32) :: &
  m3dc1_nsets = 0, &
  ipec_field_eval_type = -1, &
  xpand_field_eval_type = -1, &
- ipec_itype = 0
+ ipec_itype = 0, &
+ nres = 0, &
+ ntheta = 0, &
+ nphi = 0, &
+ mmax = 0, &
+ numpn = 0
 
 ! Namelist files
-Namelist / settings_nml / gfile_name, rmp_type, rmp_coil_type, m3dc1_filenames, &
-     m3dc1_scale_factors, rmp_current, m3dc1_time, phistart_deg, rstart, rend, zstart, zend, &
-     num_pts, ntransits, dphi_line_deg, Nsym, calc_psiN_min, follow_both_ways, m3dc1_nsets, &
-     ipec_run_path, ipec_field_eval_type, ipec_itype, xpand_fname, xpand_field_eval_type
+Namelist / settings_nml / &
+     ! driver stuff
+     nres, ntheta, nphi, mmax, pnmin, pnmax, numpn, &
+     ! Bfield stuff
+     rmp_type, &
+     gfile_name, &
+     rmp_coil_type, rmp_current, &
+     m3dc1_filenames, m3dc1_scale_factors, m3dc1_time, m3dc1_nsets, &
+     ipec_run_path, ipec_field_eval_type, ipec_itype, &
+     xpand_fname, xpand_field_eval_type
 
 !---------------------------------------------------------------------------
 !---------------------------------------------------------------------------
@@ -73,16 +82,16 @@ Namelist / settings_nml / gfile_name, rmp_type, rmp_coil_type, m3dc1_filenames, 
 
 Call Etime(tarray,tres0)
 Write(*,'(/1a)') "-------------------------------------------------------------"
-Write(*,'(a)') " Starting Poincare driver"
+Write(*,'(a)') " Starting bnorm driver"
 
 !
 ! 1) Read namelist
 !
 ! Read namelist file 
-Open(99,file="poincare_settings.nml",status="old",form="formatted",iostat=iocheck)
+Open(99,file="bnorm_settings.nml",status="old",form="formatted",iostat=iocheck)
 If ( iocheck /= 0 ) Then
   Write(*,*) 'Error opening namelist file'
-  Stop 'Exiting: I/O Error in poincare_driver.f90'
+  Stop 'Exiting: I/O Error in bnorm_driver.f90'
 Endif
 Read(99,nml=settings_nml)
 Close(99)
@@ -227,147 +236,33 @@ Select Case (rmp_type)
 End Select
 
 
-! 
-! 3) Follow fls
-! 
+Write(*,'(/1a)') "-------------------------------------------------------------"
+Write(*,*) 'Setting up bnorm'
+Write(*,*) 'Nres = ',nres
+
+Allocate(pnwant(numpn))
+pnwant = rlinspace(pnmin,pnmax,numpn)
+Allocate(phi(nphi),theta(ntheta))
+phi = rlinspace(0.d0,2.d0*pi*Real(nphi-1,real64)/Real(nphi,real64),nphi)
+theta = rlinspace(0.d0,2.d0*pi*Real(ntheta-1,real64)/Real(ntheta,real64),ntheta)
 
 
-Allocate(r1d(num_pts),z1d(num_pts))
-r1d = rlinspace(rstart,rend,num_pts)
-z1d = rlinspace(zstart,zend,num_pts)
+Allocate(rpest(numpn,ntheta))
+Allocate(zpest(numpn,ntheta))
+Allocate(jpest(numpn,ntheta))
 
-dphi_line = dphi_line_deg*pi/180.d0
-nsteps = Floor(ntransits*2.d0*pi/Abs(dphi_line))
+Call get_pest_coords(g,pnwant,ntheta,.false.,rpest,zpest,jpest)
 
-!If (bfield_method .eq. 0 ) Then
-!  ind_poin = 1
-!Else 
-  Adphirat = Abs(360.d0/dphi_line_deg/Nsym)
-  If (Adphirat - Real(Nint(Adphirat)) > 1.d-8) Then
-    Write(*,*) 'Error!: 2*pi/Nsym must be an integer multiple of dphi_line_deg'
-    Write(*,*) 'Exiting'
-    Stop
-  Endif
-  ind_poin = Nint(Adphirat)
-!Endif
-
-Write(*,'(/1a,i0,a,i0,a)') 'Following ',num_pts,' fls for ',ntransits,' transits.'
-Write(*,'(a,f12.3,a)') 'Toroidal step size is ',dphi_line_deg,' degrees'
-Write(*,'(a,i0)') 'Poincare plot step size index is ',ind_poin
-Write(*,'(a,f12.3)') 'Starting fl at phi = ',phistart_deg
-Write(*,'(a,i0)') 'Number of steps = ',nsteps
-
-nstart_fl = num_pts
-Allocate(ilg(nstart_fl),fl_ierr(nstart_fl),phistart_arr(nstart_fl))
-Allocate(fl_r(nstart_fl,nsteps+1),fl_z(nstart_fl,nsteps+1),fl_p(nstart_fl,nsteps+1))
-fl_r = 0.d0; fl_z = 0.d0; fl_p = 0.d0
-phistart_arr = phistart_deg*pi/180.d0
-
-Call follow_fieldlines_rzphi(bfield,r1d,z1d,phistart_arr,nstart_fl, dphi_line,nsteps,fl_r,fl_z,fl_p,fl_ierr,ilg)
-
-If (follow_both_ways) Then
-  Allocate(ilg2(nstart_fl),fl_ierr2(nstart_fl))
-  Allocate(fl_r2(nstart_fl,nsteps+1),fl_z2(nstart_fl,nsteps+1),fl_p2(nstart_fl,nsteps+1))
-  fl_r2 = 0.d0; fl_z2 = 0.d0; fl_p2 = 0.d0 
-  Call follow_fieldlines_rzphi(bfield,r1d,z1d,phistart_arr,nstart_fl,-dphi_line,nsteps,fl_r2,fl_z2,fl_p2,fl_ierr2,ilg2)
-Endif
-  
-Open(99,file="poincare_output.out",status="unknown",form="formatted",iostat=iocheck)
-If ( iocheck /= 0 ) Then
-  Write(*,*) 'Error opening output file'
-  Stop 'Exiting: I/O Error in poincare_driver.f90'
-Endif
-Write(99,*) phistart_deg,nstart_fl,nsteps/ind_poin+1
-!Write(*,*) phistart_deg,nstart_fl,nsteps/ind_poin+1
-
-Do i = 1,nstart_fl
-  Write(99,*) i
-  Write(99,'(6f18.12)') fl_r(i,1:nsteps+1:ind_poin)
-  Write(99,'(6f18.12)') fl_z(i,1:nsteps+1:ind_poin)
-Enddo
-Close(99)
-Deallocate(r1d,z1d)
-
-If (follow_both_ways) Then
-  Open(99,file="poincare_output2.out",status="unknown",form="formatted",iostat=iocheck)
-  If ( iocheck /= 0 ) Then
-    Write(*,*) 'Error opening output file'
-    Stop 'Exiting: I/O Error in poincare_driver.f90'
-  Endif
-  Write(99,*) phistart_deg,nstart_fl,nsteps/ind_poin+1
-  
-  Do i = 1,nstart_fl
-    Write(99,*) i
-    Write(99,'(6f18.12)') fl_r2(i,1:nsteps+1:ind_poin)
-    Write(99,'(6f18.12)') fl_z2(i,1:nsteps+1:ind_poin)
-  Enddo
-  Close(99)
-Endif
-
-!
-! Calculate min psi_N
-
-!
-If (calc_psiN_min) Then
-  Write(*,*) 'Calculating minimum psi_N'
-  Allocate(psiout(nsteps+1),psiNout(nsteps+1))
-
-  Open(99,file="psiN_min_output.out",status="unknown",form="formatted",iostat=iocheck)
-  If ( iocheck /= 0 ) Then
-    Write(*,*) 'Error opening output file'
-    Stop 'Exiting: I/O Error in poincare_driver.f90 (2)'
-  Endif
-  Write(99,*) nstart_fl
-
-  Do i = 1,nstart_fl
-    
-    !Call get_psi_bicub(fl_r(i,:),fl_z(i,:),nsteps+1,psiout,psiNout,ierr)
-    psiNout = get_psiN_2d(bfield,fl_r(i,:),fl_z(i,:),nsteps+1,ierr)
-    
-    Where (psiNout < 1.e-3) psiNout = 1000000.d0
-    Write(99,*) Minval(psiNout)
-  Enddo
-
-  Close(99)
-  Deallocate(psiout,psiNout)
-Endif
-
-If (follow_both_ways) Then
-  ! Calculate min psi_N
-  If (calc_psiN_min) Then
-    Write(*,*) 'Calculating minimum psi_N'
-    Allocate(psiout(nsteps+1),psiNout(nsteps+1))
-    
-    Open(99,file="psiN_min_output2.out",status="unknown",form="formatted",iostat=iocheck)
-    If ( iocheck /= 0 ) Then
-      Write(*,*) 'Error opening output file'
-      Stop 'Exiting: I/O Error in poincare_driver.f90 (2)'
-    Endif
-    Write(99,*) nstart_fl
-    
-    Do i = 1,nstart_fl
-      psiNout = get_psiN_2d(bfield,fl_r2(i,:),fl_z2(i,:),nsteps+1,ierr)
-      Where (psiNout < 1.e-3) psiNout = 1000000.d0
-      Write(99,*) Minval(psiNout)
-    Enddo
-    
-    Close(99)
-    Deallocate(psiout,psiNout)
-  Endif
-Endif
+! CLEANUP
 
 
-Deallocate(ilg,fl_ierr,fl_r,fl_z,fl_p,phistart_arr)
-
-If (follow_both_ways) Then
-  Deallocate(ilg2,fl_ierr2,fl_r2,fl_z2,fl_p2)
-Endif
-
+Deallocate(rpest,zpest,jpest)
+Deallocate(pnwant,phi,theta)
 Call Etime(tarray,tres)
-Write(*,*) ' Poincare_driver took ',tres-tres0,' seconds'
+Write(*,*) ' bnorm_driver took ',tres-tres0,' seconds'
 
 
-End Program poincare_driver
+End Program bnorm_driver
 
 
 

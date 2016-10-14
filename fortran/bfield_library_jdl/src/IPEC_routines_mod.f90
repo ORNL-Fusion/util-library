@@ -46,7 +46,7 @@ Real(real64), Allocatable :: data(:,:)
 !- End of header -------------------------------------------------------------
 
 Write(*,'(a,a)') ' Reading ', Trim(fname)
-open(99,file=fname,IOSTAT=iocheck)
+open(99,file=fname,IOSTAT=iocheck,STATUS="old")
 If (iocheck /= 0) Then
   Write(*,*) 'Error opening file: ',fname
   Stop 'Exiting: I/O error in function read_ipec_field_file'
@@ -137,14 +137,26 @@ Close(99)
 
 End Subroutine read_ipec_field_file
 
-Subroutine open_ipec_fields(run_path)
+Subroutine open_ipec_fields(run_path,itype)
+  Use kind_mod, Only: int32
   Implicit None
   Character(Len=*), Intent(In) :: run_path
+  Integer(int32), Intent(In) :: itype ! 1 = ipec, 2 = gpec
 
-  Call read_ipec_field_file(Trim(run_path)//'/ipec_eqbrzphi_n3.out',0)
-  Call read_ipec_field_file(Trim(run_path)//'/ipec_cbrzphi_n3.out',1)
-  Call read_ipec_field_file(Trim(run_path)//'/ipec_brzphi_n3.out',2)
-  
+  Select Case (itype)
+    Case (1) 
+      Call read_ipec_field_file(Trim(run_path)//'/ipec_eqbrzphi_n3.out',0)
+      Call read_ipec_field_file(Trim(run_path)//'/ipec_cbrzphi_n3.out',1)
+      Call read_ipec_field_file(Trim(run_path)//'/ipec_brzphi_n3.out',2)
+    Case (2)
+      Call read_ipec_field_file(Trim(run_path)//'/gpec_eqbrzphi_n3.out',0)
+      Call read_ipec_field_file(Trim(run_path)//'/gpec_cbrzphi_n3.out',1)
+      Call read_ipec_field_file(Trim(run_path)//'/gpec_brzphi_n3.out',2)      
+    Case Default
+      Write(*,*) "Did not recognize itype in open_ipec_fields",itype
+      Stop "quitting from open_ipec_fields"
+    End Select
+
 End Subroutine open_ipec_fields
 
 Subroutine close_ipec_fields

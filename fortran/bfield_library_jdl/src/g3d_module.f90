@@ -58,17 +58,58 @@ Module g3d_module
   Public :: g_type
   Public :: readg_g3d, close_gfile, get_psin_bicub, get_psi_bicub
   Public :: bfield_geq_bicub, get_psi_derivs_bicub, display_gfile
-
+  Public :: calc_RZ_at_psiN_theta1d
 Contains
+  !------------------------------------------------------------------------
+  !------------------------------------------------------------------------
+  !------------------------------------------------------------------------
+  
+  Subroutine calc_RZ_at_psiN_theta1d(g,psiN,theta_rad,rout,zout)
+    Use kind_mod, Only : int32, real64
+    Use math_geo_module, Only: rlinspace,linear_interp
+    Implicit None
+    Real(real64), Intent(In) :: psiN(:), theta_rad
+    Type(g_type), Intent(In) :: g
+    Real(real64), Intent(Out) :: rout(:), zout(:)
+    
+    Integer(int32), Parameter :: nline = 100000
+    Real(real64), Allocatable :: rline(:), zline(:),psiNline(:)
+    Integer(int32) :: i,ierr,imax,ilow
+    Real(real64) :: Lmax
+    
+    rout = 0.d0
+    zout = 0.d0
+    
+    Lmax = Max(g%xdim,g%zdim)
+    If (Any(psiN .gt. 1.d0) .OR. Any(psiN .lt. 0.d0)) Then
+      Write(*,*) 'psiN out of range 0 - 1'
+      Stop "Stopping in calc_RZ_at_psiN_theta1d"
+    Endif
 
-!  Subroutine calc_RZ_at_psiN_theta(psiN,theta_rad,npsiN,ntheta,rout,zout)
-!    Use kind_mod, Only : int32, real64
-!    Implicit None
-!    Real(real64), Intent(In) :: psiN(npsiN), theta_rad(ntheta)
-!    Integer(int32), Intent(In) :: npsiN, ntheta
-!    Real(real64), Intent(Out) :: rout(npsiN,ntheta), zout(npsiN,ntheta)
-!  End Subroutine calc_RZ_at_psiN_theta
+    Allocate(rline(nline),zline(nline),psiNline(nline))
+    rline = g%rmaxis + rlinspace(0.d0,Lmax*cos(theta_rad),nline)
+    zline = g%zmaxis + rlinspace(0.d0,Lmax*sin(theta_rad),nline)
+    Call get_psiN_bicub(g,rline,zline,nline,psiNline,ierr)
 
+    imax = Minloc(Abs(psiNline-1.001d0),1,MASK=psiNline.gt.1.001d0)
+    ilow = Count(psiN .lt. 1.d-3)    
+    If (ilow .gt. 1) Then
+      Write(*,*) 'Too many psiN close to axis, why?'
+      Stop "Quitting from calc_RZ_at_psiN_theta1d"
+    Elseif (ilow .eq. 1) Then
+      rout(Minloc(psiN)) = g%rmaxis
+      zout(Minloc(psiN)) = g%zmaxis
+    Endif
+
+    Do i = ilow+1,Size(psiN)
+      Call linear_interp(psiNline(1:imax),rline(1:imax),imax,psiN(i),rout(i),ierr)
+      Call linear_interp(psiNline(1:imax),zline(1:imax),imax,psiN(i),zout(i),ierr)
+    Enddo
+    
+    Deallocate(rline,zline,psiNline)
+  End Subroutine calc_RZ_at_psiN_theta1d
+
+  
   !-----------------------------------------------------------------------------
   !+ returns Bcyl from gfile bfield at R,Z
   !-----------------------------------------------------------------------------

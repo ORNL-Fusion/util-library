@@ -77,6 +77,7 @@ add_library( bjdl STATIC
   ${SRC_DIR}/XPAND_routines_mod.f90
   ${SRC_DIR}/biotsavart_module.f90
   ${SRC_DIR}/coil_typedef.f90
+  ${SRC_DIR}/bnorm_routines.f90
   ${EXTRA_FILES}
   )
 
