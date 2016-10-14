@@ -46,42 +46,8 @@ psiN_max_eval = 0.98;
 g=readg_g3d(gfile_name);
 psiN_g = (g.psirz-g.ssimag)/(g.ssibry-g.ssimag);
 
-max_file = 1 + ~isempty(fname2);
-for ifile = 1:max_file
-    if ifile == 1
-        fname_tmp = fname;
-    else
-        fname_tmp = fname2;
-    end
-    fid = fopen([run_path,fname_tmp]);
-    if fid == -1
-        %         fprintf();
-        error('ERROR: cannot open %s\n',[run_path,fname_tmp])
-    end
-    dat = sscanf(fgets(fid),'%f %i %i',3);
-    phi_plot_deg = dat(1);
-    numlines = dat(2);
-    num_pts = dat(3);
-    
-    rline{ifile} = zeros(numlines,num_pts);
-    zline{ifile} = zeros(numlines,num_pts);
-    psiNline{ifile} = zeros(numlines,num_pts);
-    iline{ifile} = zeros(numlines);
-    for i = 1:numlines
-        iline{ifile}(i) = fscanf(fid,'%i',1);
-        rline{ifile}(i,:) = fscanf(fid,'%f',num_pts);
-        zline{ifile}(i,:) = fscanf(fid,'%f',num_pts);
-        psiNline{ifile}(i,:) = calc_psiN(g,rline{ifile}(i,:),zline{ifile}(i,:),1);
-    end
-    fclose all;
-    
-    %     itmp = isnan(psiNline{ifile});
-    
-    rline{ifile}(isnan(psiNline{ifile})) = NaN;
-    zline{ifile}(isnan(psiNline{ifile})) =NaN;
-    psiNline{ifile}(isnan(psiNline{ifile})) = NaN;
-end
 
+poinc = read_poincare_file(run_path,fname,fname2,g);
 
 %------------------------------------------------------------------------------------------------------------------------------------
 %------------------------------------------------------------------------------------------------------------------------------------
@@ -91,8 +57,8 @@ end
 
 if 1
     figure; hold on; box on;
-    for ifile = 1:max_file
-        plot(rline{ifile},zline{ifile},'r.','markersize',2)
+    for ifile = 1:2
+        plot(poinc.rline{ifile},poinc.zline{ifile},'r.','markersize',2)
     end
     xlabel('R (m)','fontsize',12)
     ylabel('Z (m)','fontsize',12)
@@ -125,14 +91,14 @@ end
 %------------------------------------------------------------------------------------------------------------------------------------
 if 1
     
-    for ifile = 1:max_file
-        tline{ifile} = atan2(zline{ifile}-g.zmaxis,rline{ifile}-g.rmaxis);
+    for ifile = 1:2
+        tline{ifile} = atan2(poinc.zline{ifile}-g.zmaxis,poinc.rline{ifile}-g.rmaxis);
     end
     
     
     figure; hold on; box on;
-    for ifile = 1:max_file
-        plot(psiNline{ifile}.',tline{ifile}.'/pi,'k.','markersize',2)
+    for ifile = 1:2
+        plot(poinc.psiNline{ifile}.',tline{ifile}.'/pi,'k.','markersize',2)
     end
     xlabel('\psi_N','fontsize',12)
     ylabel('\theta (\pi rad.)','fontsize',12)
@@ -143,10 +109,10 @@ if 1
 
     figure; hold on; box on;
     c = colormap(colorflipper(256,'jet'));    
-    for ifile = 1:max_file
+    for ifile = 1:2
         for i = 1:size(tline{ifile},1)
             cind = round(interp1([0,1],[1,size(c,1)],i/(size(tline{ifile},1)+1)));
-            plot(psiNline{ifile}(i,:),tline{ifile}(i,:)/pi,'.','markersize',2,'color',c(cind,:))
+            plot(poinc.psiNline{ifile}(i,:),tline{ifile}(i,:)/pi,'.','markersize',2,'color',c(cind,:))
         end
     end
     xlabel('\psi_N','fontsize',12)
@@ -206,8 +172,8 @@ end
 %------------------------------------------------------------------------------------------------------------------------------------
 %------------------------------------------------------------------------------------------------------------------------------------
 if 0
-    max_file = ~isempty(fname_psimin2) + ~isempty(fname_psimin);
-    for ifile = 1:max_file
+%     2 = ~isempty(fname_psimin2) + ~isempty(fname_psimin);
+    for ifile = 1:2
         if ifile == 1
             fname_psimin_tmp = fname_psimin;
         else
@@ -389,7 +355,7 @@ if 0
     %------------------------------------------------------------------------------------------------------------------------------------
     %------------------------------------------------------------------------------------------------------------------------------------
     figure; hold on; box on;
-    for ifile = 1:max_file
+    for ifile = 1:2
         plot(psiNline{ifile}.',tline{ifile}.'/pi,'k.','markersize',2)
     end
     xlabel('\psi_N','fontsize',12)
@@ -473,7 +439,7 @@ if 0
         plot(psilim_interp,tlim_interp/pi,'bx','linewidth',3)
     end
     
-    for ifile = 1:max_file
+    for ifile = 1:2
         clear poin_inds2
         poin_inds2 = round(interp1(psiNline{ifile}(:,1),1:length(psiNline{ifile}(:,1)),p2(island_inds2)));
         for i = 1:size(poin_inds2,1)*size(poin_inds2,2)
@@ -491,7 +457,7 @@ if 0
     %------------------------------------------------------------------------------------------------------------------------------------
     %------------------------------------------------------------------------------------------------------------------------------------
     figure; hold on; box on;
-    for ifile = 1:max_file
+    for ifile = 1:2
         plot(rline{ifile},zline{ifile},'k.','markersize',2)
     end
     xlabel('R (m)','fontsize',12)
@@ -516,7 +482,7 @@ if 0
         plot(g.lim(1,:),g.lim(2,:),'k','linewidth',2)
     end
     
-    for ifile = 1:max_file
+    for ifile = 1:2
         clear poin_inds2
         poin_inds2 = round(interp1(psiNline{ifile}(:,1),1:length(psiNline{ifile}(:,1)),p2(island_inds2)));
         for i = 1:size(poin_inds2,1)*size(poin_inds2,2)
@@ -538,7 +504,7 @@ end
 % plot(psi1d,psi1d - min1d,'k','linewidth',2)
 
 % figure; hold on; box on;
-% for ifile = 1:max_file
+% for ifile = 1:2
 %     plot(r_1d(ifile,:),z_1d(ifile,:),'ko')
 % end
 

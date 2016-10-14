@@ -14,21 +14,29 @@ icount = 0;
 iline = 3;
 
 wid = 20; % Width of each entry
-ncol = 86;
+% ncol = 86;
 
-iwants = [3,8,24:27,30:32,35:37,40,80:81];  % Select columns to be used, must be recognized below
+
 while ~feof(fid)
     
     line = fgetl(fid); iline = iline + 1;
     if isempty(line)
         line = fgetl(fid); iline = iline + 1;  % Probably blank line between channels
     end
-    if length(line) ~= ncol*wid
-        if feof(fid)
+    ncol = length(line)/wid;
+    if ncol == 86
+        ver = 1;
+        iwants = [1:3,8,24:29,30:32,35:37,40,80:81];  % Select columns to be used, must be recognized below
+    elseif ncol == 84
+        ver = 2;
+        iwants = [1:3,8,24:29,30:32,35:37,40];  % Select columns to be used, must be recognized below
+    else
+         if feof(fid)
             break;
-        end
-        error('Do not understand file')
+         end
+        error('Do not understand file');
     end
+
     
     icount = icount + 1;
     for i = iwants
@@ -40,6 +48,8 @@ while ~feof(fid)
         switch i
             case 1  % Shot
                 shot(icount) = sscanf(line(inds),'%d',1);
+            case 2  % Laser time
+                time(icount) = sscanf(line(inds),'%f',1);
             case 3  % Channel(s)
                 num_channels = length(find(line(inds) == ',')) + 1;
                 myfmt = '%d';
@@ -57,6 +67,10 @@ while ~feof(fid)
                 R_map_targ_m(icount) = sscanf(line(inds),'%f',1);
             case 27  % Z_map,targ [m]
                 Z_map_targ_m(icount) = sscanf(line(inds),'%f',1);                
+            case 28  % R-Rsep,map [m]
+                RmRsep_map_targ_m(icount) = sscanf(line(inds),'%f',1);
+            case 29  % Z-Zsep,map [m]
+                ZmZsep_map_targ_m(icount) = sscanf(line(inds),'%f',1);                                
             case 30  % R_OMP [m]
                 Romp_m(icount) = sscanf(line(inds),'%f',1);
             case 31  % Te,meas [eV]
@@ -92,21 +106,28 @@ for i = 1:length(channels)
     if length(channels{i}) == 1
         ic = channels{i}(1)+1;
         icount_chans(ic) = icount_chans(ic) + 1;
-        ts2d.channel_array(i2)                 = channels{i}(1);
-        ts2d.chan{ic}.Te(icount_chans(ic))     = Te_eV(i);
-        ts2d.chan{ic}.dTe(icount_chans(ic))    = Te_err_eV(i);
-        ts2d.chan{ic}.Tefit(icount_chans(ic))  = Te_fit_eV(i);
-        ts2d.chan{ic}.ne(icount_chans(ic))     = ne_e20(i);
-        ts2d.chan{ic}.dne(icount_chans(ic))    = ne_err_e20(i);
-        ts2d.chan{ic}.nefit(icount_chans(ic))  = ne_fit_e20(i);
-        ts2d.chan{ic}.Romp(icount_chans(ic))   = Romp_m(i);
-        ts2d.chan{ic}.psiN(icount_chans(ic))   = PsiN(i);
-        ts2d.chan{ic}.Rremap(icount_chans(ic)) = R_remap_m(i);
-        ts2d.chan{ic}.Zremap(icount_chans(ic)) = Z_remap_m(i);
+        ts2d.channel_array(i2)                    = channels{i}(1);
+        ts2d.chan{ic}.shot(icount_chans(ic))      = shot(i);
+        ts2d.chan{ic}.time(icount_chans(ic))      = time(i);
+        ts2d.chan{ic}.Te(icount_chans(ic))        = Te_eV(i);
+        ts2d.chan{ic}.dTe(icount_chans(ic))       = Te_err_eV(i);
+        ts2d.chan{ic}.Tefit(icount_chans(ic))     =  Te_fit_eV(i);
+        ts2d.chan{ic}.ne(icount_chans(ic))        = ne_e20(i);
+        ts2d.chan{ic}.dne(icount_chans(ic))       = ne_err_e20(i);
+        ts2d.chan{ic}.nefit(icount_chans(ic))     = ne_fit_e20(i);
+        ts2d.chan{ic}.Romp(icount_chans(ic))      = Romp_m(i);
+        ts2d.chan{ic}.psiN(icount_chans(ic))      = PsiN(i);
+        ts2d.chan{ic}.Rremap(icount_chans(ic))    = R_remap_m(i);
+        ts2d.chan{ic}.Zremap(icount_chans(ic))    = Z_remap_m(i);
         ts2d.chan{ic}.Rmap_targ(icount_chans(ic)) = R_map_targ_m(i);
         ts2d.chan{ic}.Zmap_targ(icount_chans(ic)) = Z_map_targ_m(i);
+        ts2d.chan{ic}.RmRsep_map(icount_chans(ic)) = RmRsep_map_targ_m(i);
+        ts2d.chan{ic}.ZmZsep_map(icount_chans(ic)) = ZmZsep_map_targ_m(i);
+        
+        if ver == 1
         ts2d.chan{ic}.qperp(icount_chans(ic))     = qperp_MWm2(i);
-        ts2d.chan{ic}.qperp_err(icount_chans(ic))     = qperp_err_MWm2(i);
+        ts2d.chan{ic}.qperp_err(icount_chans(ic)) = qperp_err_MWm2(i);
+        end
         i2 = i2 + 1;
     end
 end

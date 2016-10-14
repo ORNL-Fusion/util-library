@@ -6,8 +6,8 @@ INTERP = 0; % if 1 interpolate Br_mn plot
 NARDON = 0;
 
 mmax = 20;
-pnwant = linspace(0.1,0.998,100); %[0.99,0.995];
-ntheta = 2*mmax;
+pnwant = linspace(0.1,0.998,10); %[0.99,0.995];
+ntheta = 10*mmax;
 nn = 3;
 nphi = 8*nn;
 
@@ -16,10 +16,11 @@ nsurf = length(pnwant);
 %
 %  SET UP BFIELD
 % 
-taper = 2900*[-1  1 -1  1 -1  1 -1  1 -1  1 -1  1]; % Even
-% taper = 2900*[-1  1 -1  1 -1  1  1 -1  1 -1  1 -1]; % Odd
+% taper = 2900*[-1  1 -1  1 -1  1 -1  1 -1  1 -1  1]; % Even
+taper = 2900*[-1  1 -1  1 -1  1  1 -1  1 -1  1 -1]; % Odd
 rmp = build_d3d_icoils_jl(taper);
-gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';
+% gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';
+gfile_name = 'C:\Work\DIII-D\160884\efits\g160884.05009_537';
 g = readg_g3d(gfile_name);
 bfield.type = 'just_coils';
 bfield.g = g;

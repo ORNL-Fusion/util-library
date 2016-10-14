@@ -47,8 +47,6 @@ f.theta = atan2(f.z - g.zmaxis,f.r - g.rmaxis);
 f.theta(f.theta<0) = f.theta(f.theta<0)+2*pi;
 % max(f.theta)
 
-
-
 theta_pest = zeros(npsin,ntheta);
 for i = 1:npsin
     % Get one period in theta: 0:2*pi
