@@ -5,11 +5,12 @@ Module bfield_typedef
   Implicit None
   Private
   Type, Public :: bfield_type
-    Integer(int32) :: method = 0
+    Integer(int32) :: method = -1
     Type(g_type) :: g
     Type(coil_type) :: coil
-    Integer(int32) :: method_2d = 0
-    Integer(int32) :: method_save = 0
+    Integer(int32) :: method_2d = -1    ! Method corresponding to AS fields
+    Integer(int32) :: method_pert = -1  ! Method corresponding to pert only
+    Integer(int32) :: method_save = -1  ! Used to save standard method
     Logical :: method_switched = .false.
   End Type bfield_type
 End Module bfield_typedef
@@ -41,19 +42,30 @@ Module bfield
   Implicit None
   Private
   Public :: bfield_type, coil_type, g_type
-  Public :: set_bfield_2d, reset_bfield
+  Public :: set_bfield_2d, reset_bfield, set_bfield_pert_only
+  Public :: calc_B_rzphi_general
 
 Contains
 
   Subroutine set_bfield_2d(bfield)
     Implicit None
     Type(bfield_type), Intent(InOut) :: bfield
-    If (.NOT. bfield%method_switched) Then
-      bfield%method_save = bfield%method
-      bfield%method      = bfield%method_2d
-      bfield%method_switched = .true.
-    Endif
+    Call reset_bfield(bfield)
+    bfield%method_save = bfield%method
+    bfield%method      = bfield%method_2d
+    bfield%method_switched = .true.
+    Write(*,*) 'Setting bfield method to 2d:',bfield%method
   End Subroutine set_bfield_2d
+
+  Subroutine set_bfield_pert_only(bfield)
+    Implicit None
+    Type(bfield_type), Intent(InOut) :: bfield
+    Call reset_bfield(bfield)
+    bfield%method_save = bfield%method
+    bfield%method      = bfield%method_pert
+    bfield%method_switched = .true.
+    Write(*,*) 'Setting bfield method to pert only:',bfield%method
+  End Subroutine set_bfield_pert_only
 
   Subroutine reset_bfield(bfield)
     Implicit None
@@ -61,9 +73,90 @@ Contains
     If (bfield%method_switched) Then
       bfield%method = bfield%method_save
       bfield%method_switched = .false.
+      Write(*,*) 'Resetting bfield method to:',bfield%method
     Endif
   End Subroutine reset_bfield
-  
-  
+
+  Subroutine calc_B_rzphi_general(bfield,r,z,phi,n,br,bz,bphi)
+    Use kind_mod, Only: real64, int32
+    Use g3d_module, Only : bfield_geq_bicub
+    Use M3DC1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
+    Use ipec_module, Only : bfield_ipec
+    Use xpand_module, Only: bfield_xpand
+    Use biotsavart_module, Only : bfield_bs_cyl
+    Implicit None
+    Type(bfield_type), Intent(In) :: bfield
+    Integer(int32), Intent(In) :: n
+    Real(real64), Intent(In) :: r(n),z(n),phi(n)
+    Real(real64), Intent(Out) :: br(n),bz(n),bphi(n)
+    Real(real64) :: btmp(n,3)
+    Integer(int32) :: ierr
+    
+    Select Case (bfield%method)
+    Case (0)
+      Call bfield_geq_bicub(bfield%g,r,z,n,btmp,ierr)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)
+    Case (1)
+      Call bfield_bs_cyl(r,phi,z,n,bfield%coil,br,bphi,bz)
+      Call bfield_geq_bicub(bfield%g,r,z,n,btmp,ierr)
+      br   = btmp(:,1) + br
+      bz   = btmp(:,2) + bz 
+      bphi = btmp(:,3) + bphi
+    Case (2)
+      Write(*,*) 'method = 2, pavel screening not implemented'
+      Stop "Quitting from bfield general"
+    Case (3)
+      Call bfield_geq_bicub(bfield%g,r,z,n,btmp,ierr)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)
+      Call bfield_m3dc1(r,phi,z,n,btmp,ierr)
+      br   = btmp(:,1) + br
+      bz   = btmp(:,2) + bz 
+      bphi = btmp(:,3) + bphi      
+    Case (4)  ! m3dc1 total
+      Call bfield_m3dc1(r,phi,z,n,btmp,ierr)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)
+    Case (5)  ! m3dc1 2d
+      Call bfield_m3dc1_2d(r,z,n,btmp,ierr)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)
+    Case (6) ! just coils
+      Call bfield_bs_cyl(r,phi,z,n,bfield%coil,br,bphi,bz)
+    Case (7) ! ipec eq only
+      Call bfield_ipec(r,phi,z,n,btmp,ierr,0)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)
+    Case (8) ! ipec vac
+      Call bfield_ipec(r,phi,z,n,btmp,ierr,1)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)      
+    Case (9) ! ipec pert
+      Call bfield_ipec(r,phi,z,n,btmp,ierr,2)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)      
+    Case (10) ! xpand pert
+      Call bfield_xpand(r,phi,z,n,btmp,ierr,0)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)      
+    Case (11) ! xpand vac
+      Call bfield_xpand(r,phi,z,n,btmp,ierr,1)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)
+    Case Default
+      Write(*,*) 'Unknown bfield%method:',bfield%method
+      Stop "Exiting from bfield general"
+    End Select
+  End Subroutine calc_B_rzphi_general
 End Module bfield
 

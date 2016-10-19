@@ -290,9 +290,35 @@ Real(real64), Intent(Out) :: yout
 
 Integer(int32) :: j
 
+If (xin .lt. xarr(1)) Then
+  Write(*,*) 'Error from linear_interp, x out of bounds lower (x,xarr(1))=',xin,xarr(1)
+  Stop "quitting"
+Endif
+If (xin .gt. xarr(narr)) Then
+  Write(*,*) 'Error from linear_interp, x out of bounds upper (x,xarr(1))=',xin,xarr(narr)
+  Stop "quitting"
+Endif
 Call locate_bisect(xarr,narr,xin,j,ierr)
+If (j .eq. 0) Then
+  If (abs(xin - xarr(1)) < 1.e-10) Then
+    yout = yarr(1)
+    ierr = 0
+    Return
+  Endif
+Endif
+If (j .eq. narr) Then
+  If (abs(xin - xarr(narr)) < 1.e-10) Then
+    yout = yarr(narr)
+    ierr = 0
+    Return
+  Endif
+Endif
 
-If (ierr .eq. 1) Then 
+If (ierr .eq. 1) Then
+  Write(*,*) "xarr([1,end])",xarr(1),xarr(narr)
+  Write(*,*) "xin",xin
+  Write(*,*) 'xin - xarr(1)',xin-xarr(1)
+  Stop "error linear interp!, ierr set from locate_bisect"  
   yout = 0.d0
   Return
 Endif
@@ -325,7 +351,7 @@ test1 = ( xarr(narr) .gt. xarr(1) )
 
 !If ( ( x .gt. Maxval(xarr) ) .OR. ( x .lt. Minval(xarr) ) ) Then
 !  ierr = 1
-!  j = 0
+!  Stop "x out of range in locate_bisect"
 !Endif
 
 Do While (jup - jlo .gt. 1) 

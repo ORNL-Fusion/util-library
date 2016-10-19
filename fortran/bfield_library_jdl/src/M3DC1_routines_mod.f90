@@ -84,8 +84,8 @@ Do iset = 1,num_sets
 
     Call fio_eval_series_f(ipsi_axis, 0._real64, psi_axis, ierr)
     Call fio_eval_series_f(ipsi_lcfs, 0._real64, psi_lcfs, ierr)
-    Write(*,*) 'Psi at magnetic axis: ', psi_axis
-    Write(*,*) 'Psi at lcfs: ', psi_lcfs
+!    Write(*,*) 'Psi at magnetic axis: ', psi_axis
+!    Write(*,*) 'Psi at lcfs: ', psi_lcfs
 
     Call fio_close_series_f(ipsi_axis, ierr)
     Call fio_close_series_f(ipsi_lcfs, ierr)
