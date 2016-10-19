@@ -10,29 +10,31 @@ Use kind_mod, Only: int32, real64
 Use rmpcoil_module, Only : build_d3d_ccoils_jl, build_d3d_icoils_jl
 Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factors, m3dc1_itime, m3dc1_toroidal_on_err,bfield_m3dc1, &
      m3dc1_field_type
-Use g3d_module, Only : readg_g3d
+Use g3d_module, Only : readg_g3d, get_psi_derivs_bicub
 Use bnorm_routines, Only : get_pest_coords
 Use math_geo_module, Only : rlinspace
 Use phys_const, Only: pi
 Use ipec_module, Only: open_ipec_fields
 Use xpand_module, Only: open_xpand_fields
-Use bfield, Only : bfield_type, coil_type, g_type
+Use bfield, Only : bfield_type, coil_type, g_type, calc_b_rzphi_general, set_bfield_pert_only, reset_bfield
 Implicit none
 
 Logical, Parameter :: m3dc1_toroidal_off_grid = .true.
 Integer(int32), parameter :: max_rmp_coils       = 12
 
-Integer(int32) :: nstart_fl, nsteps
-Integer(int32) :: iocheck, itest, ierr_b, ind_poin, ierr
+Integer(int32) :: i, k, mind
+Integer(int32) :: ierr,iocheck
 Real(Kind=4)  :: tarray(2),tres,tres0
 Integer(int32), parameter :: max_m3dc1_files = 10
 Type(bfield_type) :: bfield
 Type(g_type) :: g
 Type(coil_type) :: coil
-
+Integer(int32), Allocatable :: marr(:)
 Real(real64) :: dphi, dtheta
 Real(real64), Allocatable :: pnwant(:), phi(:), theta(:)
-Real(real64), Allocatable :: rpest(:,:), zpest(:,:), jpest(:,:)
+Real(real64), Allocatable :: rpest(:,:), zpest(:,:), jpest(:,:),dpsidr(:),dpsidz(:),psiout(:)
+Real(real64), Allocatable :: rn(:),zn(:),br(:),bz(:),bphi(:),bnorm(:), area(:),phiarr(:),alpha_mn(:)
+Real(real64), Allocatable :: br_c(:,:), br_s(:,:), Br_mn(:,:)
 !---------------------------------------------------------------------------
 ! Namelist variables:
 Real(real64) :: &
@@ -42,18 +44,15 @@ Real(real64) :: &
  pnmax = 0.d0 
 
 Character(Len=120) :: &
- rmp_type = 'none',  &
- gfile_name = 'none', &
- rmp_coil_type = 'none', &
- m3dc1_filenames(max_m3dc1_files), &
- ipec_run_path = 'none', &
- xpand_fname = 'none'
+ rmp_type                         = 'none',  &
+ gfile_name                       = 'none', &
+ rmp_coil_type                    = 'none', &
+ m3dc1_filenames(max_m3dc1_files) = 'none', &
+ ipec_run_path                    = 'none', &
+ xpand_fname                      = 'none'
 
 Integer(int32) :: &
  m3dc1_time = -1, &
- num_pts = 2, &
- ntransits = 1, &
- Nsym = 1, &
  m3dc1_nsets = 0, &
  ipec_field_eval_type = -1, &
  xpand_field_eval_type = -1, &
@@ -105,12 +104,14 @@ Select Case (rmp_type)
     Write(*,'(a)') '-----> BFIELD METHOD IS G3D'
     bfield%method    = 0
     bfield%method_2d = 0
+    bfield%method_pert = -1
     Call readg_g3d(gfile_name,g)
     bfield%g = g
   Case ('g3d+rmpcoil')
     Write(*,'(a)') '-----> BFIELD METHOD IS G3D+RMPCOIL'
     bfield%method = 1
     bfield%method_2d = 0
+    bfield%method_pert = 6
     Call readg_g3d(gfile_name,g)
     bfield%g = g
     ! load rmp coil    
@@ -135,6 +136,7 @@ Select Case (rmp_type)
     Write(*,'(a)') '-----> BFIELD METHOD IS G3D+M3DC1'
     bfield%method    = 3
     bfield%method_2d = 0
+    bfield%method_pert = 4
     Call readg_g3d(gfile_name,g)
     bfield%g = g
     ! Setup field    
@@ -154,6 +156,7 @@ Select Case (rmp_type)
     Write(*,'(a)') '-----> BFIELD METHOD IS M3DC1_FULL_FIELD'
     bfield%method    = 4
     bfield%method_2d = 5
+    bfield%method_pert = -1
     ! Setup field    
     If (m3dc1_time .eq. -1) Then
       Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
@@ -167,10 +170,12 @@ Select Case (rmp_type)
     Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
     Write(*,*) '---------> M3DC1 scale factor: ',m3dc1_factors(1:m3dc1_nsets)
     If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
+    Stop "This method not valid for bnorm calculation"
   Case ('m3dc1_as')
     Write(*,'(a)') '-----> BFIELD METHOD IS m3dc1_as'
     bfield%method    = 5
     bfield%method_2d = 5
+    bfield%method_pert = -1
     ! Setup field    
     If (m3dc1_time .eq. -1) Then
       Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
@@ -191,14 +196,17 @@ Select Case (rmp_type)
       Write(*,'(a)') '-----> Evaluating IPEC fields as EQUILIBRIUM ONLY!'
       bfield%method = 7
       bfield%method_2d = 0
+      bfield%method_pert = -1
     Elseif (ipec_field_eval_type .eq. 1) Then
       Write(*,'(a)') '-----> Evaluating IPEC fields as EQ + VACUUM!'
       bfield%method = 8
       bfield%method_2d = 0
+      bfield%method_pert = -1
     Elseif (ipec_field_eval_type .eq. 2) Then
       Write(*,'(a)') '-----> Evaluating IPEC fields as EQ + PERT!'
       bfield%method = 9
       bfield%method_2d = 0
+      bfield%method_pert = -1
     Else
       Stop "Did not recognize ipec_field_eval_type"
     Endif
@@ -212,10 +220,12 @@ Select Case (rmp_type)
       Write(*,'(a)') '-----> Evaluating XPAND fields as PERTURBED!'
       bfield%method = 10
       bfield%method_2d = 0
+      bfield%method_pert = -1
     Elseif (xpand_field_eval_type .eq. 1) Then
       Write(*,'(a)') '-----> Evaluating XPAND fields as VACUUM!'
       bfield%method = 11
       bfield%method_2d = 0
+      bfield%method_pert = -1
     Else
       Stop "Did not recognize xpand_field_eval_type"
     Endif
@@ -245,13 +255,90 @@ pnwant = rlinspace(pnmin,pnmax,numpn)
 Allocate(phi(nphi),theta(ntheta))
 phi = rlinspace(0.d0,2.d0*pi*Real(nphi-1,real64)/Real(nphi,real64),nphi)
 theta = rlinspace(0.d0,2.d0*pi*Real(ntheta-1,real64)/Real(ntheta,real64),ntheta)
+dphi = phi(2) - phi(1)
+dtheta = theta(2) - theta(1)
 
 
 Allocate(rpest(numpn,ntheta))
 Allocate(zpest(numpn,ntheta))
 Allocate(jpest(numpn,ntheta))
 
-Call get_pest_coords(g,pnwant,ntheta,.false.,rpest,zpest,jpest)
+! Calculate pest coords for each surface, then Br_mn
+Call get_pest_coords(bfield%g,pnwant,ntheta,rpest,zpest,jpest)
+
+Allocate(dpsidr(ntheta),dpsidz(ntheta),psiout(ntheta))
+Allocate(rn(ntheta),zn(ntheta))
+Allocate(br(ntheta),bz(ntheta),bphi(ntheta))
+Allocate(phiarr(ntheta))
+Allocate(bnorm(ntheta))
+Allocate(area(numpn))
+Allocate(alpha_mn(ntheta))
+Allocate(br_c(numpn,2*mmax+1),br_s(numpn,2*mmax+1),Br_mn(numpn,2*mmax+1))
+Allocate(marr(2*mmax+1))
+Do mind = 0,2*mmax
+  marr(mind+1) = mind - mmax
+Enddo
+
+Call set_bfield_pert_only(bfield)
+Do i = 1,numpn
+  Call get_psi_derivs_bicub(bfield%g,rpest(i,:),zpest(i,:),ntheta,&
+       psiout,dpsidr,dpsidz,ierr)
+
+  rn = dpsidr/Sqrt(dpsidr**2 + dpsidz**2) ! Unit vector in grad(psi)
+  zn = dpsidz/Sqrt(dpsidr**2 + dpsidz**2)
+
+  area(i) = Sum(jpest(i,:))*2.d0*pi*dtheta
+  
+  Do k = 1,nphi
+    phiarr(:) = phi(k)
+    Call calc_B_rzphi_general(bfield,rpest(i,:),zpest(i,:),phiarr,ntheta,br,bz,bphi)
+    bnorm = br*rn + bz*zn
+    Do mind = 1,2*mmax + 1
+      alpha_mn = nres*phi(k) - marr(mind)*theta
+      br_c(i,mind) = br_c(i,mind) + 2.d0*dtheta*dphi*Sum(jpest(i,:)*bnorm*cos(alpha_mn))/area(i) !A.15
+      br_s(i,mind) = br_s(i,mind) + 2.d0*dtheta*dphi*Sum(jpest(i,:)*bnorm*sin(alpha_mn))/area(i)
+    Enddo
+  Enddo
+Enddo
+Br_mn = Sqrt(br_c**2 + br_s**2) ! After A.15
+Call reset_bfield(bfield)
+
+Open(99,file="Brmn.out",status="unknown",form="formatted",iostat=iocheck)
+If ( iocheck /= 0 ) Then
+  Write(*,*) 'Error opening output file'
+  Stop 'Exiting: I/O Error in bnorm_driver.f90'
+Endif
+Write(99,*) Br_mn
+Close(99)
+
+Open(99,file="marr.out",status="unknown",form="formatted",iostat=iocheck)
+If ( iocheck /= 0 ) Then
+  Write(*,*) 'Error opening output file'
+  Stop 'Exiting: I/O Error in bnorm_driver.f90'
+Endif
+Write(99,*) marr
+Close(99)
+
+Open(99,file="pn.out",status="unknown",form="formatted",iostat=iocheck)
+If ( iocheck /= 0 ) Then
+  Write(*,*) 'Error opening output file'
+  Stop 'Exiting: I/O Error in bnorm_driver.f90'
+Endif
+Write(99,*) pnwant
+Close(99)
+
+Deallocate(Br_mn)
+Deallocate(marr)
+Deallocate(br_c,br_s)
+Deallocate(alpha_mn)
+Deallocate(dpsidr,dpsidz)
+Deallocate(psiout)
+
+Deallocate(phiarr,rn,zn)
+Deallocate(br,bz,bphi)
+Deallocate(area)
+Deallocate(bnorm)
+
 
 ! CLEANUP
 
