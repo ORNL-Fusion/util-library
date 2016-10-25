@@ -299,6 +299,7 @@ If (xin .gt. xarr(narr)) Then
   Stop "quitting"
 Endif
 Call locate_bisect(xarr,narr,xin,j,ierr)
+
 If (j .eq. 0) Then
   If (abs(xin - xarr(1)) < 1.e-10) Then
     yout = yarr(1)

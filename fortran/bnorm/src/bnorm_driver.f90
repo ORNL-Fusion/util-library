@@ -122,7 +122,8 @@ Select Case (rmp_type)
         Call build_d3d_ccoils_jl(coil,rmp_current(1:6))
       Case ('d3d_icoils')
         Write(*,'(a)') '----->  Rmp coils are DIII-D I coils'
-        Write(*,'(a,12f12.3)') ' Coil currents: ', rmp_current(1:12)
+        Write(*,'(a,12f12.3)') ' Coil currents 1: ', rmp_current(1:6)
+        Write(*,'(a,12f12.3)') ' Coil currents 2: ', rmp_current(7:12)
         Call build_d3d_icoils_jl(coil,rmp_current(1:12))
       Case Default
         Write(*,*) 'Error!  Unknown rmp_coil_type'
@@ -279,8 +280,11 @@ Do mind = 0,2*mmax
   marr(mind+1) = mind - mmax
 Enddo
 
+br_c = 0.d0
+br_s = 0.d0
 Call set_bfield_pert_only(bfield)
 Do i = 1,numpn
+  Write(*,*) 'Working on surf ',i,' of ',numpn
   Call get_psi_derivs_bicub(bfield%g,rpest(i,:),zpest(i,:),ntheta,&
        psiout,dpsidr,dpsidz,ierr)
 
@@ -300,8 +304,9 @@ Do i = 1,numpn
     Enddo
   Enddo
 Enddo
-Br_mn = Sqrt(br_c**2 + br_s**2) ! After A.15
 Call reset_bfield(bfield)
+
+Br_mn = Sqrt(br_c**2 + br_s**2) ! After A.15
 
 Open(99,file="Brmn.out",status="unknown",form="formatted",iostat=iocheck)
 If ( iocheck /= 0 ) Then

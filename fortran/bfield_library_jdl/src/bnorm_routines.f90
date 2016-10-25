@@ -35,7 +35,7 @@ Contains
     Allocate(rstart(npn),zstart(npn),qpsi(npn))
     
     Call calc_RZ_at_psiN_theta1d(g,pnwant,0.d0,rstart,zstart)
-
+    
     Do i = 1,npn
       Call linear_interp(g%pn,g%qpsi,g%mw,pnwant(i),qpsi(i),ierr)
     Enddo   
@@ -44,18 +44,18 @@ Contains
     phistart_arr = 0.d0
     dphi = 0.5d0*pi/180.d0
     nsteps = Nint(1.1d0*2.d0*pi*Maxval(qpsi)/dphi)
-
+    
     Allocate(fl_r(npn,nsteps+1),fl_z(npn,nsteps+1),fl_p(npn,nsteps+1))
     Allocate(fl_theta(npn,nsteps+1))    
     
     bfield%g = g
     bfield%method = 0
     Call follow_fieldlines_rzphi(bfield,rstart,zstart,phistart_arr,npn,&
-         dphi,nsteps,fl_r,fl_z,fl_p,fl_ierr,ilg)
+         dphi,nsteps,fl_r,fl_z,fl_p,fl_ierr,ilg)    
 
-    fl_theta = atan2(fl_z - g%zmaxis,fl_r - g%rmaxis)
+    fl_theta = Atan2(fl_z - g%zmaxis,fl_r - g%rmaxis)
     fl_theta = Mod(fl_theta + 2.d0*pi,2.d0*pi)
-    rpest = -1.
+    
     Do i = 1,npn
 
       ! Get one period in theta: 0:2*pi
@@ -67,6 +67,7 @@ Contains
       Do j = 2,nsteps+1
         If (fl_theta(i,j) - fl_theta(i,j-1) .LT. 0.d0) Then
           icross = j
+          Exit
         Endif
       Enddo
       If (icross .eq. 0) Then
@@ -78,7 +79,7 @@ Contains
       fl_theta(i,icross) = fl_theta(i,icross) + 2.d0*pi
       Call linear_interp(fl_theta(i,1:icross),fl_p(i,1:icross),icross,&
            2.d0*pi,phi_th0,ierr)
-      
+
       Do j = 0,ntheta-1
         phi_pest = 2.d0*pi*Real(j,real64)/Real(ntheta,real64)
         Call linear_interp(fl_p(i,1:icross),fl_r(i,1:icross),icross, &
@@ -95,9 +96,9 @@ Contains
 
       Bval = 0.d0
       Call bfield_geq_bicub(g,rpest(i,:),zpest(i,:),ntheta,Bval,ierr)
-      bpol = Sqrt(Bval(:,1)**2 + Bval(:,2)**2) ! double check this is r,z
+      bpol = Sqrt(Bval(:,1)**2 + Bval(:,2)**2) 
       jpest(i,:) = Abs(qpsi(i)/(g%rzero*g%bcentr))*bpol(:)*rpest(i,:)**3
-      
+
     Enddo
     
     Deallocate(ilg,fl_ierr)
