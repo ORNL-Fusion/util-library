@@ -22,13 +22,13 @@ rmp_current  = -3826.d0 3826.d0 -3826.d0 3826.d0 -3826.d0 3826.d0 3826.d0 -3826.
 !**************************************************************************
 
 nres = 3
-nphi = 24  ! Maybe 8*nres?
+nphi = 400  ! Maybe 8*nres?
 mmax = 20   
-ntheta = 20  ! Maybe 100*mmax?
+ntheta = 1000  ! Maybe 100*mmax?
 
 pnmin = 0.1
 pnmax = 0.998
-numpn = 5
+numpn = 500
 
 
 

@@ -295,7 +295,7 @@ If (xin .lt. xarr(1)) Then
   Stop "quitting"
 Endif
 If (xin .gt. xarr(narr)) Then
-  Write(*,*) 'Error from linear_interp, x out of bounds upper (x,xarr(1))=',xin,xarr(narr)
+  Write(*,*) 'Error from linear_interp, x out of bounds upper (x,xarr(narr))=',xin,xarr(narr)
   Stop "quitting"
 Endif
 Call locate_bisect(xarr,narr,xin,j,ierr)

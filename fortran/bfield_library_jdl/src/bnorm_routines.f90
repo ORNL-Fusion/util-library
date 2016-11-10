@@ -35,11 +35,9 @@ Contains
     Allocate(rstart(npn),zstart(npn),qpsi(npn))
     
     Call calc_RZ_at_psiN_theta1d(g,pnwant,0.d0,rstart,zstart)
-    
     Do i = 1,npn
       Call linear_interp(g%pn,g%qpsi,g%mw,pnwant(i),qpsi(i),ierr)
     Enddo   
-
     Allocate(ilg(npn),fl_ierr(npn),phistart_arr(npn))
     phistart_arr = 0.d0
     dphi = 0.5d0*pi/180.d0
@@ -81,7 +79,7 @@ Contains
            2.d0*pi,phi_th0,ierr)
 
       Do j = 0,ntheta-1
-        phi_pest = 2.d0*pi*Real(j,real64)/Real(ntheta,real64)
+        phi_pest = phi_th0*Real(j,real64)/Real(ntheta,real64)
         Call linear_interp(fl_p(i,1:icross),fl_r(i,1:icross),icross, &
              phi_pest,rpest(i,j+1),ierr)
         if (ierr .eq. 1) Then
