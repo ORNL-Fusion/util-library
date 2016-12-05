@@ -1,10 +1,13 @@
-function sep = plot_sep_g(g,plotit,newfig)
+function sep = plot_sep_g(g,plotit,newfig,linewid)
 % function sep = plot_sep_g(g,plotit,newfig)
 if nargin < 2
     plotit = 1;
 end
 if nargin < 3
     newfig = 0;
+end
+if nargin < 4
+    linewid = 1;
 end
 
 %(run_path,g,newfig,plotit,sep_file_name,rguess,zguess,de,SECOND_SEP,save_in_dir)
@@ -92,7 +95,7 @@ if fid == -1
     end
 
     if plotit == 1
-        plot(rsep,zsep,'k-')
+        plot(rsep,zsep,'k-','linewidth',linewid)
     end
     disp('>>>> Writing sep file')
     fid = fopen(fname,'w');
@@ -115,7 +118,7 @@ else
     zsep = fscanf(fid,'%f\n',nsep);
     fclose(fid);
     if plotit ==1
-        plot(rsep,zsep,'k-')
+        plot(rsep,zsep,'k-','linewidth',linewid)
     end
     sep.rsep = rsep;
     sep.zsep = zsep;

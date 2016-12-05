@@ -14,7 +14,7 @@ for ifile = 1:2
     end
     dat = sscanf(fgets(fid),'%f %i %i',3);
     phi_plot_deg = dat(1);
-    numlines = dat(2);
+    numlines = dat(2); poinc.numlines = numlines;
     num_pts = dat(3);
     
     rline{ifile} = zeros(numlines,num_pts);

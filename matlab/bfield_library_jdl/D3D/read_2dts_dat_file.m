@@ -30,10 +30,14 @@ while ~feof(fid)
     elseif ncol == 84
         ver = 2;
         iwants = [1:3,8,24:29,30:32,35:37,40];  % Select columns to be used, must be recognized below
+    elseif ncol == 91
+        ver = 3;
+        iwants = [1:3,8,24:29,30:32,35:37,40];  % Select columns to be used, must be recognized below
     else
          if feof(fid)
             break;
          end
+         fprintf('ncol found %d\n',ncol)
         error('Do not understand file');
     end
 

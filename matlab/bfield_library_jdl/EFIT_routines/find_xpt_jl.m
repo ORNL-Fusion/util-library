@@ -29,7 +29,7 @@ else
     dez = de;
 end
 
-first_guess_Bp_tol = 1e-2;  % If guess from boundary is > this then try another method (for limited configs)
+first_guess_Bp_tol = 1e-3;  % If guess from boundary is > this then try another method (for limited configs)
 Rmin_eval = g.r(3) + 1e-3;
 Zmin_eval = g.z(3) + 1e-3;
 Rmax_eval = g.r(end-2) - 1e-3;
@@ -59,7 +59,7 @@ if isempty(rguess)
             fprintf('Guess from boundary exceed tolerance!\n')
         end
         der = (g.r(end)-g.r(1))*.15;
-        dez = (g.z(end)-g.z(1))*.15;
+        dez = (g.z(end)-g.z(1))*.1;
     end
     rx = rb(ix);
     zx = zb(ix);

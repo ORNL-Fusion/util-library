@@ -8,7 +8,7 @@ fname_psimin = []; fname_psimin2 = [];
 
 
 
-if 1
+if 0
 % 164723 <------------------------*********************--------------------
  gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410'; 
 % run_path = 'C:\Work\fortran\test_poincare\164723\1FL_AS\'; suffix = '30deg2'; mytitle = '1FL \phi = 30';
@@ -25,16 +25,28 @@ run_path = 'C:\Work\fortran\test_poincare\164723\VAC\'; suffix = '0deg';  mytitl
 % run_path = 'C:\Work\fortran\test_poincare\164723\XPAND_vac\'; suffix = '0deg'; mytitle = 'XPAND vac \phi = 0';
 end
 
-if 0
+if 1
 % 160884 <------------------------*********************--------------------
-gfile_name = 'C:\Work\DIII-D\160884\efits\g160884.05009_537';
+% gfile_name = 'C:\Work\DIII-D\160884\efits\g160884.05009_537';
 % run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC\'; suffix = '0deg';  mytitle = 'VAC \phi = 0';
-run_path = 'C:\Work\fortran\test_poincare\160884\5009\2FL\'; suffix = '30deg';  mytitle = '2FL \phi = 30';
+gfile_name = 'C:\Work\M3DC1\160884\5000\g160884.05000_m3dc1';
+% run_path = 'C:\Work\fortran\test_poincare\160884\5009\1FL\'; suffix = '30deg';  mytitle = '1FL \phi = 30';
+% run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC_m3dc1\'; suffix = '0deg';  mytitle = 'VAC_m3dc1 \phi = 0';
+% run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC_m3dc1\'; suffix = '30deg';  mytitle = 'VAC_m3dc1 \phi = 30';
+run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC_m3dc1\'; suffix = '-30deg';  mytitle = 'VAC_m3dc1 \phi = -30';
 end
 
 % run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '-120'; gfile_name = 'C:\Work\DIII-D\165274\kinetic\g165274.02120'; mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;
 
-
+if 0
+    % 154929 <------------------------*********************--------------------
+    run_path = 'C:\Work\fortran\test_poincare\154929\rmp\'; suffix = '_60_n100_fake_diag2'; mytitle='test';shot = 154921; times = 3750;
+%     run_path = 'C:\Work\fortran\test_poincare\154929\rmp\'; suffix = '240_n250_fake_diag2'; mytitle='test';shot = 154921; times = 3750;
+    gfile_name = 'C:\Work\DIII-D\154929\kinetic\g154929.03750';
+    
+    
+    
+end
 
 fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
 fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];
@@ -55,7 +67,7 @@ poinc = read_poincare_file(run_path,fname,fname2,g);
 %------------------------------------------------------------------------------------------------------------------------------------
 %------------------------------------------------------------------------------------------------------------------------------------
 
-if 1
+if 0
     figure; hold on; box on;
     for ifile = 1:2
         plot(poinc.rline{ifile},poinc.zline{ifile},'r.','markersize',2)
@@ -107,18 +119,18 @@ if 1
     % contour(g.r,g.z,psiN_g.',[0.5,0.6,0.7,0.8,0.9,1.0],'linewidth',2);
     
 
-    figure; hold on; box on;
-    c = colormap(colorflipper(256,'jet'));    
-    for ifile = 1:2
-        for i = 1:size(tline{ifile},1)
-            cind = round(interp1([0,1],[1,size(c,1)],i/(size(tline{ifile},1)+1)));
-            plot(poinc.psiNline{ifile}(i,:),tline{ifile}(i,:)/pi,'.','markersize',2,'color',c(cind,:))
-        end
-    end
-    xlabel('\psi_N','fontsize',12)
-    ylabel('\theta (\pi rad.)','fontsize',12)
-    set(gca,'fontsize',12)
-    title(mytitle)
+%     figure; hold on; box on;
+%     c = colormap(colorflipper(256,'jet'));    
+%     for ifile = 1:2
+%         for i = 1:size(tline{ifile},1)
+%             cind = round(interp1([0,1],[1,size(c,1)],i/(size(tline{ifile},1)+1)));
+%             plot(poinc.psiNline{ifile}(i,:),tline{ifile}(i,:)/pi,'.','markersize',2,'color',c(cind,:))
+%         end
+%     end
+%     xlabel('\psi_N','fontsize',12)
+%     ylabel('\theta (\pi rad.)','fontsize',12)
+%     set(gca,'fontsize',12)
+%     title(mytitle)
 
 
     if plot_ts
@@ -182,7 +194,7 @@ if 0
         if ~isempty(fname_psimin_tmp)
             d2 = dlmread([run_path,fname_psimin_tmp]);
             psiNmin{ifile} = zeros(size(tline{ifile}));
-            for i =1:numlines
+            for i =1:poinc.numlines
                 if d2(i+1) > 1000
                     d2(i+1) = NaN;
                 end
@@ -192,9 +204,9 @@ if 0
         end
         
         psiNmin_1d(ifile,:) = psiNmin{ifile}(:,1);
-        psiN_1d(ifile,:) = psiNline{ifile}(:,1);
-        r_1d(ifile,:) = rline{ifile}(:,1);
-        z_1d(ifile,:) = zline{ifile}(:,1);
+        psiN_1d(ifile,:) = poinc.psiNline{ifile}(:,1);
+        r_1d(ifile,:) = poinc.rline{ifile}(:,1);
+        z_1d(ifile,:) = poinc.zline{ifile}(:,1);
     end
     
     
@@ -311,7 +323,7 @@ if 0
     figure; hold on; box on;
     subplot(2,1,1); hold on; box on;
     if plot_ts
-        errorbar(psiN_ts,Te_ts/1000,Te_std_ts/1000,'ko','linewidth',2)
+        errorbar(psiN_ts,Te_ts,Te_std_ts,'ko','linewidth',2)
     end
     if plot_ece
         errorbar(psiN_ece,Te_ece/1000,Te_std_ece/1000,'ko','linewidth',2)
@@ -356,7 +368,7 @@ if 0
     %------------------------------------------------------------------------------------------------------------------------------------
     figure; hold on; box on;
     for ifile = 1:2
-        plot(psiNline{ifile}.',tline{ifile}.'/pi,'k.','markersize',2)
+        plot(poinc.psiNline{ifile}.',tline{ifile}.'/pi,'k.','markersize',2)
     end
     xlabel('\psi_N','fontsize',12)
     ylabel('\theta (\pi rad.)','fontsize',12)
@@ -441,9 +453,9 @@ if 0
     
     for ifile = 1:2
         clear poin_inds2
-        poin_inds2 = round(interp1(psiNline{ifile}(:,1),1:length(psiNline{ifile}(:,1)),p2(island_inds2)));
+        poin_inds2 = round(interp1(poinc.psiNline{ifile}(:,1),1:length(poinc.psiNline{ifile}(:,1)),p2(island_inds2)));
         for i = 1:size(poin_inds2,1)*size(poin_inds2,2)
-            plot(psiNline{ifile}(poin_inds2(i),:).',tline{ifile}(poin_inds2(i),:).'/pi,'r.')
+            plot(poinc.psiNline{ifile}(poin_inds2(i),:).',tline{ifile}(poin_inds2(i),:).'/pi,'r.')
         end
     end
     
@@ -458,7 +470,7 @@ if 0
     %------------------------------------------------------------------------------------------------------------------------------------
     figure; hold on; box on;
     for ifile = 1:2
-        plot(rline{ifile},zline{ifile},'k.','markersize',2)
+        plot(poinc.rline{ifile},poinc.zline{ifile},'k.','markersize',2)
     end
     xlabel('R (m)','fontsize',12)
     ylabel('Z (m)','fontsize',12)
@@ -484,9 +496,9 @@ if 0
     
     for ifile = 1:2
         clear poin_inds2
-        poin_inds2 = round(interp1(psiNline{ifile}(:,1),1:length(psiNline{ifile}(:,1)),p2(island_inds2)));
+        poin_inds2 = round(interp1(poinc.psiNline{ifile}(:,1),1:length(poinc.psiNline{ifile}(:,1)),p2(island_inds2)));
         for i = 1:size(poin_inds2,1)*size(poin_inds2,2)
-            plot(rline{ifile}(poin_inds2(i),:).',zline{ifile}(poin_inds2(i),:).','r.')
+            plot(poinc.rline{ifile}(poin_inds2(i),:).',poinc.zline{ifile}(poin_inds2(i),:).','r.')
         end
     end
     

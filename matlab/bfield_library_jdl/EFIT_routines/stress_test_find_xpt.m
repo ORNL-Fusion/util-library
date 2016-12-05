@@ -9,7 +9,8 @@ fnames{4} = 'C:\Work\NSTX\g140508.00403';
 fnames{5} = 'C:\Work\NSTX\g135183.00433';
 fnames{6} = 'C:\Work\CMOD\PSI2016\EXP_DATA\g1150625014.01009_983';
 fnames{7} = 'C:\Work\JET\gfiles_corrected\g_p82806_t54.4586';
-
+fnames{8} = 'C:\Work\DIII-D\164723\g164723.03059_C1';
+fnames{9} = 'C:\Work\M3DC1\160884\5000\g160884.05000_m3dc1';
 
 for i = 1:length(fnames)
     gfile_name = fnames{i};

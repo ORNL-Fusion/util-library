@@ -2,7 +2,7 @@
 clearvars;
 x0_guess = []; y0_guess = []; force_guess = 0;
 verbose = 0;
-if 1
+if 0
     
     helicon_current = 500;
     current_A = 6400;
@@ -30,6 +30,9 @@ else
         [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,x0_guess,y0_guess,force_guess);
     end
     [helicon_current,current_A,current_B,config,skimmer,current_C] = get_Proto_current(shot);
+    target_position = 1;
+    sleeve = 0;
+    
 end
 drawnow;
 
@@ -44,12 +47,12 @@ bfield.vessel_clip_z   = geo.vessel_clip_z;
 bfield.vessel_clip_phi = 0;
 bfield.stop_at_vessel = 1;
 
-num_lines = 25;
+num_lines = 25; 
 % rr = linspace(1e-3,0.04,num_lines);
-rr = linspace(1e-3,2.0*plasma_radius_cm/100,num_lines);
-zz = geo.target.z*ones(size(rr));
-L = 2.5;
-dl = -0.01;
+rr = linspace(1e-3,2.0*plasma_radius_cm/100,num_lines);  % Initial R positions
+zz = geo.target.z*ones(size(rr));                        % Initial Z positions
+L = 2.5;                                                 % Length to follow field lines
+dl = -0.01;                                              % Step size (m)
 nsteps = abs(L/dl);
 phistart = zeros(size(rr));
 tic;
@@ -103,7 +106,8 @@ colorbar;
 for i = 1:size(rcoil,1)
     plot(zcoil(i,:),rcoil(i,:),'r')
 end
-geo = get_Proto_geometry(1,0,skimmer);
+% geo = get_Proto_geometry(1,0,skimmer);
+geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve);
 plot(geo.target.z*[1,1],geo.target.r*[0,1],'k','linewidth',3)
 plot([geo.helicon.z1,geo.helicon.z2],geo.helicon.r*[1,1],'k','linewidth',3)
 axis([0.5,3.5,0,0.15])
@@ -115,7 +119,7 @@ figure; hold on; box on;
 xlabel('Z [m]','fontsize',14)
 ylabel('R [m]','fontsize',14)
 set(gca,'fontsize',14)
-geo = get_Proto_geometry(1,0,skimmer);
+geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve);
 colorbar;
 title(['Shot ',num2str(shot)])
 
