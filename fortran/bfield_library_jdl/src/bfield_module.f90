@@ -28,10 +28,12 @@ End Module bfield_typedef
 !                     5 -- M3DC1 2D field only
 !                     6 -- Just coils
 !                     7 -- ipec eq only
-!                     8 -- ipec vacuum
-!                     9 -- ipec perturbed
+!                     8 -- ipec eq+vacuum
+!                     9 -- ipec eq+response
 !                    10 -- xpand perturbed
 !                    11 -- xpand vacuum
+!                    12 -- ipec vacuum -- pert only
+!                    13 -- ipec response -- pert only
 ! 
 
 
@@ -143,16 +145,26 @@ Contains
       br   = btmp(:,1)
       bz   = btmp(:,2)
       bphi = btmp(:,3)      
-    Case (10) ! xpand pert
+    Case (10) ! xpand eq+response
       Call bfield_xpand(r,phi,z,n,btmp,ierr,0)
       br   = btmp(:,1)
       bz   = btmp(:,2)
       bphi = btmp(:,3)      
-    Case (11) ! xpand vac
+    Case (11) ! xpand eq+vac
       Call bfield_xpand(r,phi,z,n,btmp,ierr,1)
       br   = btmp(:,1)
       bz   = btmp(:,2)
       bphi = btmp(:,3)
+    Case (12) ! ipec vac (pert only)
+      Call bfield_ipec(r,phi,z,n,btmp,ierr,3)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)      
+    Case (13) ! ipec response (pert only)
+      Call bfield_ipec(r,phi,z,n,btmp,ierr,4)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)            
     Case Default
       Write(*,*) 'Unknown bfield%method:',bfield%method
       Stop "Exiting from bfield general"

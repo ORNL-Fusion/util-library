@@ -4,6 +4,10 @@
 !
 !
 !   Contains:
+!     Subroutine read_ipec_field_file
+!     Subroutine bfield_ipec
+!     Subroutine open_ipec_fields
+!     Subroutine close_ipec_fields
 !-----------------------------------------------------------------------------
 Module ipec_module
 Use kind_mod, Only: real64, int32
@@ -171,9 +175,9 @@ End Subroutine close_ipec_fields
 !+ Evaluate B(r,z) using Equilibrium only IPEC fields
 !-----------------------------------------------------------------------------
 Subroutine bfield_ipec(r,phi,z,Npts,Bout,ierr,ifield_type)
-! ifield_type : 0=eq, 1=vac, 2=pert
+  ! ifield_type : 0=eq, 1=eq+vac, 2=eq+pert, 3=vac_only, 4=pert_only
   ! Output:
-!   Bout = (:,[Br,Bz,Bt])
+  !   Bout = (:,[Br,Bz,Bt])
 Use kind_mod, Only: int32, real64
 Implicit None
 Real(Real64), Intent(In), Dimension(Npts) :: r, z, phi
@@ -185,6 +189,7 @@ Real(real64) :: dz_grid, dr_grid, dr1, dr2, dz1, dz2, QQ(2,2)
 Real(real64) :: breal, bimg, cosphi, sinphi
 Integer(int32) :: i, ir, iz
 ierr = 0
+Bout(:,:) = 0._real64
 Do i=1,Npts
   If (r(i) .lt. ipec_r(1) .OR. r(i) .gt. ipec_r(ipec_nr-1) &
        .OR. z(i) .lt. ipec_z(1) .OR. z(i) .gt. ipec_z(ipec_nz-1)) Then
@@ -202,17 +207,24 @@ Do i=1,Npts
   dr1 = dr_grid - dr2
   dz2 = ipec_z(iz+1) - z(i)
   dz1 = dz_grid - dz2
+
+  ! 2D COMPONENT -- skip for perturbation part only
+  !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  If (ifield_type .lt. 3) Then
+    QQ = ipec_eq_br(ir:ir+1,iz:iz+1)
+    Bout(i,1) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
+    QQ = ipec_eq_bz(ir:ir+1,iz:iz+1)
+    Bout(i,2) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
+    QQ = ipec_eq_bphi(ir:ir+1,iz:iz+1)
+    Bout(i,3) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
+  Endif
+
   
-  QQ = ipec_eq_br(ir:ir+1,iz:iz+1)
-  Bout(i,1) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
-  QQ = ipec_eq_bz(ir:ir+1,iz:iz+1)
-  Bout(i,2) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
-  QQ = ipec_eq_bphi(ir:ir+1,iz:iz+1)
-  Bout(i,3) = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
-  
+  ! 3D COMPONENT -- skip for AS only
+  !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
   If (ifield_type .eq. 0) Then
     Cycle
-  Elseif (ifield_type .eq. 1) Then
+  Elseif (ifield_type .eq. 1 .OR. ifield_type .eq. 3) Then
     cosphi = cos(ipec_vac_n*phi(i))
     sinphi = sin(ipec_vac_n*phi(i))
     
@@ -233,7 +245,7 @@ Do i=1,Npts
     QQ = ipec_vac_ibphi(ir:ir+1,iz:iz+1)
     bimg = (QQ(1,1)*dr2*dz2 + QQ(2,1)*dr1*dz2 + QQ(1,2)*dr2*dz1 + QQ(2,2)*dr1*dz1)/(dr_grid*dz_grid)
     Bout(i,3) = Bout(i,3) + breal*cosphi + bimg*sinphi
-  Elseif (ifield_type .eq. 2) Then
+  Elseif (ifield_type .eq. 2 .OR. ifield_type .eq. 4) Then
     cosphi = cos(ipec_pert_n*phi(i))
     sinphi = sin(ipec_pert_n*phi(i))
     

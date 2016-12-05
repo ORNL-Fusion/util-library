@@ -39,10 +39,12 @@ LIBS = -lbjdl -lfusionio -lm3dc1 -lz -lhdf5 -lstdc++ -llapack
 
 # Objects needed to build the executable that use the default rule
 OBJS90 =  \
-bnorm_driver.o
+bnorm_driver.o \
+bnorm_routines.o
 
 # Modules to be compiled which have identically named .f90 files
-MODS90 = 
+MODS90 = \
+bnorm_bfield_mod.mod
 
 #-----------------------------------------------------------------------
 all: $(EXEC)
@@ -61,11 +63,12 @@ debug: all
 $(OBJS90) : %.o:  $(SRC_DIR)%.f90
 	$(FC) $(FF) -c -I$(LIBBJDL_INCDIR) $(LIBDIR) $(LIBS) $<
 
-$(MODS90) : %.mod:  $(SRC_DIR)%.f90
-	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS) $<
+#!$(MODS90) : %.mod:  $(SRC_DIR)%.f90
+#	$(FC) $(FF) -c -I$(LIBBJDL_DIR) $(LIBDIR) $(LIBS) $<
 
 # dependencies
-#poincare_driver.o: kind_mod.mod
+bnorm_driver.o : bnorm_bfield_mod.mod
+bnorm_bfield_mod.mod : bnorm_routines.o
 
 .PHONY: clean cleaner
 clean:

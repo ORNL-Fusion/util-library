@@ -6,7 +6,11 @@
 !   Contains:
 !     Subroutine prepare_m3dc1_fields
 !     Subroutine bfield_m3dc1
+!     Subroutine bfield_m3dc1_2d
+!     Subroutine bfield_m3dc1_pert
 !     Subroutine close_m3dc1_fields
+!     Subroutine calc_psi_m3dc1_2d
+!     Subroutine calc_psiN_m3dc1_2d
 !
 !    m3dc1_itime  : time slice to read (0 = vacuum only, 1 = with response)
 !    m3dc1_factors : factor by which to multiply perturbed (linear) part of solution
@@ -89,6 +93,7 @@ Do iset = 1,num_sets
 
     Call fio_close_series_f(ipsi_axis, ierr)
     Call fio_close_series_f(ipsi_lcfs, ierr)
+    
   Endif
 
 
@@ -107,13 +112,22 @@ Do iset = 1,num_sets
   Write(*,*) 'M3DC1 factor:', m3dc1_factors(iset)
   Call fio_set_real_option_f(FIO_LINEAR_SCALE, m3dc1_factors(iset), ierr)
   Call fio_get_field_f(isrc(iset), FIO_MAGNETIC_FIELD, imag(iset), ierr)
+
+
+!  ! Set up pert only field
+!  ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!  Call fio_set_int_option_f(FIO_PART, FIO_PERTURBED_ONLY, ierr)
+!  Call fio_set_real_option_f(FIO_LINEAR_SCALE, m3dc1_factors(iset), ierr)
+!  Call fio_get_field_f(isrc(iset), FIO_MAGNETIC_FIELD, imag_pert(iset), ierr)
+
+  
 Enddo
 
 End Subroutine prepare_m3dc1_fields
 
 
 !-----------------------------------------------------------------------------
-!+ Evaluate B(r,phi,z) using m3dc1 perturbed fields, phi in radians.
+!+ Evaluate B(r,phi,z) using m3dc1 perturbed (or total) fields, phi in radians.
 !-----------------------------------------------------------------------------
 Subroutine bfield_m3dc1(r,phi,z,Npts,Bout,ierr)
 ! Output:
@@ -155,6 +169,14 @@ Enddo
 End Subroutine bfield_m3dc1
 
 !-----------------------------------------------------------------------------
+!+ Evaluate B(r,phi,z) using m3dc1 perturbed ONLY fields, phi in radians.
+!-----------------------------------------------------------------------------
+!Subroutine bfield_m3dc1_pert(r,phi,z,Npts,Bout,ierr)
+! Will need to define imag_pert above
+!End Subroutine bfield_m3dc1_pert
+
+
+!-----------------------------------------------------------------------------
 !+ Evaluate B(r,z) using Equilibrium only M3DC1 fields
 !-----------------------------------------------------------------------------
 Subroutine bfield_m3dc1_2d(r,z,Npts,Bout,ierr)
@@ -192,6 +214,8 @@ Do i=1,Npts
 Enddo
 
 End Subroutine bfield_m3dc1_2d
+
+
 
 !-----------------------------------------------------------------------------
 !+ Evaluate psiN(r,z) using Equilibrium only M3DC1 fields
