@@ -24,6 +24,7 @@ Integer(int32), Parameter  :: num_sets_max = 10
 Integer(int32), Save :: m3dc1_itime = -1
 Integer(int32), Save :: m3dc1_field_type = -1
 Real(real64), Save   :: m3dc1_factors(num_sets_max) = 0.d0
+Real(real64), Save   :: m3dc1_phases_deg(num_sets_max)  = 0.d0
 Logical :: m3dc1_toroidal_on_err = .false.
 
 Integer, Private, Save :: num_sets
@@ -103,13 +104,14 @@ Do iset = 1,num_sets
     Write(*,*) 'M3DC1 returning total field'
     Call fio_set_int_option_f(FIO_PART, FIO_TOTAL, ierr) 
   Elseif (m3dc1_field_type .eq. 1) Then
-    Write(*,*) 'M3DC1 returning perturbed field'
+    Write(*,*) 'M3DC1 returning perturbed field only'
     Call fio_set_int_option_f(FIO_PART, FIO_PERTURBED_ONLY, ierr)
   Else
     Write(*,*) 'Bad value for m3dc1_field_type:',m3dc1_field_type
     Stop
   Endif
-  Write(*,*) 'M3DC1 factor:', m3dc1_factors(iset)
+  Write(*,*) 'M3DC1 Amplitude scale:  ', m3dc1_factors(iset)
+  Write(*,*) 'M3DC1 phase shift (deg):', m3dc1_phases_deg(iset)
   Call fio_set_real_option_f(FIO_LINEAR_SCALE, m3dc1_factors(iset), ierr)
   Call fio_get_field_f(isrc(iset), FIO_MAGNETIC_FIELD, imag(iset), ierr)
 
@@ -134,6 +136,7 @@ Subroutine bfield_m3dc1(r,phi,z,Npts,Bout,ierr)
 !   Bout = (:,[Br,Bz,Bt])
 Use fusion_io
 Use kind_mod, Only: int32, real64
+Use phys_const, Only: pi
 Implicit None
 Real(Real64), Intent(In), Dimension(Npts) :: r, z, phi
 Integer(int32), Intent(In) :: Npts
@@ -143,13 +146,15 @@ Integer(int32), Intent(Out) :: ierr
 Real(real64) :: x(3), b_tmp(3)
 Integer(int32) :: ierr_b, i, iset
 ierr = 0
+Bout = 0._real64
 Do i=1,Npts
   x(1) = r(i)
   x(2) = phi(i)
-  x(3) = z(i)
-
-  b_tmp = 0._Real64
+  x(3) = z(i)  
+  
   Do iset = 1,num_sets
+    x(2) = x(2) + m3dc1_phases_deg(iset)*pi/180._real64
+    b_tmp = 0._Real64
     Call fio_eval_field_f(imag(iset), x, b_tmp, ierr_b)  ! b_tmp(R,phi,Z)
     
     If (ierr_b .ne. 0) Then
@@ -160,9 +165,9 @@ Do i=1,Npts
         ierr = 1
       Endif
     Endif
-    Bout(i,1) = Bout(i,1) + b_tmp(1)
-    Bout(i,2) = Bout(i,2) + b_tmp(3)
-    Bout(i,3) = Bout(i,3) + b_tmp(2)
+    Bout(i,1) = Bout(i,1) + b_tmp(1) !Br
+    Bout(i,2) = Bout(i,2) + b_tmp(3) !Bz
+    Bout(i,3) = Bout(i,3) + b_tmp(2) !Bphi
   Enddo
 Enddo
 
@@ -193,10 +198,12 @@ Integer(int32), Intent(Out) :: ierr
 Real(real64) :: x(3), b_tmp(3)
 Integer(int32) :: ierr_b, i
 ierr = 0
+Bout = 0._real64
 Do i=1,Npts
   x(1) = r(i)
   x(2) = 0._real64
-  x(3) = z(i) 
+  x(3) = z(i)
+  b_tmp = 0._real64
 
   Call fio_eval_field_f(imag_2d, x, b_tmp, ierr_b)  ! b_tmp(R,phi,Z)
 
@@ -252,10 +259,12 @@ Integer(int32), Intent(Out) :: ierr
 Real(real64) :: x(3), a_tmp(3)
 Integer(int32) :: ierr_a, i
 ierr = 0
+Psi = 0._real64
 Do i=1,Npts
   x(1) = r(i)
   x(2) = 0._real64
-  x(3) = z(i) 
+  x(3) = z(i)
+  a_tmp = 0._real64
   
   Call fio_eval_field_f(ivec_2d, x, a_tmp, ierr_a)  ! A(R,phi,Z)
   If (ierr_a .ne. 0) Then

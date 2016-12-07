@@ -8,7 +8,7 @@ Use ipec_module
 Implicit None
 
 Character(Len=100) :: run_path
-Integer :: ierr_b,Ntest,ierr,ifield_type
+Integer :: ierr_b,Ntest,ierr,ifield_type, ipec_type
 
 Real(real64) :: Bout(1,3)
 
@@ -18,7 +18,8 @@ run_path = '/home/jjl/IPEC/164723/low/gpec'
 !fname = '/home/jjl/IPEC/164723/low/gpec/ipec_eqbrzphi_n3.out'
 !Write(*,*) 'Reading ipec file:', fname
 !Call read_ipec_field_file(fname,0)
-Call open_ipec_fields(run_path)
+ipec_type = 1
+Call open_ipec_fields(run_path,ipec_type)
 ifield_type = 1
 
 Call bfield_ipec((/2.1d0/),(/0.1d0/),(/0.05d0/),1,Bout,ierr,ifield_type)

@@ -10,7 +10,8 @@ Module bnorm_bfield_mod
 
   Real(real64) :: &
        rmp_current(max_rmp_coils) = 0.d0, &
-       m3dc1_scale_factors(max_m3dc1_files) = 0.d0
+       m3dc1_scale_factors(max_m3dc1_files) = 0.d0, &
+       m3dc1_phase_shift_deg(max_m3dc1_files) = 0.d0
   
   Character(Len=120) :: &
        rmp_type                         = 'none',  &
@@ -36,7 +37,7 @@ Module bnorm_bfield_mod
        rmp_type, &
        gfile_name, &
        rmp_coil_type, rmp_current, &
-       m3dc1_filenames, m3dc1_scale_factors, m3dc1_time, m3dc1_nsets, &
+       m3dc1_filenames, m3dc1_scale_factors, m3dc1_time, m3dc1_nsets, m3dc1_phase_shift_deg,&
        ipec_run_path, ipec_field_eval_type, ipec_itype, &
        xpand_fname, xpand_field_eval_type
   
@@ -48,7 +49,7 @@ Contains
     Use xpand_module, Only: open_xpand_fields
     Use rmpcoil_module, Only : build_d3d_ccoils_jl, build_d3d_icoils_jl
     Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factors, m3dc1_itime, m3dc1_toroidal_on_err,bfield_m3dc1, &
-         m3dc1_field_type
+         m3dc1_field_type, m3dc1_phases_deg
     Use g3d_module, Only : readg_g3d
     
     Implicit None
@@ -108,6 +109,7 @@ Contains
       m3dc1_factors = m3dc1_scale_factors
       m3dc1_toroidal_on_err = m3dc1_toroidal_off_grid
       m3dc1_field_type = 1
+      m3dc1_phases_deg = m3dc1_phase_shift_deg
       Call prepare_m3dc1_fields(m3dc1_filenames(1:m3dc1_nsets))
       Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
       Write(*,*) '---------> M3DC1 scale factor: ',m3dc1_factors(1:m3dc1_nsets)

@@ -59,28 +59,30 @@ Endif
 Read(99,nml=settings_nml)
 Close(99)
 
-
-
 Write(*,'(/1a)') "-------------------------------------------------------------"
 Write(*,*) 'Setting up bnorm'
 Write(*,*) 'Nres = ',nres
 
+Call setup_bfield_bnorm
+
 Allocate(pnwant(numpn))
 pnwant = rlinspace(pnmin,pnmax,numpn)
-Allocate(phi(nphi),theta(ntheta))
-phi = rlinspace(0.d0,2.d0*pi*Real(nphi-1,real64)/Real(nphi,real64),nphi)
-theta = rlinspace(0.d0,2.d0*pi*Real(ntheta-1,real64)/Real(ntheta,real64),ntheta)
-dphi = phi(2) - phi(1)
-dtheta = theta(2) - theta(1)
-
-Call setup_bfield_bnorm
 
 Allocate(rpest(numpn,ntheta))
 Allocate(zpest(numpn,ntheta))
 Allocate(jpest(numpn,ntheta))
 
 ! Calculate pest coords for each surface, then Br_mn
+Write(*,*) 'Calculating PEST coordinates'
 Call get_pest_coords(bfield%g,pnwant,ntheta,rpest,zpest,jpest)
+Call cpu_time(tend)
+Write(*,*) 'Calculating PEST coordinates took ',tend-tstart,' seconds'
+
+Allocate(phi(nphi),theta(ntheta))
+phi = rlinspace(0.d0,2.d0*pi*Real(nphi-1,real64)/Real(nphi,real64),nphi)
+theta = rlinspace(0.d0,2.d0*pi*Real(ntheta-1,real64)/Real(ntheta,real64),ntheta)
+dphi = phi(2) - phi(1)
+dtheta = theta(2) - theta(1)
 
 Allocate(dpsidr(ntheta),dpsidz(ntheta),psiout(ntheta))
 Allocate(rn(ntheta),zn(ntheta))
@@ -100,8 +102,7 @@ br_s = 0.d0
 Call set_bfield_pert_only(bfield)
 Do i = 1,numpn
   Write(*,*) 'Working on surf ',i,' of ',numpn
-  Call get_psi_derivs_bicub(bfield%g,rpest(i,:),zpest(i,:),ntheta,&
-       psiout,dpsidr,dpsidz,ierr)
+  Call get_psi_derivs_bicub(bfield%g,rpest(i,:),zpest(i,:),ntheta,psiout,dpsidr,dpsidz,ierr)
 
   rn = dpsidr/Sqrt(dpsidr**2 + dpsidz**2) ! Unit vector in grad(psi)
   zn = dpsidz/Sqrt(dpsidr**2 + dpsidz**2)

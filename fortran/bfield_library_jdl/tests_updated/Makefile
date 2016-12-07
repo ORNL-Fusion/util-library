@@ -59,7 +59,7 @@ MODS90 =
 
 all_tests: test_int_two_lines.x test_int_curve_curve.x test_find_xpt_gonly.x \
 test_bfield_rmp_d3d.x test_bfield_ipec_d3d.x test_bfield_xpand_d3d.x \
-test_m3dc1_bfield.x calc_psiN_m3dc1.x test_read_gfile.x
+test_m3dc1_bfield.x calc_psiN_m3dc1.x test_read_gfile.x compare_m3dc1_and_coils.x
 
 
 test_int_two_lines.x: test_int_two_lines.o $(LIBBJDL_DIR)/libbjdl.a 

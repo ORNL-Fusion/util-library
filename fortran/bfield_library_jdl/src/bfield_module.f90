@@ -24,7 +24,7 @@ End Module bfield_typedef
 !                     1 -- gfile + rmp coil field
 !                     2 -- gfile + Pavel's screened fields with bspline interpolation (not fully implemented!)
 !                     3 -- gfile + M3DC1 perturbed field
-!                     4 -- M3DC1 total field
+!                     4 -- M3DC1 only
 !                     5 -- M3DC1 2D field only
 !                     6 -- Just coils
 !                     7 -- ipec eq only
@@ -93,6 +93,11 @@ Contains
     Real(real64), Intent(Out) :: br(n),bz(n),bphi(n)
     Real(real64) :: btmp(n,3)
     Integer(int32) :: ierr
+
+    br   = 0._real64
+    bz   = 0._real64
+    bphi = 0._real64
+    btmp = 0._real64
     
     Select Case (bfield%method)
     Case (0)
@@ -107,9 +112,9 @@ Contains
       bz   = btmp(:,2) + bz 
       bphi = btmp(:,3) + bphi
     Case (2)
-      Write(*,*) 'method = 2, pavel screening not implemented'
+      Write(*,*) 'method == 2, pavel screening not implemented'
       Stop "Quitting from bfield general"
-    Case (3)
+    Case (3) ! g+m3dc1
       Call bfield_geq_bicub(bfield%g,r,z,n,btmp,ierr)
       br   = btmp(:,1)
       bz   = btmp(:,2)
@@ -118,7 +123,7 @@ Contains
       br   = btmp(:,1) + br
       bz   = btmp(:,2) + bz 
       bphi = btmp(:,3) + bphi      
-    Case (4)  ! m3dc1 total
+    Case (4)  ! m3dc1 only
       Call bfield_m3dc1(r,phi,z,n,btmp,ierr)
       br   = btmp(:,1)
       bz   = btmp(:,2)
