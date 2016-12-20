@@ -17,6 +17,11 @@ if ~ischar(bfield.type)
     ierr = 1;
     return;
 end
+if ~isfield(bfield,'nsym')
+    fprintf([errstr,'nsym required for all bfield structures\n'])
+    ierr = 1;
+    return;
+end
 
 switch bfield.type
     case 'gfile'

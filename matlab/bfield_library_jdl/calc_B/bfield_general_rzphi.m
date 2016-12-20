@@ -1,4 +1,5 @@
 function [Bout,ierr] = bfield_general_rzphi(R,Z,phi_radian,bfield,nowarn)
+% [Bout,ierr] = bfield_general_rzphi(R,Z,phi_radian,bfield,nowarn)
 if nargin < 5
     nowarn = 0;
 end

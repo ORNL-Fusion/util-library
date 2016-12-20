@@ -4,8 +4,23 @@ if nargin < 4
 end
 N = length(RZ);
 
-[Br,Bphi,Bz]=bfield_bs_cyl(RZ(1:2:N-1),phi*ones(size(RZ(1:2:N-1))),RZ(2:2:N),bfield.coil,bfield.current,nowarn);
+if isfield(bfield,'bounds')
+    switch bfield.bounds.type
+        case 'box'
+            if any(RZ(1:2:N-1) < bfield.bounds.Rlims(1) | RZ(1:2:N-1) > bfield.bounds.Rlims(2) | RZ(2:2:N) < bfield.bounds.Zlims(1) | RZ(2:2:N) > bfield.bounds.Zlims(2))
+                if ~nowarn
+                    fprintf('RZ out of defined bfield.bounds.[R,Z]lim\n')
+                end
+                df = [];
+                ierr = 1;
+                return
+            end
+        otherwise
+            error('Did not recognize bfield.bounds.type')
+    end
+end
 
+[Br,Bphi,Bz]=bfield_bs_cyl(RZ(1:2:N-1),phi*ones(size(RZ(1:2:N-1))),RZ(2:2:N),bfield.coil,bfield.current,nowarn);
 df(1:2:N-1) = RZ(1:2:N-1).'.*Br./Bphi;
 df(2:2:N)   = RZ(1:2:N-1).'.*Bz./Bphi;
 ierr = 0;
