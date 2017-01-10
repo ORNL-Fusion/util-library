@@ -1,4 +1,4 @@
-function poinc = make_poincare_coils_only(bfield,Rstart,Zstart,phistart,phi_want,npoints_want,dphi,sort_it)
+function poinc = make_poincare(bfield,Rstart,Zstart,phistart,phi_want,npoints_want,dphi,sort_it,Rax_guess,Zax_guess,plot_settings)
 % R,Z = [m], phi = [radians]
 % R,Z can be arrays
 if nargin < 5
@@ -19,24 +19,8 @@ tic;
 fprintf('Making %d poincare surfaces\n',length(Rstart))
 
 %--------------------------------------------------------------------------
-%      BFIELD SETUP
-%--------------------------------------------------------------------------
-
-% if nargin == 0    
-%     coils_file = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\coils.w7x';            
-%     coil = load_vmec_coils_file(coils_file);    
-%     taper = [13067,12931,13203,14564,14700,8983,-3267,-2756,2756];  % 0kA mimic    
-%     coil = set_w7x_current(coil,taper); % taper = [I1,I2,I3,I4,I5,IA,IB,IS1,IS2];
-%     fprintf('Bfield setup took %f seconds.\n',toc); tic;
-% end
-
-
-
-%--------------------------------------------------------------------------
 %      POINCARE SETUP
 %--------------------------------------------------------------------------
-
-
 nsurfs = length(Rstart);
 if nsurfs ~= length(Zstart)
     if length(Zstart) == 1
@@ -77,10 +61,7 @@ for i = 1:nsurfs
     end
 end
 
-
-% Rpoinc = f.r(istart:istride:end,:);
-% Zpoinc = f.z(istart:istride:end,:);
-fprintf('Field line following took %f seconds.\n',toc); tic;
+fprintf('Poincare took %f seconds.\n',toc); tic;
 
 %--------------------------------------------------------------------------
 %      PLOTTING
@@ -88,10 +69,7 @@ fprintf('Field line following took %f seconds.\n',toc); tic;
 
 
 if sort_it
-%     phistart = 0;
-    [Rax,Zax] = find_axis(bfield,phistart);
-%     Rax = mean(mean(Rpoinc));
-%     Zax = mean(mean(Zpoinc));
+    [Rax,Zax] = find_axis(bfield,phistart,Rax_guess,Zax_guess);
     tpoinc = atan2(Zpoinc-Zax,Rpoinc-Rax);
     rpoinc = sqrt((Rpoinc-Rax).^2 + (Zpoinc-Zax).^2);
     [tpoinc,Isort]=sort(tpoinc);                       %sort by increasing theta
@@ -100,23 +78,26 @@ if sort_it
         Rpoinc(:,j) = Rpoinc(Isort(:,j),j);
         Zpoinc(:,j) = Zpoinc(Isort(:,j),j);
     end
-%     rpoinc = rpoinc(Isort);
-%     Zpoinc = Zpoinc(Isort);
-%     Rpoinc = Rpoinc(Isort);
 end
     
-
-figure; hold on; box on;
-if sort_it    
-    plot(Rpoinc,Zpoinc,'.-','linewidth',2)
-else
-    plot(Rpoinc,Zpoinc,'o')
+if plot_settings.plotit
+    if plot_settings.newfig
+    figure; hold on; box on;
+    end    
+    if sort_it
+        if plot_settings.connect
+            plot(Rpoinc,Zpoinc,'.-','linewidth',2)        
+        else
+            plot(Rpoinc,Zpoinc,'.','linewidth',2)
+        end
+    else
+        plot(Rpoinc,Zpoinc,'o')
+    end
+    xlabel('R [m]','fontsize',14)
+    ylabel('Z [m]','fontsize',14)
+    set(gca,'fontsize',14);
+    title(strcat('\Phi = ',sprintf('%f',phi_want*180/pi)));
 end
-xlabel('R [m]','fontsize',14)
-ylabel('Z [m]','fontsize',14)
-set(gca,'fontsize',14);
-title(strcat('\Phi = ',sprintf('%f',phi_want*180/pi)));
-
 poinc.Rpoinc = Rpoinc;
 poinc.Zpoinc = Zpoinc;
 poinc.phi = phi_want;

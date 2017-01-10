@@ -15,6 +15,16 @@ if isfield(bfield,'bounds')
                 ierr = 1;
                 return
             end
+        case 'ves'
+            ves_cut = cut_W7X_vessel(bfield.bounds.ves,phi);
+            if any(~inpolygon(RZ(1:2:N-1),RZ(2:2:N),ves_cut.r,ves_cut.z))
+                if ~nowarn
+                    fprintf('RZ out of defined bfield.bounds.[R,Z]lim\n')
+                end
+                df = [];
+                ierr = 1;
+                return
+            end
         otherwise
             error('Did not recognize bfield.bounds.type')
     end

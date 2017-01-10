@@ -18,12 +18,12 @@ for i = 1:npts
     iz = floor(interp1(field.z(:),1:field.nz,Z(i)));
     P_rad(i) = mod(P_rad(i)+2*pi,2*pi);
     iphi = floor(interp1(field.phi,1:field.nphi,P_rad(i)));
-    
+    error('Replace above because interp1 is hella slow: check test_bfield_grid')
 %     iphi = floor( (P_rad(i) - field.phi(1)) / (field.phi(2)-field.phi(1)) ) + 1;
     
     if isnan(ir) || isnan(iz)
         if ~nowarn
-            warning(['Point(s) off grid in bfield_ipec --> returning toroidal field = 1 there'])
+            warning(['Point(s) off grid in bfield_xpand --> returning toroidal field = 1 there'])
         end
         Bphi(i) = 1;
         continue;
@@ -47,33 +47,33 @@ for i = 1:npts
         QQ2 = field.Br(ir:ir+1,iz:iz+1,iphi+1);        
         Br(i) = ...
             (1-phi_fac)*(QQ1(1,1)*dr2*dz2 + QQ1(2,1)*dr1*dz2 + QQ1(1,2)*dr2*dz1 + QQ1(2,2)*dr1*dz1)/(dr_grid*dz_grid) + ...
-            phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);
+                phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);
         QQ1 = field.Bz(ir:ir+1,iz:iz+1,iphi);
         QQ2 = field.Bz(ir:ir+1,iz:iz+1,iphi+1);        
         Bz(i) = ...
             (1-phi_fac)*(QQ1(1,1)*dr2*dz2 + QQ1(2,1)*dr1*dz2 + QQ1(1,2)*dr2*dz1 + QQ1(2,2)*dr1*dz1)/(dr_grid*dz_grid) + ...
-            phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);        
+                phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);        
         QQ1 = field.Bphi(ir:ir+1,iz:iz+1,iphi);
         QQ2 = field.Bphi(ir:ir+1,iz:iz+1,iphi+1);        
         Bphi(i) = ...
             (1-phi_fac)*(QQ1(1,1)*dr2*dz2 + QQ1(2,1)*dr1*dz2 + QQ1(1,2)*dr2*dz1 + QQ1(2,2)*dr1*dz1)/(dr_grid*dz_grid) + ...
-            phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);
+                phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);
     elseif field_choice == 1
         QQ1 = field.Brvac(ir:ir+1,iz:iz+1,iphi);
         QQ2 = field.Brvac(ir:ir+1,iz:iz+1,iphi+1);        
         Br(i) = ...
             (1-phi_fac)*(QQ1(1,1)*dr2*dz2 + QQ1(2,1)*dr1*dz2 + QQ1(1,2)*dr2*dz1 + QQ1(2,2)*dr1*dz1)/(dr_grid*dz_grid) + ...
-            phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);
+                phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);
         QQ1 = field.Bzvac(ir:ir+1,iz:iz+1,iphi);
         QQ2 = field.Bzvac(ir:ir+1,iz:iz+1,iphi+1);        
         Bz(i) = ...
             (1-phi_fac)*(QQ1(1,1)*dr2*dz2 + QQ1(2,1)*dr1*dz2 + QQ1(1,2)*dr2*dz1 + QQ1(2,2)*dr1*dz1)/(dr_grid*dz_grid) + ...
-            phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);        
+                phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);        
         QQ1 = field.Bphivac(ir:ir+1,iz:iz+1,iphi);
         QQ2 = field.Bphivac(ir:ir+1,iz:iz+1,iphi+1);        
         Bphi(i) = ...
             (1-phi_fac)*(QQ1(1,1)*dr2*dz2 + QQ1(2,1)*dr1*dz2 + QQ1(1,2)*dr2*dz1 + QQ1(2,2)*dr1*dz1)/(dr_grid*dz_grid) + ...
-            phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);        
+                phi_fac*(QQ2(1,1)*dr2*dz2 + QQ2(2,1)*dr1*dz2 + QQ2(1,2)*dr2*dz1 + QQ2(2,2)*dr1*dz1)/(dr_grid*dz_grid);        
         
 %         % Need to add EFIT?? 
 %         Bout = bfield_geq_bicub(field.g,R(i),Z(i),nowarn);

@@ -143,6 +143,13 @@ switch bfield.type
             ierr = 1;
             return;
         end            
+    case {'Bgrid'}
+        errstr2 = 'for Bgrid';
+        if ~isfield(bfield,'Bgrid')
+            fprintf([errstr,errstr2,'type structure must contain field "Bgrid"\n'])
+            ierr = 1;
+            return;
+        end    
     otherwise
         fprintf([errstr,'Did not recognize bfield type\n'])
         fprintf('Supported types are:\n')
@@ -158,7 +165,8 @@ switch bfield.type
         fprintf('     ipec_pert_only\n')        
         fprintf('     xpand_pert\n') 
         fprintf('     xpand_vac\n') 
-        error('Throwing error')
+        fprintf('     Bgrid\n')
         ierr = 1;
+        error('Throwing error')        
         return;
 end

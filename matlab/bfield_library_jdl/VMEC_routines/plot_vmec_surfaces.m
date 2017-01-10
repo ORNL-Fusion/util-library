@@ -1,13 +1,17 @@
-function surf = plot_vmec_surfaces(wout,phi)
+function surf = plot_vmec_surfaces(wout,phi,plotit)
 % phi in radians
 if nargin < 2
     phi = 0;
 end
 
 ntheta = 200;
-numsurf = 20;
-surf_inds = round(linspace(1,wout.ns,numsurf));
 
+% if 1
+% numsurf = 20;
+% surf_inds = round(linspace(1,wout.ns,numsurf));
+% else
+    surf_inds = 1:wout.ns;
+% end
 theta = linspace(0,2*pi,ntheta);
 
 for i = 1:length(surf_inds)
@@ -24,8 +28,9 @@ for i = 1:length(surf_inds)
     end
 end
 
-figure; hold on; box on;
-plot(rsurf.',zsurf.')
-
+if plotit
+    figure; hold on; box on;
+    plot(rsurf.',zsurf.')
+end
 surf.rsurf = rsurf;
 surf.zsurf = zsurf;

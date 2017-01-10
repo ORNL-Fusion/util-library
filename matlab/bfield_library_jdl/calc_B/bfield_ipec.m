@@ -19,6 +19,7 @@ for i = 1:npts
     
     ir = floor(interp1(ipec.eq.r(:,1),1:ipec.eq.nr,R(i))); %stuck with interp as it gives NaN for OOB
     iz = floor(interp1(ipec.eq.z(1,:),1:ipec.eq.nz,Z(i)));
+    error('Replace above because interp1 is hella slow: check test_bfield_grid')
     if isnan(ir) || isnan(iz)
         if ~nowarn
             warning(['Point(s) off grid in bfield_ipec --> returning toroidal field = 1 there'])

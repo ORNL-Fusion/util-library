@@ -1,6 +1,7 @@
 function coil = set_w7x_current(coil,taper)
            %1  2  3  4  5  6  7   8   9       10       11       12       13       14
 % taper = [I1,I2,I3,I4,I5,IA,IB,IS1,IS2,Itrim_A1,Itrim_A2,Itrim_A3,Itrim_A4,Itrim_B1];
+% taper should be the current per winding, as it is multiplied by the number of windings in each coil belowuw582
 taper_tmp = taper;
 taper = zeros(1,14);
 taper(1:length(taper_tmp)) = taper_tmp;

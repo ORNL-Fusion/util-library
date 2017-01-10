@@ -85,6 +85,8 @@ varid = netcdf.inqVarID(ncid,'bsubvmnc');
 wout.bsubvmnc = netcdf.getVar(ncid,varid);
 varid = netcdf.inqVarID(ncid,'bsubsmns');
 wout.bsubsmns = netcdf.getVar(ncid,varid);
+varid = netcdf.inqVarID(ncid,'nfp');
+wout.nfp = double(netcdf.getVar(ncid,varid));
 
 if version > 8.5
     varid = netcdf.inqVarID(ncid,'equif');

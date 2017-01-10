@@ -10,12 +10,12 @@ end
 
 X0=[R0,Z0];
 OPTIONS=optimset('tolfun',1e-9,'tolx',1e-10,'Display','off');
-XLB=[];
-XUB=[];
+XLB=[R0-.25,Z0-.25];
+XUB=[R0+.25,Z0+.25];
 
 
 % global params for getdistsq
-nowarn = 1;
+nowarn = 0;
 dphi = 0.5*pi/180;
 rnst = 2*pi/bfield.nsym/dphi;
 nsteps = round(rnst);

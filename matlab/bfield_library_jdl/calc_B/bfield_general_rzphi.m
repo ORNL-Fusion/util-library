@@ -35,7 +35,13 @@ switch bfield.type
 %     case 'xpand_pert'        
 %         [dydx,ierr] = fl_derivs_dphi_xpand(x,y,bfield,nowarn,0);                
 %     case 'xpand_vac'        
-%         [dydx,ierr] = fl_derivs_dphi_xpand(x,y,bfield,nowarn,1);                        
+%         [dydx,ierr] = fl_derivs_dphi_xpand(x,y,bfield,nowarn,1);      
+    case 'Bgrid'        
+        [Br,Bz,Bphi]=bfield_grid(R,Z,phi_radian,bfield.Bgrid,nowarn);        
+        Bout.br = Br;
+        Bout.bphi = Bphi;
+        Bout.bz = Bz;
+        ierr = 0;
     otherwise
         fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
@@ -50,6 +56,7 @@ switch bfield.type
 %         fprintf('     ipec_pert_only\n')        
 %         fprintf('     xpand_vac\n')
 %         fprintf('     xpand_pert\n')
+        fprintf('     Bgrid\n')
         error('quitting')
         ierr = 1;
         return;

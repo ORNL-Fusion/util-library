@@ -20,20 +20,28 @@ for ifile = 1:2
     rline{ifile} = zeros(numlines,num_pts);
     zline{ifile} = zeros(numlines,num_pts);
     psiNline{ifile} = zeros(numlines,num_pts);
-    iline{ifile} = zeros(numlines);
+    iline{ifile} = zeros(numlines,1);
     for i = 1:numlines
         iline{ifile}(i) = fscanf(fid,'%i',1);
+        try
         rline{ifile}(i,:) = fscanf(fid,'%f',num_pts);
+        catch
+            a=1;
+        end
         zline{ifile}(i,:) = fscanf(fid,'%f',num_pts);
-        psiNline{ifile}(i,:) = calc_psiN(g,rline{ifile}(i,:),zline{ifile}(i,:),1);
+        if ~isempty(g)
+            psiNline{ifile}(i,:) = calc_psiN(g,rline{ifile}(i,:),zline{ifile}(i,:),1);
+        end
     end
     fclose all;
     
     %     itmp = isnan(psiNline{ifile});
     
-    rline{ifile}(isnan(psiNline{ifile})) = NaN;
-    zline{ifile}(isnan(psiNline{ifile})) =NaN;
-    psiNline{ifile}(isnan(psiNline{ifile})) = NaN;
+    if ~isempty(g)
+        rline{ifile}(isnan(psiNline{ifile})) = NaN;
+        zline{ifile}(isnan(psiNline{ifile})) =NaN;
+        psiNline{ifile}(isnan(psiNline{ifile})) = NaN;
+    end
 end
 
 poinc.rline = rline;

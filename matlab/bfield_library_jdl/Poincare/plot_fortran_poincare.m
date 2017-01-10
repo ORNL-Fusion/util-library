@@ -4,7 +4,7 @@ plot_ts = 0;
 plot_ece = 0;
 plot_glim = 0;
 
-fname_psimin = []; fname_psimin2 = [];
+fname_psimin = []; fname_psimin2 = []; gfile_name =[];
 
 
 
@@ -25,7 +25,7 @@ run_path = 'C:\Work\fortran\test_poincare\164723\VAC\'; suffix = '0deg';  mytitl
 % run_path = 'C:\Work\fortran\test_poincare\164723\XPAND_vac\'; suffix = '0deg'; mytitle = 'XPAND vac \phi = 0';
 end
 
-if 1
+if 0
 % 160884 <------------------------*********************--------------------
 % gfile_name = 'C:\Work\DIII-D\160884\efits\g160884.05009_537';
 % run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC\'; suffix = '0deg';  mytitle = 'VAC \phi = 0';
@@ -48,15 +48,27 @@ if 0
     
 end
 
-fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
-fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];
+run_path = 'C:\Work\fortran\test_poincare\vmec_coils_to_fil\'; suffix = ''; mytitle = 'test';
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DONE SETTING RUN PATH
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isempty(suffix)
+    fname_psimin = ['psiN_min_output_',suffix,'.out'];fname_psimin2 = ['psiN_min_output2_',suffix,'.out'];
+    fname = ['poincare_output_',suffix,'.out'];  fname2 = ['poincare_output2_',suffix,'.out'];
+else
+    fname_psimin = 'psiN_min_output.out';fname_psimin2 = 'psiN_min_output2.out';
+    fname = 'poincare_output.out';  fname2 = 'poincare_output2.out';
+end
 
 psiN_max_eval = 0.98;
 
-g=readg_g3d(gfile_name);
-psiN_g = (g.psirz-g.ssimag)/(g.ssibry-g.ssimag);
+if ~isempty(gfile_name)
+    g=readg_g3d(gfile_name);
+    psiN_g = (g.psirz-g.ssimag)/(g.ssibry-g.ssimag);
+else
+    g = [];
+end
 
 
 poinc = read_poincare_file(run_path,fname,fname2,g);
@@ -67,7 +79,7 @@ poinc = read_poincare_file(run_path,fname,fname2,g);
 %------------------------------------------------------------------------------------------------------------------------------------
 %------------------------------------------------------------------------------------------------------------------------------------
 
-if 0
+if 1
     figure; hold on; box on;
     for ifile = 1:2
         plot(poinc.rline{ifile},poinc.zline{ifile},'r.','markersize',2)
@@ -101,7 +113,7 @@ end
 % PLOT THETA/PSIN
 %------------------------------------------------------------------------------------------------------------------------------------
 %------------------------------------------------------------------------------------------------------------------------------------
-if 1
+if 0
     
     for ifile = 1:2
         tline{ifile} = atan2(poinc.zline{ifile}-g.zmaxis,poinc.rline{ifile}-g.rmaxis);

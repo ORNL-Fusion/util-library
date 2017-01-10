@@ -7,9 +7,9 @@ tic;
 % phi = poinc.phi;
 phi = phi_surf;
 
-Rax = mean(R_surf);
-Zax = mean(Z_surf);
-disp(['Guess of axis from geometric average of lcfs coords: Rax=' num2str(Rax) ' Zax=' num2str(Zax)])
+% Rax = mean(R_surf);
+% Zax = mean(Z_surf);
+% disp(['Guess of axis from geometric average of lcfs coords: Rax=' num2str(Rax) ' Zax=' num2str(Zax)])
 
 
 % Set integration limits
@@ -19,12 +19,12 @@ Rmax = max(R_surf) + dx;
 Zmin = min(Z_surf) - dx;
 Zmax = max(Z_surf) + dx;
 
-theta_surf = atan2(Z_surf-Zax,R_surf-Rax);
-r_surf = sqrt((R_surf-Rax).^2 + (Z_surf-Zax).^2);
-[theta_surf,Isort]=sort(theta_surf);                       %sort by increasing theta
-r_surf = r_surf(Isort);
-Z_surf = Z_surf(Isort);
-R_surf = R_surf(Isort);
+% theta_surf = atan2(Z_surf-Zax,R_surf-Rax);
+% r_surf = sqrt((R_surf-Rax).^2 + (Z_surf-Zax).^2);
+% [theta_surf,Isort]=sort(theta_surf);                       %sort by increasing theta
+% r_surf = r_surf(Isort);
+% Z_surf = Z_surf(Isort);
+% R_surf = R_surf(Isort);
 
 
 nx = 100;
