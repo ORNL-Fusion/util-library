@@ -14,7 +14,7 @@ Module bnorm_bfield_mod
        m3dc1_phase_shift_deg(max_m3dc1_files) = 0.d0
   
   Character(Len=120) :: &
-       rmp_type                         = 'none',  &
+       rmp_type                         = 'none', &
        gfile_name                       = 'none', &
        rmp_coil_type                    = 'none', &
        m3dc1_filenames(max_m3dc1_files) = 'none', &
@@ -62,8 +62,6 @@ Contains
     Endif
     Read(99,nml=bfield_nml)
     Close(99)
-
-
     
     ! Setup rmp field
     Select Case (rmp_type)

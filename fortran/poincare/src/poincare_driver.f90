@@ -7,21 +7,16 @@ Program poincare_driver
 !
 ! Modules used:
 Use kind_mod, Only: int32, real64
-Use rmpcoil_module, Only : build_d3d_ccoils_jl, build_d3d_icoils_jl
-Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factors, m3dc1_itime, m3dc1_toroidal_on_err,bfield_m3dc1, &
-     m3dc1_field_type
-Use g3d_module, Only : readg_g3d, get_psi_bicub
+Use g3d_module, Only : get_psi_bicub
 Use math_geo_module, Only : rlinspace
 Use fieldline_follow_mod, Only: follow_fieldlines_rzphi
 Use util_routines, Only: get_psin_2d
 Use phys_const, Only: pi
-Use ipec_module, Only: open_ipec_fields
-Use xpand_module, Only: open_xpand_fields
-Use bfield, Only : bfield_type, coil_type, g_type
+Use setup_bfield_module
+Use bfield, Only: calc_B_rzphi_general
+
 Implicit none
 
-Logical, Parameter :: m3dc1_toroidal_off_grid = .true.
-Integer(int32), parameter :: max_rmp_coils       = 12
 
 Integer(int32) :: ntor_pts_coil, i, nstart_fl, nsteps
 Integer(int32) :: iocheck, itest, ierr_b, ind_poin, ierr
@@ -32,40 +27,22 @@ Real(real64) :: dphi_line, Adphirat
 character(10) :: junk
 Real(Kind=4)  :: tarray(2),tres,tres0
 Logical :: calc_psiN_min = .false., follow_both_ways = .false.
-Integer(int32), parameter :: max_m3dc1_files = 10
-Type(bfield_type) :: bfield
-Type(g_type) :: g
-Type(coil_type) :: coil
+
+Real(real64),Dimension(1) :: br_test,bz_test,bphi_test
+
 !---------------------------------------------------------------------------
 ! Namelist variables:
 Real(real64) :: &
- rmp_current(max_rmp_coils) = 0.d0, &
- m3dc1_scale_factors(max_m3dc1_files) = 0.d0, &
  phistart_deg, rstart, rend, zstart, zend, dphi_line_deg
 
-Character(Len=120) :: &
- rmp_type = 'none',  &
- gfile_name = 'none', &
- rmp_coil_type = 'none', &
- m3dc1_filenames(max_m3dc1_files), &
- ipec_run_path = 'none', &
- xpand_fname = 'none'
-
 Integer(int32) :: &
- m3dc1_time = -1, &
  num_pts = 2, &
  ntransits = 1, &
- Nsym = 1, &
- m3dc1_nsets = 0, &
- ipec_field_eval_type = -1, &
- xpand_field_eval_type = -1, &
- ipec_itype = 0
+ Nsym = 1
 
 ! Namelist files
-Namelist / settings_nml / gfile_name, rmp_type, rmp_coil_type, m3dc1_filenames, &
-     m3dc1_scale_factors, rmp_current, m3dc1_time, phistart_deg, rstart, rend, zstart, zend, &
-     num_pts, ntransits, dphi_line_deg, Nsym, calc_psiN_min, follow_both_ways, m3dc1_nsets, &
-     ipec_run_path, ipec_field_eval_type, ipec_itype, xpand_fname, xpand_field_eval_type
+Namelist / settings_nml / phistart_deg, rstart, rend, zstart, zend, &
+     num_pts, ntransits, dphi_line_deg, Nsym, calc_psiN_min, follow_both_ways
 
 !---------------------------------------------------------------------------
 !---------------------------------------------------------------------------
@@ -85,6 +62,8 @@ If ( iocheck /= 0 ) Then
   Stop 'Exiting: I/O Error in poincare_driver.f90'
 Endif
 Read(99,nml=settings_nml)
+Rewind(99)
+Read(99,nml=bfield_nml)
 Close(99)
 
 !
@@ -93,126 +72,23 @@ Close(99)
 ! Setup rmp field
 Select Case (rmp_type)
   Case ('g3d')
-    Write(*,'(a)') '-----> BFIELD METHOD IS G3D'
-    bfield%method    = 0
-    bfield%method_2d = 0
-    Call readg_g3d(gfile_name,g)
-    bfield%g = g
+    Call setup_bfield_g3d
   Case ('g3d+rmpcoil')
-    Write(*,'(a)') '-----> BFIELD METHOD IS G3D+RMPCOIL'
-    bfield%method = 1
-    bfield%method_2d = 0
-    Call readg_g3d(gfile_name,g)
-    bfield%g = g
-    ! load rmp coil    
-    Select Case (rmp_coil_type)
-      Case ('d3d_ccoils')
-        Write(*,'(a)') '-----> Rmp coils are DIII-D C coils'
-        Write(*,'(a,6f12.3)') ' Coil currents: ', rmp_current(1:6)
-        Call build_d3d_ccoils_jl(coil,rmp_current(1:6))
-      Case ('d3d_icoils')
-        Write(*,'(a)') '----->  Rmp coils are DIII-D I coils'
-        Write(*,'(a,12f12.3)') ' Coil currents: ', rmp_current(1:12)
-        Call build_d3d_icoils_jl(coil,rmp_current(1:12))
-      Case Default
-        Write(*,*) 'Error!  Unknown rmp_coil_type'
-        Write(*,*) 'Current options are:'
-        Write(*,*) '''d3d_ccoils'''        
-        Write(*,*) '''d3d_icoils'''        
-        Stop
-      End Select
-      bfield%coil = coil
+    Call setup_bfield_g_and_rmp
   Case ('g3d+m3dc1')
-    Write(*,'(a)') '-----> BFIELD METHOD IS G3D+M3DC1'
-    bfield%method    = 3
-    bfield%method_2d = 0
-    Call readg_g3d(gfile_name,g)
-    bfield%g = g
-    ! Setup field    
-    If (m3dc1_time .eq. -1) Then
-      Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
-      Stop
-    Endif
-    m3dc1_itime = m3dc1_time           ! Variables in module
-    m3dc1_factors = m3dc1_scale_factors
-    m3dc1_toroidal_on_err = m3dc1_toroidal_off_grid
-    m3dc1_field_type = 1
-    Call prepare_m3dc1_fields(m3dc1_filenames(1:m3dc1_nsets))
-    Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
-    Write(*,*) '---------> M3DC1 scale factor: ',m3dc1_factors(1:m3dc1_nsets)
-    If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
+    Call setup_bfield_g_and_m3dc1
   Case ('m3dc1_full_field')
-    Write(*,'(a)') '-----> BFIELD METHOD IS M3DC1_FULL_FIELD'
-    bfield%method    = 4
-    bfield%method_2d = 5
-    ! Setup field    
-    If (m3dc1_time .eq. -1) Then
-      Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
-      Stop
-    Endif
-    m3dc1_itime = m3dc1_time           ! Variables in module
-    m3dc1_factors = m3dc1_scale_factors
-    m3dc1_toroidal_on_err = m3dc1_toroidal_off_grid
-    m3dc1_field_type = 0
-    Call prepare_m3dc1_fields(m3dc1_filenames(1:m3dc1_nsets))
-    Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
-    Write(*,*) '---------> M3DC1 scale factor: ',m3dc1_factors(1:m3dc1_nsets)
-    If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
+    Call setup_bfield_m3dc1_full
   Case ('m3dc1_as')
-    Write(*,'(a)') '-----> BFIELD METHOD IS m3dc1_as'
-    bfield%method    = 5
-    bfield%method_2d = 5
-    ! Setup field    
-    If (m3dc1_time .eq. -1) Then
-      Write(*,*) 'Error: Bfield type of M3DC1 is set but m3dc1_time is not. Exiting.'
-      Stop
-    Endif
-    m3dc1_itime = m3dc1_time           ! Variables in module
-    m3dc1_factors = m3dc1_scale_factors
-    m3dc1_toroidal_on_err = m3dc1_toroidal_off_grid
-    m3dc1_field_type = 0
-    Call prepare_m3dc1_fields(m3dc1_filenames(1:m3dc1_nsets))
-    Write(*,'(a,i0)') '---------> M3DC1 time (0 vacuum, 1 response): ',m3dc1_itime
-    Write(*,*) '---------> M3DC1 scale factor: ',m3dc1_factors(1:m3dc1_nsets)
-    If (m3dc1_toroidal_on_err) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
+    Call setup_bfield_m3dc1_as
   Case ('ipec')
-    Write(*,'(a)') '-----> BFIELD METHOD IS IPEC'
-    Write(*,'(a,i0)') '-----> ipec_field_eval_type is: ',ipec_field_eval_type
-    If (ipec_field_eval_type .eq. 0) Then
-      Write(*,'(a)') '-----> Evaluating IPEC fields as EQUILIBRIUM ONLY!'
-      bfield%method = 7
-      bfield%method_2d = 0
-    Elseif (ipec_field_eval_type .eq. 1) Then
-      Write(*,'(a)') '-----> Evaluating IPEC fields as EQ + VACUUM!'
-      bfield%method = 8
-      bfield%method_2d = 0
-    Elseif (ipec_field_eval_type .eq. 2) Then
-      Write(*,'(a)') '-----> Evaluating IPEC fields as EQ + PERT!'
-      bfield%method = 9
-      bfield%method_2d = 0
-    Else
-      Stop "Did not recognize ipec_field_eval_type"
-    Endif
-    Call readg_g3d(gfile_name,g)
-    bfield%g = g
-    Call open_ipec_fields(ipec_run_path,ipec_itype)
+    Call setup_bfield_ipec
   Case ('xpand')
-    Write(*,'(a)') '-----> BFIELD METHOD IS XPAND'
-    Write(*,'(a,i0)') '-----> xpand_field_eval_type is: ',xpand_field_eval_type
-    If (xpand_field_eval_type .eq. 0) Then
-      Write(*,'(a)') '-----> Evaluating XPAND fields as PERTURBED!'
-      bfield%method = 10
-      bfield%method_2d = 0
-    Elseif (xpand_field_eval_type .eq. 1) Then
-      Write(*,'(a)') '-----> Evaluating XPAND fields as VACUUM!'
-      bfield%method = 11
-      bfield%method_2d = 0
-    Else
-      Stop "Did not recognize xpand_field_eval_type"
-    Endif
-    Call readg_g3d(gfile_name,g)
-    bfield%g = g
-    Call open_xpand_fields(xpand_fname)    
+    Call setup_bfield_xpand
+  Case ('vmec_coils')
+    Call setup_bfield_vmec_coils
+  Case ('vmec_coils_to_fil')
+    Call setup_bfield_vmec_coils_to_fil
   Case Default
     Write(*,*) 'Unknown rmp_type in poincare_driver!'
     Write(*,*) 'Current options are:'
@@ -223,14 +99,15 @@ Select Case (rmp_type)
     Write(*,*) '''m3dc1_as'''
     Write(*,*) '''ipec'''
     Write(*,*) '''xpand'''
+    Write(*,*) '''vmec_coils'''
+    Write(*,*) '''vmec_coils_to_fil'''
     Stop      
 End Select
 
 
 ! 
 ! 3) Follow fls
-! 
-
+!
 
 Allocate(r1d(num_pts),z1d(num_pts))
 r1d = rlinspace(rstart,rend,num_pts)
@@ -239,17 +116,14 @@ z1d = rlinspace(zstart,zend,num_pts)
 dphi_line = dphi_line_deg*pi/180.d0
 nsteps = Floor(ntransits*2.d0*pi/Abs(dphi_line))
 
-!If (bfield_method .eq. 0 ) Then
-!  ind_poin = 1
-!Else 
-  Adphirat = Abs(360.d0/dphi_line_deg/Nsym)
-  If (Adphirat - Real(Nint(Adphirat)) > 1.d-8) Then
-    Write(*,*) 'Error!: 2*pi/Nsym must be an integer multiple of dphi_line_deg'
-    Write(*,*) 'Exiting'
-    Stop
-  Endif
-  ind_poin = Nint(Adphirat)
-!Endif
+Adphirat = Abs(360.d0/dphi_line_deg/Nsym)
+If (Adphirat - Real(Nint(Adphirat)) > 1.d-8) Then
+  Write(*,*) 'Error!: 2*pi/Nsym must be an integer multiple of dphi_line_deg'
+  Write(*,*) 'Exiting'
+  Stop
+Endif
+ind_poin = Nint(Adphirat)
+
 
 Write(*,'(/1a,i0,a,i0,a)') 'Following ',num_pts,' fls for ',ntransits,' transits.'
 Write(*,'(a,f12.3,a)') 'Toroidal step size is ',dphi_line_deg,' degrees'
@@ -282,8 +156,8 @@ Write(99,*) phistart_deg,nstart_fl,nsteps/ind_poin+1
 
 Do i = 1,nstart_fl
   Write(99,*) i
-  Write(99,'(6f18.12)') fl_r(i,1:nsteps+1:ind_poin)
-  Write(99,'(6f18.12)') fl_z(i,1:nsteps+1:ind_poin)
+  Write(99,'(6e20.12)') fl_r(i,1:nsteps+1:ind_poin)
+  Write(99,'(6e20.12)') fl_z(i,1:nsteps+1:ind_poin)
 Enddo
 Close(99)
 Deallocate(r1d,z1d)
@@ -298,8 +172,8 @@ If (follow_both_ways) Then
   
   Do i = 1,nstart_fl
     Write(99,*) i
-    Write(99,'(6f18.12)') fl_r2(i,1:nsteps+1:ind_poin)
-    Write(99,'(6f18.12)') fl_z2(i,1:nsteps+1:ind_poin)
+    Write(99,'(6e20.12)') fl_r2(i,1:nsteps+1:ind_poin)
+    Write(99,'(6e20.12)') fl_z2(i,1:nsteps+1:ind_poin)
   Enddo
   Close(99)
 Endif

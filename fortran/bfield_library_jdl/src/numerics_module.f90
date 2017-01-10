@@ -413,6 +413,11 @@ Real(real64)                :: rlinvec(numel)
 Integer(int32)   ::  ii
 !- End of header -------------------------------------------------------------
 
+If (numel .eq. 1) Then
+  rlinvec(1) = xstart
+  Return
+Endif
+
 Do ii = 1,numel
   rlinvec(ii) = ( Real(ii,real64) - 1._real64 ) * ( xend - xstart ) &
        / ( numel - 1._real64 ) + xstart

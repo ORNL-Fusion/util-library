@@ -8,7 +8,7 @@ Use ipec_module
 Implicit None
 
 Character(Len=100) :: run_path
-Integer :: ierr_b,Ntest,ierr,ifield_type, ipec_type
+Integer(int32) :: ierr,ifield_type, ipec_type
 
 Real(real64) :: Bout(1,3)
 

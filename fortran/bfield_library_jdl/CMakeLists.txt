@@ -78,6 +78,13 @@ add_library( bjdl STATIC
   ${SRC_DIR}/biotsavart_module.f90
   ${SRC_DIR}/coil_typedef.f90
   ${SRC_DIR}/bnorm_routines.f90
+  ${SRC_DIR}/setup_bfield.f90
+  ${SRC_DIR}/VMEC_routines_mod.f90
+  ${SRC_DIR}/LIBSTELL_LIGHT/tolower.f90
+  ${SRC_DIR}/LIBSTELL_LIGHT/stel_kinds.f
+  ${SRC_DIR}/LIBSTELL_LIGHT/safe_open_mod.f90
+  ${SRC_DIR}/LIBSTELL_LIGHT/biotsavart.f
+  ${SRC_DIR}/LIBSTELL_LIGHT/bsc_T.f
   ${EXTRA_FILES}
   )
 

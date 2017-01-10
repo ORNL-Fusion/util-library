@@ -1,0 +1,52 @@
+&bfield_nml
+
+rmp_type = 'vmec_coils'
+
+vmec_coils_file = "/home/jjl/VMEC_RUNS/W7X_2016/coils/coils.w7x"
+
+  vmec_extcur_set(1) =  11923.d0 !Nonplanar 1-5
+  vmec_extcur_set(2) =  11799.d0
+  vmec_extcur_set(3) =  12048.d0
+  vmec_extcur_set(4) =  13290.d0
+  vmec_extcur_set(5) =  13414.d0
+  vmec_extcur_set(6) =   8197.d0 ! A
+  vmec_extcur_set(7) =  -2981.d0 ! B
+  vmec_extcur_set(8) =  -2515.d0 ! Sweep 1
+  vmec_extcur_set(9) =   2515.d0 ! Sweep 2 (repeated)
+  vmec_extcur_set(10) = -2515.d0
+  vmec_extcur_set(11) =  2515.d0
+  vmec_extcur_set(12) = -2515.d0
+  vmec_extcur_set(13) =  2515.d0
+  vmec_extcur_set(14) = -2515.d0
+  vmec_extcur_set(15) =  2515.d0
+  vmec_extcur_set(16) = -2515.d0
+  vmec_extcur_set(17) =  2515.d0
+  vmec_extcur_set(18) =  0.d0 ! Trim coils 1-5
+  vmec_extcur_set(19) =  0.d0
+  vmec_extcur_set(20) =  0.d0
+  vmec_extcur_set(21) =  0.d0
+  vmec_extcur_set(22) =  0.d0
+
+
+
+/
+
+&settings_nml
+
+
+Nsym = 5
+
+rstart = 5.9d0
+rend = 5.95d0
+zstart = 0.d0
+zend = 0.d0
+
+num_pts = 3
+phistart_deg = 0.d0
+ntransits = 5
+dphi_line_deg = 0.5d0
+
+follow_both_ways = .true.
+calc_psiN_min = .false.
+
+/

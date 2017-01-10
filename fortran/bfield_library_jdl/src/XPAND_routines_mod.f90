@@ -135,10 +135,11 @@ Integer(int32) :: i, ir, iz, iphi
 ierr = 0
 
 Do i=1,Npts
+
+  Bout(i,1:3) = 0._real64
   If (r(i) .lt. xpand_r(1) .OR. r(i) .gt. xpand_r(xpand_nr-1) &
        .OR. z(i) .lt. xpand_z(1) .OR. z(i) .gt. xpand_z(xpand_nz-1)) Then
     ierr = 1
-    Bout(i,1:3) = 0._real64
     Cycle
   Endif
   

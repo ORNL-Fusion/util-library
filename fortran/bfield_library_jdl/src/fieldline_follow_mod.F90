@@ -491,6 +491,8 @@ Use xpand_module, Only : bfield_xpand
 #ifdef HAVE_M3DC1
 Use m3dc1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
 #endif
+Use vmec_routines_mod, Only : bfield_vmec_coils
+Use bfield, Only : calc_B_rzphi_general
 Implicit None
 Type(bfield_type), Intent(In) :: bfield
 Real(real64), Intent(In) :: phi
@@ -506,81 +508,93 @@ Real(real64) :: Bz, Br, Bphi, Br_rmp, Bphi_rmp, Bz_rmp, phi_tmp(Npts)
 !- End of header -------------------------------------------------------------
 
 bval = 0._real64
-ierr_b = 0
+phi_tmp = phi
+Call calc_B_rzphi_general(bfield,RZ(1),RZ(2),phi_tmp,Npts,bval(1,1),bval(1,2),bval(1,3),ierr_b) 
+Br   = bval(1,1)
+Bz   = bval(1,2)
+Bphi = bval(1,3)
+
+!bval = 0._real64
+!ierr_b = 0
 ierr_rmp = 0
-If (bfield%method == 0) Then     ! gfile field only
-  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
-  Br   = bval(1,1)
-  Bz   = bval(1,2)
-  Bphi = bval(1,3)
-Elseif (bfield%method == 1) Then ! g + rmp coils
-  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
-  Call bfield_bs_cyl(RZ(1),phi,RZ(2),bfield%coil,Br_rmp,Bphi_rmp,Bz_rmp)
-  ierr_rmp = 0
-  Br   = bval(1,1) + Br_rmp
-  Bz   = bval(1,2) + Bz_rmp
-  Bphi = bval(1,3) + Bphi_rmp
-Elseif (bfield%method == 2) Then ! g + screening B-spline
-  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)
-  phi_tmp(1) = phi
-  Call bfield_bspline(RZ(1),phi_tmp,RZ(2),Npts,bval_screened,ierr_rmp)
-  Br   = bval(1,1) + bval_screened(1,1)
-  Bz   = bval(1,2) + bval_screened(1,2)
-  Bphi = bval(1,3) + bval_screened(1,3)
-#ifdef HAVE_M3DC1
-Elseif (bfield%method == 3) Then  ! g + m3dc1 
-  phi_tmp(1) = phi
-  bval_tmp =0.d0
-  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
-  Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),Npts,bval_tmp,ierr_rmp)
-  bval = bval + bval_tmp
-  Br   = bval(1,1)
-  Bz   = bval(1,2)
-  Bphi = bval(1,3)
-  ierr_rmp = ierr_b + ierr_rmp
-Elseif (bfield%method == 4) Then  ! m3dc1 total field
-  phi_tmp(1) = phi
-  Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),Npts,bval,ierr_rmp)
-  Br   = bval(1,1)
-  Bz   = bval(1,2)
-  Bphi = bval(1,3)
-Elseif (bfield%method == 5) Then  ! m3dc1 2d field only
-  Call bfield_m3dc1_2d(RZ(1),RZ(2),Npts,bval,ierr_rmp)
-  Br   = bval(1,1)
-  Bz   = bval(1,2)
-  Bphi = bval(1,3)
-#endif
-Elseif (bfield%method == 6) Then     ! just coils
-  Call bfield_bs_cyl(RZ(1),phi_tmp(1),RZ(2),bfield%coil,Br,Bphi,Bz)
-Elseif (bfield%method == 7) Then  ! ipec eq only
-  Call bfield_ipec(RZ(1),(/0.d0/),RZ(2),Npts,bval,ierr_rmp,0)
-  Br   = bval(1,1)
-  Bz   = bval(1,2)
-  Bphi = bval(1,3)
-Elseif (bfield%method == 8) Then  ! ipec vac
-  Call bfield_ipec(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,1)
-  Br   = bval(1,1)
-  Bz   = bval(1,2)
-  Bphi = bval(1,3)
-Elseif (bfield%method == 9) Then  ! ipec pert
-  Call bfield_ipec(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,2)
-  Br   = bval(1,1)
-  Bz   = bval(1,2)
-  Bphi = bval(1,3)
-Elseif (bfield%method == 10) Then  ! xpand pert
-  Call bfield_xpand(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,0)
-  Br   = bval(1,1)
-  Bz   = bval(1,2)
-  Bphi = bval(1,3)
-Elseif (bfield%method == 11) Then  ! xpand vac
-  Call bfield_xpand(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,1)
-  Br   = bval(1,1)
-  Bz   = bval(1,2)
-  Bphi = bval(1,3)      
-Else
-  Write(*,*) 'Unknown bfield%method in fl_derivs_fun'
-  stop
-Endif
+!!$If (bfield%method == 0) Then     ! gfile field only
+!!$  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$Elseif (bfield%method == 1) Then ! g + rmp coils
+!!$  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
+!!$  Call bfield_bs_cyl(RZ(1),phi,RZ(2),bfield%coil,Br_rmp,Bphi_rmp,Bz_rmp)
+!!$  ierr_rmp = 0
+!!$  Br   = bval(1,1) + Br_rmp
+!!$  Bz   = bval(1,2) + Bz_rmp
+!!$  Bphi = bval(1,3) + Bphi_rmp
+!!$Elseif (bfield%method == 2) Then ! g + screening B-spline
+!!$  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)
+!!$  phi_tmp(1) = phi
+!!$  Call bfield_bspline(RZ(1),phi_tmp,RZ(2),Npts,bval_screened,ierr_rmp)
+!!$  Br   = bval(1,1) + bval_screened(1,1)
+!!$  Bz   = bval(1,2) + bval_screened(1,2)
+!!$  Bphi = bval(1,3) + bval_screened(1,3)
+!!$#ifdef HAVE_M3DC1
+!!$Elseif (bfield%method == 3) Then  ! g + m3dc1 
+!!$  phi_tmp(1) = phi
+!!$  bval_tmp =0.d0
+!!$  Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),Npts,bval,ierr_b)     
+!!$  Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),Npts,bval_tmp,ierr_rmp)
+!!$  bval = bval + bval_tmp
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$  ierr_rmp = ierr_b + ierr_rmp
+!!$Elseif (bfield%method == 4) Then  ! m3dc1 total field
+!!$  phi_tmp(1) = phi
+!!$  Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),Npts,bval,ierr_rmp)
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$Elseif (bfield%method == 5) Then  ! m3dc1 2d field only
+!!$  Call bfield_m3dc1_2d(RZ(1),RZ(2),Npts,bval,ierr_rmp)
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$#endif
+!!$Elseif (bfield%method == 6) Then     ! just coils
+!!$  Call bfield_bs_cyl(RZ(1),phi_tmp(1),RZ(2),bfield%coil,Br,Bphi,Bz)
+!!$Elseif (bfield%method == 7) Then  ! ipec eq only
+!!$  Call bfield_ipec(RZ(1),(/0.d0/),RZ(2),Npts,bval,ierr_rmp,0)
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$Elseif (bfield%method == 8) Then  ! ipec vac
+!!$  Call bfield_ipec(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,1)
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$Elseif (bfield%method == 9) Then  ! ipec pert
+!!$  Call bfield_ipec(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,2)
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$Elseif (bfield%method == 10) Then  ! xpand pert
+!!$  Call bfield_xpand(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,0)
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$Elseif (bfield%method == 11) Then  ! xpand vac
+!!$  Call bfield_xpand(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp,1)
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$Elseif (bfield%method == 14) Then ! VMEC coils
+!!$  Call bfield_vmec_coils(RZ(1),(/phi/),RZ(2),Npts,bval,ierr_rmp)
+!!$  Br   = bval(1,1)
+!!$  Bz   = bval(1,2)
+!!$  Bphi = bval(1,3)
+!!$Else
+!!$  Write(*,*) 'Unknown bfield%method in fl_derivs_fun'
+!!$  stop
+!!$Endif
 
 If ((ierr_b .ne. 0) .or. (ierr_rmp .ne. 0)) Then
   ierr = 1

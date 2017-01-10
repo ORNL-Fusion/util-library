@@ -14,10 +14,24 @@ Module coil_typedef
   End Type coil_type
 
   Public :: allocate_coiltype
+  Public :: allocate_coiltype_single
   Public :: deallocate_coiltype
   
 Contains
 
+  Subroutine allocate_coiltype_single(npts,coil)
+    Implicit None
+    Type(coil_type), Intent(Out) :: coil
+    Integer(int32), Intent(In) :: npts
+    
+    Allocate(coil%coilxyz(npts,3))
+    Allocate(coil%current(npts))
+    coil%ncoil_pts = npts
+    coil%num_coils = 1
+    coil%coilxyz = 0._real64
+    coil%current = 0._real64
+  End Subroutine allocate_coiltype_single    
+  
   Subroutine allocate_coiltype(num_coils,ntorpts,coil)
     Implicit None
     Type(coil_type), Intent(Out) :: coil
