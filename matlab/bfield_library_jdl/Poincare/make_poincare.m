@@ -1,4 +1,4 @@
-function poinc = make_poincare(bfield,Rstart,Zstart,phistart,phi_want,npoints_want,dphi,sort_it,Rax_guess,Zax_guess,plot_settings)
+function poinc = make_poincare(bfield,Rstart,Zstart,phistart,phi_want,npoints_want,dphi,sort_it,Rax_guess,Zax_guess,plot_settings,save_name)
 % R,Z = [m], phi = [radians]
 % R,Z can be arrays
 if nargin < 5
@@ -12,6 +12,20 @@ if nargin < 7
 end
 if nargin < 8
     sort_it = 0;
+end
+if nargin >= 12
+    saveit = 1;
+else
+    saveit = 0;
+end
+
+if saveit
+    if exist(out_file,'file') == 2
+        inp = input('The output file already exists, are you sure you want to overwrite [Y/N] ??');
+        if ~strcmpi(inp,'y')
+            error('Stopping')
+        end
+    end
 end
 
 
@@ -69,7 +83,10 @@ fprintf('Poincare took %f seconds.\n',toc); tic;
 
 
 if sort_it
-    [Rax,Zax] = find_axis(bfield,phistart,Rax_guess,Zax_guess);
+%     [Rax,Zax] = find_axis(bfield,phistart,Rax_guess,Zax_guess);
+    warning('NOT FINDING AXIS, USING GUESS!!')
+    Rax = Rax_guess;
+    Zax = Zax_guess;
     tpoinc = atan2(Zpoinc-Zax,Rpoinc-Rax);
     rpoinc = sqrt((Rpoinc-Rax).^2 + (Zpoinc-Zax).^2);
     [tpoinc,Isort]=sort(tpoinc);                       %sort by increasing theta

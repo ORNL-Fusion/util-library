@@ -28,6 +28,8 @@ switch bfield.type
         [dydx,ierr] = fl_derivs_dphi_xpand(x,y,bfield,nowarn,1);                        
     case 'Bgrid'        
         [dydx,ierr] = fl_derivs_dphi_Bgrid(x,y,bfield,nowarn);               
+    case 'Aspline'        
+        [dydx,ierr] = fl_derivs_dphi_Aspline(x,y,bfield,nowarn);         
     otherwise
         fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
@@ -43,6 +45,8 @@ switch bfield.type
         fprintf('     xpand_vac\n')
         fprintf('     xpand_pert\n')
         fprintf('     Bgrid\n')
+        fprintf('     Aspline\n')
         ierr = 1;
+        error('barfing')
         return;
 end

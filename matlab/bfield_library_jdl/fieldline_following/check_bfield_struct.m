@@ -149,7 +149,14 @@ switch bfield.type
             fprintf([errstr,errstr2,'type structure must contain field "Bgrid"\n'])
             ierr = 1;
             return;
-        end    
+        end  
+    case {'Aspline'}
+        errstr2 = 'for Aspline';
+        if ~isfield(bfield,'Arcoeff')
+            fprintf([errstr,errstr2,'type structure must contain field "Arcoeff"\n'])
+            ierr = 1;
+            return;
+        end            
     otherwise
         fprintf([errstr,'Did not recognize bfield type\n'])
         fprintf('Supported types are:\n')

@@ -28,7 +28,7 @@ for i = 1:n
     ilp1mx  = min(i+k,np1);
     left    = max(left,i);
     if (xyzveci < xyzknot(left))
-        fprintf('subroutine db3in:\n')
+        fprintf('subroutine spli3d:\n')
         fprintf('i with knot(i) <= x/y/z < knot(i+1) required.\n')
         fprintf('knot(1)   = %f\n', xyzknot(1))
         fprintf('knot(n+k) = %f\n', xyzknot(n+k))
@@ -40,7 +40,7 @@ for i = 1:n
         if (left >= ilp1mx)
             left = left - 1;
             if (xyzveci > xyzknot(left+1))
-                fprintf('subroutine db3in:\n')
+                fprintf('subroutine spli3d:\n')
                 fprintf('i with knot(i) <= x/y/z < knot(i+1) required.\n')
                 fprintf('knot(1)   = %f\n', xyzknot(1))
                 fprintf('knot(n+k) = %f\n', xyzknot(n+k))

@@ -42,6 +42,11 @@ switch bfield.type
         Bout.bphi = Bphi;
         Bout.bz = Bz;
         ierr = 0;
+    case 'Aspline'
+        [Br,Bz,Bphi,ierr]=bfield_Aspline(R,Z,phi_radian,bfield.Arcoeff,bfield.Azcoeff,bfield.Aphicoeff,bfield.spline_info);              
+        Bout.br = Br;
+        Bout.bphi = Bphi;
+        Bout.bz = Bz;
     otherwise
         fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
@@ -57,6 +62,7 @@ switch bfield.type
 %         fprintf('     xpand_vac\n')
 %         fprintf('     xpand_pert\n')
         fprintf('     Bgrid\n')
+        fprintf('     Agrid\n')
         error('quitting')
         ierr = 1;
         return;

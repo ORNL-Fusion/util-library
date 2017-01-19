@@ -72,18 +72,20 @@ if 0
 elseif 0
     % Define by distance from axis to point
     Rend = 5.3;
-    Zend = 0.968;   
+    Zend = 0.968;
     L = 0.2;  % m from ax to start surfs from
     Rstart=Rax-L/sqrt(1+((Zend-Zax)/(Rend-Rax))^2);
     Zstart=L/sqrt(1+((Rend-Rax)/(Zend-Zax))^2)-Zax;
     Rstart = linspace(Rstart,Rend,nsurf);
     Zstart = linspace(Zstart,Zend,nsurf);
 else
-%     Rstart = 5.6;
-%     Zstart = 0;
-Rstart = linspace(5.9,5.95,3);
-Zstart = zeros(size(Rstart));
+    %     Rstart = 5.6;
+    %     Zstart = 0;
+    Rstart = linspace(5.9,5.95,3);
+    Zstart = zeros(size(Rstart));
 end
+
+poincare_save_name = 'C:\Work\Stellarator\W7X EMC3 modeling\mimic_configs\VAC\0kA\poincare_0deg_3surf_25pt.mat';
 
 npoints_want = 25;
 dphi = 0.5*pi/180;
@@ -93,7 +95,9 @@ plot_settings.plotit = 1;
 plot_settings.newfig = 1;
 plot_settings.connect = 0;
 
-poinc = make_poincare(bfield,Rstart,Zstart,phistart,phistart,npoints_want,dphi,sort_it,Rax,Zax,plot_settings);
+if 1
+    poinc = make_poincare(bfield,Rstart,Zstart,phistart,phistart,npoints_want,dphi,sort_it,Rax,Zax,plot_settings,poincare_save_name);
+end
 ves = load_W7X_vessel(0,0,phistart);
 plot(ves.cut.r,ves.cut.z,'k')
 
