@@ -13,29 +13,12 @@ switch bfield.type
         Bout.br = Bout.br + Br;
         Bout.bphi = Bout.bphi + Bphi;
         Bout.bz = Bout.bz + Bz;
-%     case 'vmec'        
-%         [dydx,ierr] = fl_derivs_dphi_vmec(x,y,bfield,nowarn);
     case 'just_coils'        
         [Br,Bphi,Bz]=bfield_bs_cyl(R,phi_radian,Z,bfield.coil,bfield.current,nowarn);
         Bout.br = Br;
         Bout.bphi = Bphi;
         Bout.bz = Bz;
-        ierr = 0;
-%         [dydx,ierr] = fl_derivs_dphi_just_coils(x,y,bfield,nowarn);
-%     case 'ipec_eq'        
-%         [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,0);        
-%     case 'ipec_vac'        
-%         [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,1);                
-%     case 'ipec_pert'        
-%         [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,2);        
-%     case 'ipec_vac_only'        
-%         [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,3);                
-%     case 'ipec_pert_only'        
-%         [dydx,ierr] = fl_derivs_dphi_ipec(x,y,bfield,nowarn,4);               
-%     case 'xpand_pert'        
-%         [dydx,ierr] = fl_derivs_dphi_xpand(x,y,bfield,nowarn,0);                
-%     case 'xpand_vac'        
-%         [dydx,ierr] = fl_derivs_dphi_xpand(x,y,bfield,nowarn,1);      
+        ierr = 0; 
     case 'Bgrid'        
         [Br,Bz,Bphi]=bfield_grid(R,Z,phi_radian,bfield.Bgrid,nowarn);        
         Bout.br = Br;
@@ -47,6 +30,12 @@ switch bfield.type
         Bout.br = Br;
         Bout.bphi = Bphi;
         Bout.bz = Bz;
+    case 'MPEX'
+        [Br,Bz] = bfield_circular_coils(bfield.coil,bfield.current,R,Z);
+        Bout.br = Br;
+        Bout.bz = Bz;
+        Bout.bphi = zeros(size(Br));
+        ierr = 0;
     otherwise
         fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
@@ -63,6 +52,7 @@ switch bfield.type
 %         fprintf('     xpand_pert\n')
         fprintf('     Bgrid\n')
         fprintf('     Agrid\n')
+        fprintf('      MPEX\n')
         error('quitting')
         ierr = 1;
         return;

@@ -6,7 +6,7 @@ function [s,ierr,i_last_good]=follow_fieldlines_rzphi_dz(bfield,Rstart,Zstart,ph
 % bfield should be a struct with fields 'type' and others corresponding to the type
 %   type = 'gfile'
 %       g = gfile info
-ierr = check_bfield_struct(bfield);
+ierr = check_bfield_struct(bfield,1);
 if ierr ~= 0
     error('Cannot follow fieldline, bfield structure not properly set up')
 end

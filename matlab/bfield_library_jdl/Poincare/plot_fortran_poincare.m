@@ -42,13 +42,18 @@ if 0
     % 154929 <------------------------*********************--------------------
     run_path = 'C:\Work\fortran\test_poincare\154929\rmp\'; suffix = '_60_n100_fake_diag2'; mytitle='test';shot = 154921; times = 3750;
 %     run_path = 'C:\Work\fortran\test_poincare\154929\rmp\'; suffix = '240_n250_fake_diag2'; mytitle='test';shot = 154921; times = 3750;
-    gfile_name = 'C:\Work\DIII-D\154929\kinetic\g154929.03750';
-    
-    
-    
+    gfile_name = 'C:\Work\DIII-D\154929\kinetic\g154929.03750';  
 end
 
+if 0
 run_path = 'C:\Work\fortran\test_poincare\vmec_coils_to_fil\'; suffix = ''; mytitle = 'test';
+end
+
+if 1
+    % 165274 <------------------------*********************--------------------
+    run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '0deg'; mytitle='test';shot = 165274;% times = 3750;
+    gfile_name = 'C:\Work\DIII-D\165274\kinetic\g165274.02120';
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % DONE SETTING RUN PATH
@@ -80,7 +85,7 @@ poinc = read_poincare_file(run_path,fname,fname2,g);
 %------------------------------------------------------------------------------------------------------------------------------------
 
 if 1
-    figure; hold on; box on;
+%     figure; hold on; box on;
     for ifile = 1:2
         plot(poinc.rline{ifile},poinc.zline{ifile},'r.','markersize',2)
     end

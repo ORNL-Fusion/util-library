@@ -60,6 +60,7 @@ if fid == -1
         for ii = 1:maxtries
             bfield.type = 'gfile';
             bfield.g = g;
+            bfield.nsym = 1;
             [stmp0,ierr_ff]=follow_fieldlines_rzphi_dphi(bfield,rstart,zstart,phistart,idir*dphi_fl,ns_fl);
     
             rsep0 = [rsep0;stmp0.r(2:end)];

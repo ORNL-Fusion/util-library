@@ -3,9 +3,9 @@ clearvars;
 data = return_AMJUEL_data;
 
 mp = 1.67e-27;
-matom = 184*mp;  % 2, 184
+matom = 2*mp;  % 2, 184
 mmolc = 2*matom;
-Tatom = 0.026;   % 3
+Tatom = 3;   % 3
 Tatom_slow = 0.026;
 Tmolc = 0.026;
 
@@ -18,8 +18,8 @@ rH2 = 1.37e-10;
 n0_coll_xs = pi*(2*rH2)^2;
 nn0 = 3.3e19;
 
-suffix = '50'; element='w';
-% suffix = '96'; element='h';
+% suffix = '50'; element='w';
+suffix = '96'; element='h';
 fname = ['C:\Work\ADAS\adf11_all\scd',suffix,'\','scd',suffix,'_',element,'.dat'];  % Effective ionization coefficients (cm^-3/s)
 [te_scd,ne_scd,scd] = read_adas_adf11_file(fname); scd1 = squeeze(scd(1,:,:));
 fname = ['C:\Work\ADAS\adf11_all\acd',suffix,'\','acd',suffix,'_',element,'.dat'];  % Effective recombination coefficients (cm^-3/s)
@@ -85,9 +85,9 @@ if 1
     figure; hold on; box on
     for i=1:length(ne_test)
         plot(Te_test,mfp_iz_atom(:,i),'r','linewidth',2,'linestyle',char(s{i}))
-        plot(Te_test,mfp_iz_atom_adas(:,i),'c','linewidth',2,'linestyle',char(s{i}))
+%         plot(Te_test,mfp_iz_atom_adas(:,i),'c','linewidth',2,'linestyle',char(s{i}))
         plot(Te_test,mfp_rc_atom(:,i),'b','linewidth',2,'linestyle',char(s{i}))
-        plot(Te_test,mfp_rc_atom_adas(:,i),'y','linewidth',2,'linestyle',char(s{i}))
+%         plot(Te_test,mfp_rc_atom_adas(:,i),'y','linewidth',2,'linestyle',char(s{i}))
         plot(Te_test,mfp_molc(:,i),'k','linewidth',2,'linestyle',char(s{i}))
         if add_slow
             plot(Te_test,mfp_iz_atom_slow(:,i),'r','linewidth',2,'linestyle','--')

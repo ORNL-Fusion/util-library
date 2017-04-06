@@ -1,5 +1,8 @@
-function ierr = check_bfield_struct(bfield)
+function ierr = check_bfield_struct(bfield,is_non_toroidal)
 % checks the fields in bfield structure
+if nargin < 2
+    is_non_toroidal = 0;
+end
 ierr = 0;
 errstr = 'Error from check_bfield_struct: ';
 if ~isstruct(bfield)
@@ -13,11 +16,11 @@ if ~isfield(bfield,'type')
     return;
 end
 if ~ischar(bfield.type)
-    fprintf([errstr,bfield.type must be a character array\n'])
+    fprintf([errstr,'bfield.type must be a character array\n'])
     ierr = 1;
     return;
 end
-if ~isfield(bfield,'nsym')
+if ~isfield(bfield,'nsym') && ~is_non_toroidal
     fprintf([errstr,'nsym required for all bfield structures\n'])
     ierr = 1;
     return;
