@@ -5,11 +5,11 @@ end
 if nargin < 4
     error('must specify inputs')
 end
-debug_plots = 1;
+debug_plots = 0;
 
 [nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C);
 
-ntheta_per_wind = 10;
+ntheta_per_wind = 101;  % >= 100 seems to give reasonable results for B components, fewer may be ok for field line following
 
 ncoils = length(nturns);
 ibuild = 0;

@@ -2,7 +2,7 @@
 clearvars;
 x0_guess = []; y0_guess = []; force_guess = 0;
 verbose = 0;
-if 0
+if 1
     
     helicon_current = 500;
     current_A = 6400;
@@ -46,6 +46,7 @@ bfield.vessel_clip_r   = geo.vessel_clip_r;
 bfield.vessel_clip_z   = geo.vessel_clip_z;
 bfield.vessel_clip_phi = 0;
 bfield.stop_at_vessel = 1;
+bfield.nsym = 1;
 
 num_lines = 25; 
 % rr = linspace(1e-3,0.04,num_lines);

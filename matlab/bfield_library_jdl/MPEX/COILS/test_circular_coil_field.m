@@ -43,11 +43,11 @@ P_z = (z1+dz/2)*ones(size(P_r));
 
 % ANALYTICAL
 coil_an = build_circular_coil_jackson(r1,r2,z1,dz,nturns,nlayers);
-% [Br_an,Bz_an,Atheta_an] = bfield_circular_coil(coil_an,cur(1),P_r,P_z);
+[Br_an,Bz_an,Atheta_an] = bfield_circular_coils(coil_an,cur(1),P_r,P_z);
 
 fprintf('-----------------------------------------\n')
 fprintf('Evaluating at [R,Z] = %f,%f\n',P_r,P_z)
-fprintf('Rick [br,bz] = %e,%e\n',br(ir_test,iz_test),bz(ir_test,iz_test))
+% fprintf('Rick [br,bz] = %e,%e\n',br(ir_test,iz_test),bz(ir_test,iz_test))
 fprintf('Biot [br,bz] = %e,%e\n',Br,Bz)
 fprintf('Ban  [br,bz] = %e,%e\n',Br_an,Bz_an)
 fprintf('-----------------------------------------\n')

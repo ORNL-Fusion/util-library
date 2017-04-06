@@ -4,7 +4,8 @@ function [nturns,nlayers,rr1,rr2,cl,z0] = define_proto_coil_filaments
 % rr1 = inner radius of each coil
 % rr2 = outer radius of each coil
 % cl = axial length of each coil
-% z0 = (axial) starting position of each coil relative to the start of the magnetic field profile at z=0. The coil extends from        this location in the direction of larger z
+% z0 = (axial) starting position of each coil relative to the start of the magnetic field profile at z=0. The coil extends from        
+% this location in the direction of larger z
 ncoils = 12;
 omat = ones(1,ncoils);
 nturns  = 8*omat;

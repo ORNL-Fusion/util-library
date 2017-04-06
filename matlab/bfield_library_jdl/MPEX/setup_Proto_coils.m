@@ -1,5 +1,6 @@
 function [nturns,nlayers,rr1,rr2,cl,z0,cur] = setup_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C)
 % helicon_current = coils 3-4
+% The rest depend on config
 % cur = the current in each WINDING (amps)
 [nturns,nlayers,rr1,rr2,cl,z0] = define_proto_coil_filaments;
 if nargin == 0
@@ -24,8 +25,7 @@ if nargin < 5
 end
 
 ncoils = length(nturns);
-omat = ones(1,ncoils);
-cur = 0*omat;
+cur = zeros(1,ncoils);
 cur(3:4) = helicon_current;
 cur(10:12) = current_B;
 switch config
