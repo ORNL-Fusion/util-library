@@ -1,41 +1,87 @@
 clearvars;
 
-
 % Set up magnetic field -- MPEX parameters
-helicon_current = 440;
+verbose = 0;
+
+helicon_current = 200;
 current_A = 6400;
 current_B = 6400;
 current_C = [];
 config = 'flat';
-verbose = 0;
+current_in = [helicon_current,current_A,current_B,current_C];  % Could also be 12 element array of coil winding currents
+% current_in = [6400 0 260 260]; current_in(5:12) = 1200; %current_in(6:7) = 800;
+% config = [];
 
-% Build bfield structure
-[coil,current] = build_Proto_coils_jackson(helicon_current,current_A,current_B,config,verbose,current_C);
+
+
+% Build coils
+[coil,current] = build_Proto_coils_jackson(current_in,config,verbose);
+
+%-----------------------------------
+% Example 1: 
+% Calculate psi at a point R,Z
+%-----------------------------------
+% Reval = 0.063; Zeval = 1.75;
+Reval = 0.045; Zeval = 1.75;
+psi_eval = calc_psi_mpex(coil,current,Reval,Zeval);
+fprintf('\nExample 1\n')
+fprintf('At point (R,Z) = (%6.3f,%6.3f) [m], psi = %6.3e [Wb]\n',Reval,Zeval,psi_eval)
+
+%--------------------------------------------------------------------------
+% Example 2: 
+% Map a point R,Z to the a line at constant axial position (e.g., target)
+% by interpolating axial flux.
+%--------------------------------------------------------------------------
+Ztarg = 4.33415;  % Set axial position for mapping
+% Ztarg = 2.68;  % Set axial position for mapping
+Rmap = map_pt_to_target_mpex(coil,current,Ztarg,Reval,Zeval);
+fprintf('\nExample 2\n')
+fprintf('Point (R,Z) = (%6.3f,%6.3f) [m] maps to radius %8.5f [m] at Z = %6.3f [m]\n',Reval,Zeval,Rmap,Ztarg)
+
+nr = 100; nz = 500;
+Z1d = linspace(0.5,5,nz);
+R1d = linspace(0,0.075,nr);
+% R1d = linspace(0,0.175,nr);
+[R2d,Z2d] = meshgrid(R1d,Z1d);
+psi2d = calc_psi_mpex(coil,current,R2d,Z2d);
+
+% asdfadsf
+% asdfadsf
+%--------------------------------------------------------------------------
+% Example 3: 
+% Map a point R,Z to the a line at constant axial position (e.g., target)
+% by following a field line
+%--------------------------------------------------------------------------
+MAKE_PLOT = 1;
+
 bfield.coil = coil; bfield.current = current; bfield.type = 'MPEX';
+dz_want = 0.01;
+L = Ztarg - Zeval;
+nsteps = round(abs(L/dz_want));
+dz = L/nsteps;
+f = follow_fieldlines_rzphi_dz(bfield,Reval,Zeval,0,dz,nsteps);
+fprintf('\nExample 3\n')
+fprintf('Point (R,Z) = (%6.3f,%6.3f) [m] maps to radius %8.5f [m] at Z = %6.3f [m]\n',Reval,Zeval,f.r(end),Ztarg)
 
-% Evaluate flux at target
+if MAKE_PLOT
+    skimmer = 1;
+    target_position = 2;
+    sleeve = 1;
+    geo = get_Proto_geometry(1,1,skimmer,target_position,sleeve);    
+    plot(Zeval,Reval,'ko')
+    plot(f.z,f.r,'b','linewidth',2)
+    plot(f.z(end),f.r(end),'rx','markersize',12)
+end
 
-% % First define geometry
-skimmer = 1;
-plasma_radius_cm = 1;
-target_position = 2;
-sleeve = 1;
-plot_geo = 1; if plot_geo; newfig_geo = 1; else; newfig_geo = 0; end
-geo = get_Proto_geometry(plot_geo,newfig_geo,skimmer,target_position,sleeve);
+contour(Z1d,R1d,psi2d.',logspace(-5.5,log10(max(max(psi2d))),20))
+contour(Z1d,R1d,psi2d.',[1,1]*psi_eval,'k','linewidth',3)
 
-% Interpolate along target radius
-RMAX = 0.1221; % Inner radius of coil
-ZTARG = 4.33415; % Axial position of target
-ninterp = 1000;
-zinterp = ZTARG*ones(1,ninterp);
-rinterp = linspace(0,RMAX,ninterp);
-psiinterp = calc_psi_mpex(coil,current,rinterp,zinterp);
 
-% figure; hold on; box on;
-% plot(rinterp,psiinterp)
+%--------------------------------------------------------------------------
+% Example 3: 
+% Map a point R,Z to the a line at constant axial position (e.g., target)
+% by following a field line
+%--------------------------------------------------------------------------
+all(inpolygon(f.z,f.r,geo.vessel_clip_z,geo.vessel_clip_r))
 
-% Evaluation and mapping to target
-reval = 0.05;
-zeval = 1.05;
-psi_eval = calc_psi_mpex(coil,current,reval,zeval);
-rmap = interp1(psiinterp,rinterp,psi_eval)
+
