@@ -4,8 +4,10 @@ if nargin < 2
     plotit = 0;
 end
 
-px_per_cm = 12.146;
+% px_per_cm = 12.146;
+px_per_cm = 32.44;
 d = load(fname);
+d.Frame = d.deltatemp_matrix;
 
 % plot raw data
 if plotit

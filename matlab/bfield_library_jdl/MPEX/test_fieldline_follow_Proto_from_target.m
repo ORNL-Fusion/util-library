@@ -2,7 +2,7 @@
 clearvars;
 x0_guess = []; y0_guess = []; force_guess = 0;
 verbose = 0;
-if 1
+if 0
     
     helicon_current = 500;
     current_A = 6400;
@@ -19,13 +19,15 @@ else
     
 %     shot = 7418;  mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
 %      shot = 7477; mytitle = 'I_A = 3300 A, with skimmer';x0_guess = -.5877;y0_guess = -2.8914; force_guess = 1; % shots = 7400 + [77,87,88,92:98,100,101,103];
-    shot = 7277;  mytitle = 'I_A = 3300 A, no skimmer';  x0_guess = -0.604712; y0_guess = -3.026471; force_guess = 0; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
+%     shot = 7277;  mytitle = 'I_A = 3300 A, no skimmer';  x0_guess = -0.604712; y0_guess = -3.026471; force_guess = 0; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
 %     shot = 7278;  mytitle = 'I_A = 3300 A, no skimmer';  x0_guess = -0.604712; y0_guess = -3.026471; force_guess = 0; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
 %     shot = 7674;  mytitle = 'I_A = 3300 A, no skimmer';  x0_guess = -0.591378; y0_guess = -2.477497; force_guess = 0; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
     
 %     shot = 6547; x0_guess = 0.05; y0_guess = -1.7; force_guess = 0;
+
+    shot = 14103;
     if isempty(x0_guess)
-        [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,0,0);
+        [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1);
     else
         [rr_cm_IR,dd_cm_IR,plasma_radius_cm] = fit_IR_data(shot,1,x0_guess,y0_guess,force_guess);
     end
@@ -35,8 +37,7 @@ else
     
 end
 drawnow;
-
-[coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C);
+[coil,current] = build_Proto_coils([helicon_current, current_A, current_B, current_C],config,verbose);
 geo = get_Proto_geometry(0,0,skimmer,target_position,sleeve);
 
 bfield.coil = coil;

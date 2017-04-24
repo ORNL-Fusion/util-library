@@ -24,7 +24,8 @@ Zmin = -1.2;
 Zmax = 1.2;
 
 
-num_test = 20000;
+% num_test = 20000;
+num_test = 1;
 
 t_grid = 0;
 t_BS = 0;

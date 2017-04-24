@@ -49,7 +49,7 @@ ntheta_per_wind = 101;  % >= 100 seems to give reasonable results for B componen
 ibuild = 0;
 for i=1:fil.ncoils
     if abs(cur(i)) > 1e-8
-        [coil0,current0] = build_circular_coil(fil.rr1(i),fil.rr2(i),fil.z0(i),fil.cl(i),fil.nturns(i),fil.nlayers(i),fil.cur(i),ntheta_per_wind);
+        [coil0,current0] = build_circular_coil(fil.rr1(i),fil.rr2(i),fil.z0(i),fil.cl(i),fil.nturns(i),fil.nlayers(i),cur(i),ntheta_per_wind);
         if ibuild == 0
             coil = coil0;
             current = current0;            

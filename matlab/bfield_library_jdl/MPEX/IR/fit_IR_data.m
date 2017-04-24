@@ -1,9 +1,9 @@
 function [rr,dd,radius,angle,x0_final,y0_final] = fit_IR_data(shot,plotit,x0_guess,y0_guess,force)
 % [rr,dd,radius,angle,x0_final,y0_final] = fit_IR_data(shot,plotit,x0_guess,y0_guess,force)
-% 
+%
 % Note: x0,y0_guess in [cm]
 %       rr in [cm]
-% 
+%
 % There are a few ways to run this routine:
 %
 %  1) Supply x0,y0_guess [cm].
@@ -16,7 +16,7 @@ function [rr,dd,radius,angle,x0_final,y0_final] = fit_IR_data(shot,plotit,x0_gue
 %      approximate center point using the mouse.
 %  4) x0,y0_guess == 0 and force is not input.
 %      - find_IR_center will be called and used to supply an initial guess.
-%  
+%
 if nargin < 2
     plotit = 1;
 end
@@ -38,9 +38,9 @@ opt_display = 'off';     % Controls optimization output.  'off','final','iter'
 ax_size = 7;     % plot axes are ax_size*[-1,1,-1,1]
 optimizer = 1;   % 0:fmincon, 1:lsqnonlin w/ LM, 2:lsqnonlin w/ trust-region-reflective
 debug = 0;       % display function evaluations
-radius_fit_power = 1;  % Mimizing function is weighted by r to this power 
-                         % to avoid a fit with a tiny radius in the maximum deltaT region.  
-                         % range of 0.7 to 1 seems to work pretty well.
+radius_fit_power = 1;  % Mimizing function is weighted by r to this power
+% to avoid a fit with a tiny radius in the maximum deltaT region.
+% range of 0.7 to 1 seems to work pretty well.
 
 % Read data and create intial cells
 fname = find_IR_file(shot);
@@ -55,6 +55,7 @@ if manual_select == 0 && x0_guess == 0 && y0_guess == 0
 end
 
 % Plot with initial center guess.  If no guess prompt for mouse select.
+r_guess = [];
 if plotit
     figure;hold on; box on;
     patch(cells.xcell,cells.ycell,data.IRdata1D,'edgecolor','none')
@@ -64,13 +65,19 @@ if plotit
     title(['\DeltaT, ',num2str(shot)],'fontsize',14)
     axis tight;
     axis(ax_size*[-1,1,-1,1])
-
+    
     if manual_select
         title('Click on approximate center position')
         fprintf('Waiting for mouse input\n')
         [x0_guess,y0_guess] = ginput(1);
         fprintf('Click gave x0_guess = %f, y0_guess = %f\n',x0_guess,y0_guess)
-
+        drawnow;
+        title('Click on guess for radius')
+        fprintf('Waiting for mouse input\n')
+        [x0_guess2,y0_guess2] = ginput(1);
+        r_guess = sqrt( (x0_guess2 - x0_guess)^2 + (y0_guess2 - y0_guess)^2);
+        fprintf('Click gave r_guess = %f\n',r_guess)        
+        
         cells = create_IR_cells(data,x0_guess,y0_guess);
         clf;hold on; box on;
         patch(cells.xcell,cells.ycell,data.IRdata1D,'edgecolor','none')
@@ -80,7 +87,7 @@ if plotit
         title('\DeltaT [C]','fontsize',14)
         axis tight;
         axis(ax_size*[-1,1,-1,1])
-    end   
+    end
 end
 fprintf('Using x0_guess = %f, y0_guess = %f [cm]\n',x0_guess,y0_guess)
 
@@ -90,7 +97,12 @@ costt = cos(tevals);
 sintt = sin(tevals);
 
 % dx_step = 1;
-radius_eval = 1.5;  % initial guess [cm]
+if isempty(r_guess)
+    radius_eval = 1.5;  % initial guess [cm]
+else
+    radius_eval = r_guess;
+end
+
 lb = [0.1,-10,-10];
 ub = [6,10,10];
 if force == 1
@@ -112,8 +124,8 @@ elseif optimizer == 1
 elseif optimizer == 2
     fprintf('Using lsqnonlin trust-region-reflective\n')
     opts=optimoptions(@lsqnonlin,'Display',opt_display);
-    xfinal = lsqnonlin(@minfun,x00,[],[],opts);    
-else    
+    xfinal = lsqnonlin(@minfun,x00,[],[],opts);
+else
     error('Bad value for optimizer %d',optimizer)
 end
 radius  = xfinal(1);
@@ -125,7 +137,7 @@ else
     y0_final = xfinal(3) + y0_guess;
 end
 
-if plotit 
+if plotit
     plot(x0_final,y0_final,'mx')
     if force ~= 1
         plot(x00(2),x00(3),'mo')
@@ -135,7 +147,7 @@ fprintf('Found x0,y0,radius of %f,%f,%f\n',x0_final,y0_final,radius)
 if optimizer == 0
     fprintf('Found max function value of %f\n',minfun(xfinal))
 elseif optimizer > 0
-    f = 1/minfun(xfinal);    
+    f = 1/minfun(xfinal);
     fprintf('Found max function value of %f\n',f)
 end
 
@@ -143,10 +155,10 @@ end
 cells = create_IR_cells(data,x0_final,y0_final);
 if debug_plots >= 2 && plotit
     figure;hold on; box on;
-elseif plotit 
-    clf; hold on; box on;    
+elseif plotit
+    clf; hold on; box on;
 end
-if plotit    
+if plotit
     patch(cells.xcell,cells.ycell,data.IRdata1D,'edgecolor','none')
     plot([0,0],[min(min(cells.ycell)),max(max(cells.ycell))],'k-')
     plot([min(min(cells.xcell)),max(max(cells.xcell))],[0,0],'k-')
@@ -162,7 +174,7 @@ if plotit
     plot(radius*cos(theta),radius*sin(theta),'m')
 end
 
-% 
+%
 xmean = mean(cells.xcell);
 ymean = mean(cells.ycell);
 xeval = 1.2*radius*cos(theta);
@@ -193,7 +205,7 @@ if plotit >= 2
     title(num2str(shot),'fontsize',14)
     xlabel('r [cm]','fontsize',14)
     ylabel('\DeltaT','fontsize',14)
-    set(gca,'fontsize',14)    
+    set(gca,'fontsize',14)
 end
 
     function f = maxfun(x)
@@ -215,18 +227,18 @@ end
         if optimizer == 0
             f  = sum(dtmp)*x(1)^radius_fit_power;
         elseif optimizer > 0
-            f = 1/(x(1)^radius_fit_power*sum(dtmp));      
+            f = 1/(x(1)^radius_fit_power*sum(dtmp));
         end
-
-            if debug && length(x) == 3 && length(f) == 1
-                fprintf('x: %f %f %f, y: %f\n',x,f)
-            elseif debug && length(x) == 1 && length(f) == 1
-                fprintf('x: %f, y: %f\n',x,f)
-            end
+        
+        if debug && length(x) == 3 && length(f) == 1
+            fprintf('x: %f %f %f, y: %f\n',x,f)
+        elseif debug && length(x) == 1 && length(f) == 1
+            fprintf('x: %f, y: %f\n',x,f)
+        end
         %     f = [1,1./x(1)]./sum(sum(dtmp));
         
         %     f = 1./dtmp;
-
+        
         if debug_plots >= 2
             plot(xevals-xshift,yevals-yshift,'g.')
         end

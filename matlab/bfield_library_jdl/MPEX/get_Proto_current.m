@@ -82,6 +82,8 @@ switch shot
         
     case {7670, 7680, 7687}
         helicon_current = 210; current_A = 6400; current_B = 0; config = 'flat'; skimmer = 1;        
+    case num2cell(14000:15000)
+        helicon_current = 160; current_A = 4000; current_B = 4000; current_C = 600; config = 'flat'; skimmer = 1;                
     otherwise
         error(['Did not recognize shot: ',num2str(shot)])
 end
