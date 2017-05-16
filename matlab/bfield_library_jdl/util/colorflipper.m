@@ -12,7 +12,7 @@ function cf = colorflipper(num_colors,cmap)
 %'morgan'
 %'rainbow'
 %'rainbow_to_white'
-%Default is jet
+%'matlab_lines'
 
 if nargin < 1
     num_colors = [];
@@ -23,6 +23,7 @@ end
 
 switch lower(cmap)
     case {'jet'}
+        num_colors = 64;
         cf = jet(num_colors);
         return;
     case {'jet_to_white'}
@@ -53,8 +54,10 @@ switch lower(cmap)
         cf = cmap_rainbow;
     case {'magma'}
         cf = cmap_magma;
+    case {'matlab_lines'}
+        cf = matlab_lines(num_colors);
     otherwise
-        cf = hsv(num_colors);
+        cf = matlab_lines;
         return;
 end
 
@@ -62,6 +65,20 @@ if ~isempty(num_colors)
     cf = interpolate_cf(cf,num_colors);
 end
 
+end
+
+function cmap = matlab_lines(num_colors)
+cmap = [...
+                   0   0.447000000000000   0.741000000000000
+   0.850000000000000   0.325000000000000   0.098000000000000
+   0.929000000000000   0.694000000000000   0.125000000000000
+   0.494000000000000   0.184000000000000   0.556000000000000
+   0.466000000000000   0.674000000000000   0.188000000000000
+   0.301000000000000   0.745000000000000   0.933000000000000
+   0.635000000000000   0.078000000000000   0.184000000000000
+];
+nrep = ceil(num_colors/size(cmap,1));
+cmap = repmat(cmap,nrep,1);
 end
 
 function cf2 = interpolate_cf(cf,n)

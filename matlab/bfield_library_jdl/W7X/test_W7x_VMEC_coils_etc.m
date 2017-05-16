@@ -14,9 +14,9 @@ if 1
     
     
     winding_array = [108,108,108,108,108,36,36,8,8];
-    taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.2200, -0.0800, -0.0150, 0.0150]; Inorm = 1.341e6;  %  0kA mimic
+%     taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.2200, -0.0800, -0.0150, 0.0150]; Inorm = 1.341e6;  %  0kA mimic
     % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1950, -0.1050, -0.0150, 0.0150]; Inorm = 1.354e6;  % 11kA mimic
-    % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1700, -0.1300, -0.0150, 0.0150]; Inorm = 1.367e6;  % 22kA mimic
+    taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1700, -0.1300, -0.0150, 0.0150]; Inorm = 1.367e6;  % 22kA mimic
     % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1450, -0.1550, -0.0150, 0.0150]; Inorm = 1.380e6;  % 32kA mimic
     % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, -0.0150, 0.0150]; Inorm = 1.393e6;  % 43kA mimic    
 %     taper_norm = [1, 1, 1, 1, 1, 1, 1, 1, 1]; Inorm = 1;  %  TEST
@@ -64,30 +64,42 @@ fprintf('B0 = %f\n',B0)
 %
 % Poincare
 %
-nsurf = 3;
+nsurf = 10;
 
 if 0
     Rstart = linspace(Rax+.275,Rax+1,nsurf);
     Zstart = Zax;
 elseif 0
     % Define by distance from axis to point
-    Rend = 5.3;
-    Zend = 0.968;
-    L = 0.2;  % m from ax to start surfs from
+    Rend = 5.255;
+    Zend = 1.14;
+    L = 0.9;  % m from ax to start surfs from
     Rstart=Rax-L/sqrt(1+((Zend-Zax)/(Rend-Rax))^2);
     Zstart=L/sqrt(1+((Rend-Rax)/(Zend-Zax))^2)-Zax;
     Rstart = linspace(Rstart,Rend,nsurf);
     Zstart = linspace(Zstart,Zend,nsurf);
+elseif 1
+%     Rstart = 5.351;
+%     Zstart = 0.977;
+%     Rend = 5.299;
+%     Zend = 1.065;
+
+    Rstart = 5.66; Rend = 5.60;
+    Zstart = 0; Zend = 0;
+    Rstart = linspace(Rstart,Rend,nsurf);
+    Zstart = linspace(Zstart,Zend,nsurf);    
 else
     %     Rstart = 5.6;
     %     Zstart = 0;
-    Rstart = linspace(5.9,5.95,3);
-    Zstart = zeros(size(Rstart));
+%     Rstart = linspace(5.9,5.95,3);
+%     Zstart = zeros(size(Rstart));
+    Rstart = 5.924;
+    Zstart = 0;    
 end
 
 poincare_save_name = 'C:\Work\Stellarator\W7X EMC3 modeling\mimic_configs\VAC\0kA\poincare_0deg_3surf_25pt.mat';
 
-npoints_want = 25;
+npoints_want = 30;
 dphi = 0.5*pi/180;
 sort_it = 1;
 
@@ -101,6 +113,7 @@ end
 ves = load_W7X_vessel(0,0,phistart);
 plot(ves.cut.r,ves.cut.z,'k')
 
+adsfadsf
 
 wout_file = 'C:\Work\Stellarator\W7X EMC3 modeling\mimic_configs\VAC\0kA\wout_w7x.0990.1010.1115.1125.+0688.-0250.-0211.vacuum.0kA_mimic.v01.nc';
 wout = load_wout(wout_file);

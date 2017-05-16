@@ -20,8 +20,8 @@ else
 end
 
 if saveit
-    if exist(out_file,'file') == 2
-        inp = input('The output file already exists, are you sure you want to overwrite [Y/N] ??');
+    if exist(save_name,'file') == 2
+        inp = input('The output file already exists, are you sure you want to overwrite [Y/N] ??','s');
         if ~strcmpi(inp,'y')
             error('Stopping')
         end
@@ -49,8 +49,8 @@ end
 
 NFP = bfield.nsym;
 ntran = npoints_want/NFP;
-nsteps_real = ntran*2*pi/dphi;
-nsteps = round(nsteps_real);
+nsteps_real = abs(ntran*2*pi/dphi);
+nsteps = abs(round(nsteps_real));
 if abs(nsteps_real - nsteps) > 1e-6
     error('Make this divisible')
 end
@@ -118,3 +118,5 @@ end
 poinc.Rpoinc = Rpoinc;
 poinc.Zpoinc = Zpoinc;
 poinc.phi = phi_want;
+
+save(save_name,'poinc')
