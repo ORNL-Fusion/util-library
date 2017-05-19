@@ -37,8 +37,8 @@
 !-----------------------------------------------
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
-      TYPE(bsc_coil)     :: coil_temp
-      INTEGER            :: istat
+!      TYPE(bsc_coil)     :: coil_temp
+!      INTEGER            :: istat
       INTEGER     :: nextcur, ig, nc
       REAL(rprec)        :: current, current_first
       CHARACTER(len=200) :: coil_file
@@ -508,7 +508,7 @@
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
       INTEGER :: igroup
-      REAL :: cosp, sinp
+      REAL(rprec) :: cosp, sinp
       REAL(rprec), DIMENSION(3) :: xpt, bvec
 !-----------------------------------------------
 
@@ -607,7 +607,7 @@
 !   L o c a l   V a r i a b l e s
 !-----------------------------------------------
       INTEGER :: igroup
-      REAL :: cosp, sinp
+      REAL(rprec) :: cosp, sinp
       REAL(rprec), DIMENSION(3) :: xpt, avec
 !-----------------------------------------------
 

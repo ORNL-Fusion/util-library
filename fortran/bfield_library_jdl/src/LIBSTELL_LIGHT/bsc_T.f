@@ -2187,8 +2187,8 @@
       REAL(rprec), PARAMETER :: c2f = 0.1_rprec
       REAL(rprec), PARAMETER :: c3f = 3._rprec / 44._rprec
       REAL(rprec), PARAMETER :: c4f = one / 14._rprec
-      REAL(rprec), PARAMETER :: sixth = one / 6._rprec
-      REAL(rprec), PARAMETER :: twelfth = one / 12._rprec
+!      REAL(rprec), PARAMETER :: sixth = one / 6._rprec
+!      REAL(rprec), PARAMETER :: twelfth = one / 12._rprec
       REAL(rprec), PARAMETER :: c1d = 3._rprec / 14._rprec
       REAL(rprec), PARAMETER :: c2d = one / 6._rprec
       REAL(rprec), PARAMETER :: c3d = 9._rprec / 22._rprec

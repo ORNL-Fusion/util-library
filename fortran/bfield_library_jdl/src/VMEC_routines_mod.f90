@@ -70,7 +70,6 @@ Contains
 
   Subroutine bfield_vmec_coils(r,phi,z,Npts,Bout,ierr)
     !   Bout = (:,[Br,Bz,Bt])
-    Use phys_const, Only: pi
     Implicit None
     Real(Real64), Intent(In), Dimension(Npts) :: r, z, phi
     Integer(int32), Intent(In) :: Npts

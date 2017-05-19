@@ -13,7 +13,6 @@ Use fieldline_follow_mod, Only: follow_fieldlines_rzphi
 Use util_routines, Only: get_psin_2d
 Use phys_const, Only: pi
 Use setup_bfield_module
-Use bfield, Only: calc_B_rzphi_general
 
 Implicit none
 
