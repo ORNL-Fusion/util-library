@@ -959,7 +959,7 @@
       REAL(rprec), DIMENSION(:,:), ALLOCATABLE :: this_temp 
       REAL(rprec), DIMENSION(3) :: shift_2
       INTEGER(iprec) :: xyz_dim_use
-      INTEGER(iprec) :: is1, js2, i, j, nm1
+      INTEGER(iprec) :: is1, js2
             
 !  Start of executable code
 
@@ -1591,14 +1591,13 @@
       REAL(rprec), DIMENSION(3), INTENT(out) :: b
       
 !  Local Variable Declaration
-      REAL(rprec), PARAMETER :: third = one / 3
       REAL(rprec), PARAMETER :: sixth = one / 6
       REAL(rprec), PARAMETER :: two_third = 2._rprec / 3
 
-      REAL(rprec), DIMENSION(3) :: rprime, rhoprime, rhophat, phiphat
-      REAL(rprec) :: zprime, fsq, fcube, em, emone, cfcube, geofac1
+      REAL(rprec), DIMENSION(3) :: rprime, rhoprime, rhophat
+      REAL(rprec) :: zprime, fsq,  em, emone, cfcube, geofac1
       REAL(rprec) :: rhopmsq, rhopmag, f, rf, rd, brackg, brackh,              &
-     &   brfac1, brho, bz, aphi, radcc, add_on, fac1, fac2
+     &   brfac1, brho, bz, radcc, add_on, fac1, fac2
      
 !  Coefficients for power series in m
       REAL(rprec) :: c_bz0, c_bz1, c_bz2, c_bz3, c_bz4, c_bz5, c_bz6
@@ -2007,8 +2006,8 @@
          ELSE
             npoints = 0
             DO iseg = 1,SIZE(coil_b % lnod)
-               npoints_this_segment = coil_b % lnod(iseg) /                    &
-     &             len_integrate + 1
+               npoints_this_segment = Int(coil_b % lnod(iseg) /                &
+     &             len_integrate + 1, iprec)
                npoints = npoints + npoints_this_segment
             END DO
          ENDIF
@@ -2016,7 +2015,7 @@
          IF (len_integrate .le. zero) THEN
             npoints = npcirc
          ELSE
-            npoints = twopi * coil_b % rcirc / len_integrate + 1
+            npoints = Int( twopi * coil_b % rcirc/len_integrate+1,iprec)
             npoints = MAX(npcirc,npoints)
          ENDIF
       END SELECT
@@ -2044,8 +2043,8 @@
             IF (len_integrate .le. zero) THEN
                npoints_this_segment = 1
             ELSE
-               npoints_this_segment = coil_b % lnod(iseg) /                    &
-     &             len_integrate + 1
+               npoints_this_segment = Int(coil_b % lnod(iseg) /                &
+     &             len_integrate + 1,iprec)
             ENDIF
             IF (npoints_this_segment .eq. 1) THEN
                positions(1:3,i) = coil_b % xnod(1:3,iseg) +                    &
@@ -2327,7 +2326,7 @@
       REAL(rprec), DIMENSION(3), INTENT(out) :: mean_r
       
 !  Local Variable Declaration
-      INTEGER :: nwire, nm1, iwire, i
+      INTEGER :: nwire, nm1, i
       REAL(rprec) :: coil_length
 
 !  Start of executable code
@@ -2373,7 +2372,7 @@
       REAL(rprec), DIMENSION(3), INTENT(out) :: mean_xnod
       
 !  Local Variable Declaration
-      INTEGER :: nwire, nm1, iwire, i
+      INTEGER :: nwire, nm1, i
 
 !  Start of executable code
 
