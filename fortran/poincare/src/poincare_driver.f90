@@ -88,6 +88,8 @@ Select Case (rmp_type)
     Call setup_bfield_vmec_coils
   Case ('vmec_coils_to_fil')
     Call setup_bfield_vmec_coils_to_fil
+  Case ('bgrid')
+    Call setup_bfield_bgrid    
   Case Default
     Write(*,*) 'Unknown rmp_type in poincare_driver!'
     Write(*,*) 'Current options are:'
@@ -100,6 +102,7 @@ Select Case (rmp_type)
     Write(*,*) '''xpand'''
     Write(*,*) '''vmec_coils'''
     Write(*,*) '''vmec_coils_to_fil'''
+    Write(*,*) '''bgrid'''
     Stop      
 End Select
 

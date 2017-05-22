@@ -81,6 +81,7 @@ add_library( bjdl STATIC
   ${SRC_DIR}/setup_bfield.f90
   ${SRC_DIR}/VMEC_routines_mod.f90
   ${SRC_DIR}/xdr_routines_mod.f90
+  ${SRC_DIR}/bgrid_routines_mod.f90
   ${SRC_DIR}/LIBSTELL_LIGHT/tolower.f90
   ${SRC_DIR}/LIBSTELL_LIGHT/stel_kinds.f
   ${SRC_DIR}/LIBSTELL_LIGHT/safe_open_mod.f90

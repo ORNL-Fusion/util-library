@@ -36,6 +36,7 @@ End Module bfield_typedef
 !                    13 -- ipec response -- pert only
 !                    14 -- VMEC coils file with extcur
 !                    15 -- xdr file
+!                    15 -- bgrid file (FLARE format)
 ! 
 
 
@@ -90,6 +91,7 @@ Contains
     Use biotsavart_module, Only : bfield_bs_cyl
     Use VMEC_routines_mod, Only : bfield_vmec_coils
     Use xdr_routines_mod, Only : bint_xdr_n
+    Use bgrid_module, Only : bfield_bgrid
     Implicit None
     Type(bfield_type), Intent(In) :: bfield
     Integer(int32), Intent(In) :: n
@@ -188,6 +190,11 @@ Contains
       br   = btmp(:,1)
       bz   = btmp(:,3)  ! Note order!
       bphi = btmp(:,2)      
+    Case (16) ! bgrid
+      Call bfield_bgrid(r,phi,z,n,btmp,ierr)
+      br   = btmp(:,1)
+      bz   = btmp(:,2)
+      bphi = btmp(:,3)
     Case Default
       Write(*,*) 'Unknown bfield%method:',bfield%method
       Stop "Exiting from bfield general"

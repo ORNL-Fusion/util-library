@@ -1,0 +1,26 @@
+&bfield_nml
+rmp_type = 'bgrid'
+bgrid_fname = '/home/jjl/BGRID/Bgrid_vac_narrow_mirror_90x82x65'
+
+
+
+/
+
+&settings_nml
+
+Nsym = 5
+
+
+num_pts = 5
+rstart = 5.9d0
+rend = 6.1d0
+zstart = 0.d0
+zend = 0.d0
+phistart_deg = 0.d0
+ntransits = 100
+dphi_line_deg = 0.5d0
+
+follow_both_ways = .true.
+calc_psiN_min = .false.
+
+/
