@@ -35,6 +35,7 @@ End Module bfield_typedef
 !                    12 -- ipec vacuum -- pert only
 !                    13 -- ipec response -- pert only
 !                    14 -- VMEC coils file with extcur
+!                    15 -- xdr file
 ! 
 
 
@@ -88,6 +89,7 @@ Contains
     Use xpand_module, Only: bfield_xpand
     Use biotsavart_module, Only : bfield_bs_cyl
     Use VMEC_routines_mod, Only : bfield_vmec_coils
+    Use xdr_routines_mod, Only : bint_xdr_n
     Implicit None
     Type(bfield_type), Intent(In) :: bfield
     Integer(int32), Intent(In) :: n
@@ -180,7 +182,12 @@ Contains
       Call bfield_vmec_coils(r,phi,z,n,btmp,ierr)
       br   = btmp(:,1)
       bz   = btmp(:,2)
-      bphi = btmp(:,3)                  
+      bphi = btmp(:,3)
+    Case (15) ! Xdr
+      Call bint_xdr_n(r,phi,z,n,btmp,ierr)
+      br   = btmp(:,1)
+      bz   = btmp(:,3)  ! Note order!
+      bphi = btmp(:,2)      
     Case Default
       Write(*,*) 'Unknown bfield%method:',bfield%method
       Stop "Exiting from bfield general"

@@ -707,13 +707,7 @@ Subroutine rk45_fixed_step_integrate_diffuse(bfield,y0,n,x0,dx,nsteps,odefun,you
 !
 ! Modules used:
 Use kind_mod, Only: real64, int32
-Use g3d_module, Only : bfield_geq_bicub
-Use screening_module, Only : bfield_bspline
-Use biotsavart_module, Only : bfield_bs_cyl
-
-#ifdef HAVE_M3DC1
-Use m3dc1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
-#endif
+Use bfield, Only : calc_B_rzphi_general
 Use phys_const, Only : pi
 Implicit None
 
@@ -788,61 +782,19 @@ Do i=1,nsteps
   phi = x
   bval = 0._real64
   ierr_b = 0
-  ierr_rmp = 0
-  If (bfield%method == 0) Then     ! gfile field only
-    Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     !-- turn off verbose
-    Br   = bval(1,1)
-    Bz   = bval(1,2)
-    Bphi = bval(1,3)
-  Elseif (bfield%method == 1) Then ! g + rmp coils
-    Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
-    Call bfield_bs_cyl(RZ(1),phi,RZ(2),bfield%coil,Br_rmp,Bphi_rmp,Bz_rmp)
-    ierr_rmp = 0
-    Br   = bval(1,1) + Br_rmp
-    Bz   = bval(1,2) + Bz_rmp
-    Bphi = bval(1,3) + Bphi_rmp
-  Elseif (bfield%method == 2) Then ! g + screening B-spline
-    Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
-    phi_tmp(1) = phi
-    Call bfield_bspline(RZ(1),phi_tmp,RZ(2),1,bval_screened,ierr_rmp)
-    Br   = bval(1,1) + bval_screened(1,1)
-    Bz   = bval(1,2) + bval_screened(1,2)
-    Bphi = bval(1,3) + bval_screened(1,3)
-#ifdef HAVE_M3DC1
-  Elseif (bfield%method == 3) Then  ! g+m3dc1 
-    phi_tmp(1) = phi
-    bval_tmp =0.d0
-    Call bfield_geq_bicub(bfield%g,RZ(1),RZ(2),1,bval,ierr_b,verbose)     
-    Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),1,bval_tmp,ierr_rmp)
-    bval = bval + bval_tmp
-    Br   = bval(1,1)
-    Bz   = bval(1,2)
-    Bphi = bval(1,3)
-    ierr_rmp = ierr_b + ierr_rmp
-  Elseif (bfield%method == 4) Then  ! m3dc1 total field
-    phi_tmp(1) = phi
-    Call bfield_m3dc1(RZ(1),phi_tmp(1),RZ(2),1,bval,ierr_rmp)
-    Br   = bval(1,1)
-    Bz   = bval(1,2)
-    Bphi = bval(1,3)
-  Elseif (bfield%method == 5) Then  ! m3dc1 2d field only
-    Call bfield_m3dc1_2d(RZ(1),RZ(2),1,bval,ierr_rmp)
-    Br   = bval(1,1)
-    Bz   = bval(1,2)
-    Bphi = bval(1,3)
-#endif    
-  Else
-    Write(*,*) 'Unknown bfield%method in rk45_fixed_step_integrate_diffuse'
-    stop
-  Endif
-  If ((ierr_b .ne. 0) .or. (ierr_rmp .ne. 0)) Then
+  phi_tmp(1) = phi
+  Call calc_B_rzphi_general(bfield,RZ(1),RZ(2),phi_tmp,1,bval(1,1),bval(1,2),bval(1,3),ierr_b) 
+  Br   = bval(1,1)
+  Bz   = bval(1,2)
+  Bphi = bval(1,3)
+  If (ierr_b .ne. 0)Then
     ierr = 1
     i_last_good = i
     Return
   Endif
   
   dL = sqrt(ytmp(1)*ytmp(1) + y(1)*y(1) - 2._real64*ytmp(1)*y(1)*cos(dx) & 
-       + ytmp(2)*ytmp(2) + y(2)*y(2) - 2._real64*ytmp(2)*y(2))
+          + ytmp(2)*ytmp(2) + y(2)*y(2) - 2._real64*ytmp(2)*y(2))
   
   ! B cross z^hat
   perpdir1(1) = Bphi   !r 
@@ -862,16 +814,17 @@ Do i=1,nsteps
   dca = Cos(alpha)
   dsa = Sin(alpha)
   
-  phi_factor = 1 + diff_mag*cos(nfac_diff*x)
+!  phi_factor = 1 + diff_mag*cos(nfac_diff*x)
 
 !  theta = atan2(ytmp(1)-bfield%g%rmaxis,ytmp(2)-bfield%g%zmaxis)*180.d0/3.14159d0
 !  pol_factor = (1/(2.506628274631*sigtheta))*exp(-theta**2/(2*sigtheta**2))*250.d0
 
-  theta = atan2(ytmp(2)-bfield%g%zmaxis,ytmp(1)-bfield%g%rmaxis)
-  pol_factor = (1/(2.506628274631*sigtheta))*exp(-theta**2/(2*sigtheta**2))
+!  theta = atan2(ytmp(2)-bfield%g%zmaxis,ytmp(1)-bfield%g%rmaxis)
+!  pol_factor = (1/(2.506628274631*sigtheta))*exp(-theta**2/(2*sigtheta**2))
 
   
-  delta_x = Sqrt(dmag*dL*phi_factor*pol_factor)
+!  delta_x = Sqrt(dmag*dL*phi_factor*pol_factor)
+  delta_x = Sqrt(dmag*dL)
   
   
   ytmp(1)   = ytmp(1)   + delta_x*(dca*perpdir1(1) + dsa*perpdir2(1))

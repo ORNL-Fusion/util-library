@@ -80,13 +80,31 @@ add_library( bjdl STATIC
   ${SRC_DIR}/bnorm_routines.f90
   ${SRC_DIR}/setup_bfield.f90
   ${SRC_DIR}/VMEC_routines_mod.f90
+  ${SRC_DIR}/xdr_routines_mod.f90
   ${SRC_DIR}/LIBSTELL_LIGHT/tolower.f90
   ${SRC_DIR}/LIBSTELL_LIGHT/stel_kinds.f
   ${SRC_DIR}/LIBSTELL_LIGHT/safe_open_mod.f90
   ${SRC_DIR}/LIBSTELL_LIGHT/biotsavart.f
   ${SRC_DIR}/LIBSTELL_LIGHT/bsc_T.f
+  ${SRC_DIR}/fxdr/cxdrinit.c
+  ${SRC_DIR}/fxdr/cxdrint.c
+  ${SRC_DIR}/fxdr/cxdrclose.c
+  ${SRC_DIR}/fxdr/cxdrreal.c
+  ${SRC_DIR}/fxdr/cxdrdouble.c 
+  ${SRC_DIR}/fxdr/cxdrrmat.c
+  ${SRC_DIR}/fxdr/cxdrdmat.c
+  ${SRC_DIR}/fxdr/cxdrimat.c
+  ${SRC_DIR}/fxdr/cxdrstring.c
+  ${SRC_DIR}/fxdr/cxdrreal64.c
+  ${SRC_DIR}/fxdr/cxdrrewind.c
+  ${SRC_DIR}/fxdr/cxdrrmat64.c
+  ${SRC_DIR}/fxdr/cxdrshort.c
+  ${SRC_DIR}/fxdr/fxdr_module.f90
   ${EXTRA_FILES}
   )
+
+
+
 
 # Installation
 #install( DIRECTORY DESTINATION ${LIB_DIR} )

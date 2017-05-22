@@ -213,7 +213,7 @@ Contains
     !Input/output
     Type(bfield_type), Intent(In) :: bfield
     Logical, Intent(In) :: second_sep
-    Character(Len=120),Intent(In) :: fname_out
+    Character(Len=*),Intent(In) :: fname_out
     ! Local Variables
     Real(real64) :: rx,zx,rx2,zx2
     Integer(int32) :: idir,maxtries,ii,i,nlim,nbox,in1,in2,nsep1,nsep0,nseps,isep
@@ -231,7 +231,7 @@ Contains
     Integer(real64), Parameter :: nsep_div = 1000  ! total number of sep points from fl follow divided by this to output
     !- End of header -------------------------------------------------------------
 
-    Open(99,file=fname_out)
+    Open(99,file=Trim(Adjustl(fname_out)))
     If (second_sep) Then
       nseps = 3
     Else

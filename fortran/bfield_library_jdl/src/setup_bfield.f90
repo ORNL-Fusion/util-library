@@ -25,14 +25,15 @@ Module setup_bfield_module
        m3dc1_phase_shift_deg(max_m3dc1_files) = 0.d0, &
        vmec_extcur_set(max_extcur)            = 0.d0
   
-  Character(Len=120) :: &
+  Character(Len=300) :: &
        rmp_type                         = 'none', &
        gfile_name                       = 'none', &
        rmp_coil_type                    = 'none', &
        m3dc1_filenames(max_m3dc1_files) = 'none', &
        ipec_run_path                    = 'none', &
        xpand_fname                      = 'none', &
-       vmec_coils_file                  = 'none'
+       vmec_coils_file                  = 'none', &
+       xdr_fname                        = 'none'  
 
   Integer(int32) :: &
        m3dc1_time            = -1, &
@@ -41,6 +42,9 @@ Module setup_bfield_module
        xpand_field_eval_type = -1, &
        ipec_itype            =  0
 
+  Logical :: &
+       xdr_check   = .true.,   &
+       xdr_verbose = .true.
   
   Namelist / bfield_nml / &
        rmp_type, &
@@ -49,7 +53,8 @@ Module setup_bfield_module
        m3dc1_filenames, m3dc1_scale_factors, m3dc1_time, m3dc1_nsets, m3dc1_phase_shift_deg,&
        ipec_run_path, ipec_field_eval_type, ipec_itype, &
        xpand_fname, xpand_field_eval_type, &
-       vmec_coils_file, vmec_extcur_set
+       vmec_coils_file, vmec_extcur_set, &
+       xdr_fname, xdr_check, xdr_verbose
   
   ! ------------ BFIELD NAMELIST VARIABLES ----------------
   
@@ -299,6 +304,19 @@ Contains
     bfield%g = g
     Call open_xpand_fields(xpand_fname)    
   End Subroutine setup_bfield_xpand
+
+  ! *********************************************
+  ! ***************  XDR  ***********************
+  ! *********************************************    
+  Subroutine setup_bfield_xdr
+    Use xdr_routines_mod, Only : readbgrid_xdr
+    Implicit None
+    Write(*,'(a)') '-----> BFIELD METHOD IS XDR'
+    Call readbgrid_xdr(xdr_fname,xdr_check,xdr_verbose)
+    bfield%method      = 15
+    bfield%method_2d   = -1
+    bfield%method_pert = -1
+  End Subroutine setup_bfield_xdr
   
 End Module setup_bfield_module
   
