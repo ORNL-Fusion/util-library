@@ -16,7 +16,7 @@ Module setup_bfield_module
   Logical, Parameter        :: m3dc1_toroidal_off_grid = .true.
   Integer(int32), Parameter :: max_rmp_coils           = 12
   Integer(int32), Parameter :: max_extcur              = 100
-  Logical :: setup_bfield_verbose = .true.
+  Logical :: setup_bfield_verbose = .true. ! To be used by calling routines to supress output (particularly in MPI runs)
   ! ------------ BFIELD NAMELIST VARIABLES ----------------
   
   Real(real64) :: &
