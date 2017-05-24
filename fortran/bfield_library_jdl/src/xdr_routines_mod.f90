@@ -14,11 +14,16 @@ real(real64), dimension(:,:,:), allocatable :: brg
 real(real64), dimension(:,:,:), allocatable :: bfg
 real(real64), dimension(:,:,:), allocatable :: bzg
 
+! These ones are not used except when writing to ascii
+integer(int32) :: i1, i2, ixdrs, iganz
+real(real64) :: fnull, bfak, ampby0, bz0
+
 Save
 Private
 Public :: readbgrid_xdr
 Public :: bint_xdr
 Public :: bint_xdr_n
+Public :: write_xdr_to_ascii
 
 contains
 
@@ -35,10 +40,10 @@ logical,Intent(in) :: xdr_check, verbose
 
 character(len=300) :: newfilename
 logical :: l_val=.false., l_check=.false.
-integer(int32) :: ierr, ixdrs,iganz
-integer(int32) :: i1, i2
+integer(int32) :: ierr
+
 integer(int32) :: iz,ir,i 
-real(real64) :: bmean, fnull,bfak,ampby0,bz0
+real(real64) :: bmean
 logical :: debug=.false.
 
 !logical :: verbose = .true.
@@ -142,11 +147,11 @@ If (xdr_check .eqv. .true.) Then
             write(6,*)"Point detected:"
             write(6,*)"bfg (",i,",",ir,",",iz,") = ",bfg(i,ir,iz)
             write(6,*)"bmean(",i,",",ir,",",iz,") = ",bmean
-            brg(i,ir,iz)=0.25d+0*(brg(i,ir-1,iz)+brg(i,ir+1,iz)+ &
+            brg(i,ir,iz)=0.25d0*(brg(i,ir-1,iz)+brg(i,ir+1,iz)+ &
                  brg(i,ir,iz-1)+brg(i,ir,iz+1))
-            bfg(i,ir,iz)=0.25d+0*(bfg(i,ir-1,iz)+bfg(i,ir+1,iz)+ &
+            bfg(i,ir,iz)=0.25d0*(bfg(i,ir-1,iz)+bfg(i,ir+1,iz)+ &
                  bfg(i,ir,iz-1)+bfg(i,ir,iz+1))
-            bzg(i,ir,iz)=0.25d+0*(bzg(i,ir-1,iz)+bzg(i,ir+1,iz)+ &
+            bzg(i,ir,iz)=0.25d0*(bzg(i,ir-1,iz)+bzg(i,ir+1,iz)+ &
                  bzg(i,ir,iz-1)+bzg(i,ir,iz+1))
             l_check=.true.
           endif
@@ -227,7 +232,6 @@ subroutine bint_xdr_n(r,phi,z,n,btmp,ierr)
   Enddo
     
 end subroutine bint_xdr_n
-
 
 !***********************************************************************
 subroutine bint_xdr(r_in,phi_in,z_in,bval,idiv)
@@ -447,6 +451,55 @@ endif
 
 return
 end subroutine bint_xdr
+
+Subroutine write_xdr_to_ascii(filename_out)
+  Use kind_mod
+  Implicit None
+  Character(Len=*) :: filename_out
+  integer(int32) :: iz,ir,i
+  
+  write(*,*) 'Writing file ',Trim(filename_out)  
+  Open(99, file=Trim(filename_out),status="unknown")
+  write(99,*) i1
+  write(99,*) i2
+  write(99,*) rnull
+  write(99,*) ronull
+  write(99,*) eta
+  write(99,*) fnull
+  write(99,*) nperio
+  write(99,*) ialfa
+  write(99,*) knull
+  write(99,*) iganz
+  write(99,*) ampby0
+  write(99,*) bz0
+  write(99,*) bfak
+  write(99,*) k2
+  write(99,*) iald21
+  do iz=1,k2
+    do ir=1,k2
+      do i=1,iald21
+        write(99,'(E18.12)') brg(i,ir,iz)
+      enddo
+    enddo
+  enddo
+  do iz=1,k2
+    do ir=1,k2
+      do i=1,iald21
+        write(99,'(E18.12)') bfg(i,ir,iz)
+      enddo
+    enddo
+  enddo
+  do iz=1,k2
+    do ir=1,k2
+      do i=1,iald21
+        write(99,'(E18.12)') bzg(i,ir,iz)
+      enddo
+    enddo
+  enddo
+  Close(99)
+
+  
+End Subroutine write_xdr_to_ascii
 
 
 end module xdr_routines_mod

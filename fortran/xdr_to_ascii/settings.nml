@@ -1,0 +1,11 @@
+&settings_nml
+xdr_check = .false.
+
+
+filename_in  = '/home/jjl/BGRID/fieldn_mfbe181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.xdr'
+filename_out = '/home/jjl/BGRID/fieldn_mfbe181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.dat'
+
+
+!filename_in  = '/home/jjl/BGRID/fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.xdr'
+!filename_out = '/home/jjl/BGRID/fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.dat'
+/
