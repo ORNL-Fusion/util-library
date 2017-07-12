@@ -1,25 +1,28 @@
 clearvars;
 
-RECALC_MAT = 0;
+RECALC_MAT = 1;
 
-out_dir = 'C:\Work\FLARE\coils';
-out_file = 'Bgrid_vac_22kA_mimic_45x41x32'; % 22kA mimic  -- corrected IS1
-out_file = fullfile(out_dir,out_file);
 
 
 if RECALC_MAT
-    if 1
+    if 0
         
-        % out_file = 'Bgrid_90x82x66.mat';
+        
+        out_dir = 'C:\Work\FLARE\coils';
+        % out_file = 'Bgrid_vac_22kA_mimic_45x41x32_v2'; % 22kA mimic  -- corrected IS1
+        % out_file = 'Bgrid_vac_22kA_mimic_90x82x65_v2'; % 22kA mimic  -- corrected IS1
+        out_file = 'Bgrid_vac_narrow_mirror_90x82x65'; % Narrow mirror
+        out_file = fullfile(out_dir,out_file);
         
         coils_file = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\coils.w7x';
         coil = load_vmec_coils_file(coils_file);
         winding_array = [108,108,108,108,108,36,36,8,8];
-        % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.2200, -0.0800, 0.0150, -0.0150]; Inorm = 1.341e6; out_file = 'Bgrid_w7x_0kA_mimic_180x164x132.mat'; %  0kA mimic
-        % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1950, -0.1050, 0.0150, -0.0150]; Inorm = 1.354e6; out_file = 'Bgrid_w7x_11kA_mimic_180x164x132.mat';  % 11kA mimic
-        taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1700, -0.1300, 0.0150, -0.0150]; Inorm = 1.367e6; out_file = 'Bgrid_vac_22kA_mimic_45x41x32'; % 22kA mimic  -- corrected IS1
-        % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1450, -0.1550, 0.0150, -0.0150]; Inorm = 1.380e6; out_file = 'Bgrid_w7x_32kA_mimic_180x164x132.mat'; % 32kA mimic
-        % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, 0.0150, -0.0150]; Inorm = 1.393e6; out_file = 'Bgrid_w7x_43kA_mimic_180x164x132.mat'; % 43kA mimic
+        taper_norm = [1, 1.02, 1.08, 0.97, 0.88, 0.15, -0.15, 0, 0].*winding_array; Inorm = 12556;  % Narrow mirror
+        % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.2200, -0.0800, 0.0150, -0.0150]; Inorm = 1.341e6;%  0kA mimic
+        % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1950, -0.1050, 0.0150, -0.0150]; Inorm = 1.354e6; % 11kA mimic
+%         taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1700, -0.1300, 0.0150, -0.0150]; Inorm = 1.367e6; % 22kA mimic  -- corrected IS1
+        % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1450, -0.1550, 0.0150, -0.0150]; Inorm = 1.380e6; % 32kA mimic
+        % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, 0.0150, -0.0150]; Inorm = 1.393e6; % 43kA mimic
         
         %     taper_norm = [1,1,1,1,1,1,1,1]; Inorm = 1; out_file = 'Bgrid_coil1_1Amp.txt';
         taper = Inorm*taper_norm./winding_array;
@@ -31,43 +34,73 @@ if RECALC_MAT
         bfield.current = coil.current;
         bfield.nsym = coil.num_periods;
     elseif 0
-        out_dir = 'C:\Work\Stellarator\W7X EMC3 modeling\mimic_configs\VAC\0kA\';
-        out_file = 'Bgrid_bmw_180x164_132.mat';
+        out_dir = 'C:\Work\Stellarator\W7X EMC3 modeling\VMEC_RUNS\W7X_2016\OP2_SE_ref\22kA\';
+        out_file = 'Bgrid_bmw_90x82x65';
+%         out_file = 'Bgrid_fromA_bmw_90x82x65';
+        out_file = fullfile(out_dir,out_file);
+        
         bmw_fname = fullfile(out_dir,'bmw_result.nc');
         bmw = load_bmw_file(bmw_fname);
-        [Arcoeff,Azcoeff,Aphicoeff,spline_info] = prepare_Agrid_splines(bmw);
         
-        bfield.type = 'Aspline';
-        bfield.Arcoeff = Arcoeff;
-        bfield.Azcoeff = Azcoeff;
-        bfield.Aphicoeff = Aphicoeff;
-        bfield.spline_info = spline_info;
+        
+        if 0
+            [Arcoeff,Azcoeff,Aphicoeff,spline_info] = prepare_Agrid_splines(bmw);
+            bfield.type       = 'Aspline';
+            bfield.Arcoeff    = Arcoeff;
+            bfield.Azcoeff    = Azcoeff;
+            bfield.Aphicoeff  = Aphicoeff;
+            bfield.spline_info = spline_info;
+        else
+            [Brcoeff,Bzcoeff,Bphicoeff,spline_info] = prepare_Bgrid_splines(bmw);
+            bfield.type       = 'Bspline';
+            bfield.Brcoeff    = Brcoeff;
+            bfield.Bzcoeff    = Bzcoeff;
+            bfield.Bphicoeff  = Bphicoeff;            
+            bfield.spline_info = spline_info;
+        end
+        
+        
         bfield.nsym = bmw.nsym;
+        
+    elseif 1
+
+        xdr_path = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\';
+
+%         fname_xdr_dump = 'fieldn_mfbe181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.dat';
+%         out_file = 'Bgrid_xdr_mfbe_22kA_90x82x65';
+        
+        fname_xdr_dump = 'fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.dat';
+        out_file = 'Bgrid_xdr_altern_22kA_90x82x65';
+
+        out_dir = xdr_path;
+
+        
+        out_file = fullfile(out_dir,out_file);        
+
+        xdr = read_xdr_dump_file(xdr_path,fname_xdr_dump);
+        
+        bfield.type = 'xdr';
+        bfield.nsym = xdr.nperio;
+        bfield.xdr = xdr;
+        
         
     else
         error('do something')
     end
     
-    out_file = fullfile(out_dir,out_file);
-    
-    % Rmin = 4.25;
-    % Rmin = 4.3;
-    % Rmax = 6.4;
-    % Zmin = -1.15;
-    % Zmax = 1.15;
-    
-    Rmin = 4.25;
-    Rmax = 6.45;
+%     Rmin = 4.25;
+%     Rmax = 6.45;
+%     Zmin = -1.2;
+%     Zmax = 1.2;
+    Rmin = 4.3;
+    Rmax = 6.4;
     Zmin = -1.2;
-    Zmax = 1.2;
+    Zmax = 1.2;    
     
-    
-    nz = 45;
-    nr = 41;
+    nz = 45*2;  % Seems to work ok
+    nr = 41*2; 
     nsym = 5;
-    nphi = 33; % This is number of planes including 0 and 2*pi/5.  One fewer will be written to the file
-    
-    
+    nphi = 33*2; % This is number of planes including 0 and 2*pi/5.  One fewer will be written to the data files (not the .mat file though)
     
     if exist(out_file,'file') == 2
         inp = input('The output file already exists, are you sure you want to overwrite [Y/N] ??');
@@ -82,24 +115,32 @@ if RECALC_MAT
     fprintf('dR = %f\n',dr)
     fprintf('dZ = %f\n',dz)
     fprintf('dphi (deg) = %f\n',dphi*180/pi)
-    
-    
+        
     r = linspace(Rmin,Rmax,nr);
     z = linspace(Zmin,Zmax,nz);
     p = linspace(0,2*pi/nsym,nphi);
     
     nowarn = 0;
+    Br = zeros(nr,nz,nphi);
+    Bz = zeros(nr,nz,nphi);
+    Bphi = zeros(nr,nz,nphi);
+    t0 = tic;
     for kt = 1:nphi
         fprintf('Working on kt %d of %d\n',kt,nphi)
         for jz = 1:nz
-            %         fprintf('    jz %d of %d\n',jz,nz)
+%             fprintf('    jz %d of %d\n',jz,nz)
             for ir = 1:nr
                 [Bout,ierr] = bfield_general_rzphi(r(ir),z(jz),p(kt),bfield,nowarn);
+%                 if ierr ~= 0
+%                     a=1
+%                 end
                 Br(ir,jz,kt) = Bout.br;
                 Bz(ir,jz,kt) = Bout.bz;
                 Bphi(ir,jz,kt) = Bout.bphi;
             end
+% aa=1;
         end
+%         if toc(t0) > 10
     end
     
     

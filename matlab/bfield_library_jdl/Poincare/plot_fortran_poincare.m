@@ -51,10 +51,34 @@ end
 
 if 1
     % 165274 <------------------------*********************--------------------
-    run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '0deg'; mytitle='test';shot = 165274;% times = 3750;
+%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = 'test'; mytitle='165274';shot = 165274;% times = 3750;
+    run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '-120'; mytitle='165274';shot = 165274;% times = 3750;    
+%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '2_1'; mytitle='2/1';shot = 165274;% times = 3750;    
+%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '3_1'; mytitle='3/1';shot = 165274;% times = 3750;    
+%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '4_1'; mytitle='4/1';shot = 165274;% times = 3750;    
+%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '4_1_3turns'; mytitle='4/1';shot = 165274;% times = 3750;    
+%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = 'normal_to_compare_to_3'; mytitle='4/1';shot = 165274;% times = 3750;   
+%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '3turn_test'; mytitle='4/1';shot = 165274;% times = 3750; 
     gfile_name = 'C:\Work\DIII-D\165274\kinetic\g165274.02120';
 end
 
+if 0
+%     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '60surf';mytitle = 'bmw';
+% run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\mfbe\'; suffix = '60surf';mytitle = 'mfbe';
+% run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '40surf_v2';mytitle = 'extender';
+run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '60surf';mytitle = 'extender';
+% run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '40surf_18deg';mytitle = 'bmw';
+end
+
+if 0 
+%     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = 'find_lcfs';mytitle = 'bmw';
+%     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\mfbe\'; suffix = 'find_lcfs';mytitle = 'mfbe';
+end
+
+MYCOL = 'k';
+NEWFIG = 0;
+TITLE = 0;
+AXES_LABELS = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % DONE SETTING RUN PATH
 %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -85,14 +109,18 @@ poinc = read_poincare_file(run_path,fname,fname2,g);
 %------------------------------------------------------------------------------------------------------------------------------------
 
 if 1
-%     figure; hold on; box on;
+    if NEWFIG; figure; hold on; box on; end
     for ifile = 1:2
-        plot(poinc.rline{ifile},poinc.zline{ifile},'r.','markersize',2)
+        plot(poinc.rline{ifile},poinc.zline{ifile},strcat(MYCOL,'.'),'markersize',2)
     end
+    if AXES_LABELS
     xlabel('R (m)','fontsize',12)
     ylabel('Z (m)','fontsize',12)
     set(gca,'fontsize',12)
-    title(mytitle)
+    end
+    if TITLE
+        title(mytitle)
+    end
 %     contour(g.r,g.z,psiN_g.',[0.5,0.6,0.7,0.8,0.9,1.0],'linewidth',2);
     if plot_ts
         R(1:40)=1.94;

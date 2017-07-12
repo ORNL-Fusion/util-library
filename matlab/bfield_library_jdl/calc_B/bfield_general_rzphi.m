@@ -30,12 +30,22 @@ switch bfield.type
         Bout.br = Br;
         Bout.bphi = Bphi;
         Bout.bz = Bz;
+    case 'Bspline'
+        [Br,Bz,Bphi,ierr]=bfield_Bspline(R,Z,phi_radian,bfield.Brcoeff,bfield.Bzcoeff,bfield.Bphicoeff,bfield.spline_info);              
+        Bout.br = Br;
+        Bout.bphi = Bphi;
+        Bout.bz = Bz;        
     case 'MPEX'
         [Br,Bz] = bfield_circular_coils(bfield.coil,bfield.current,R,Z);
         Bout.br = Br;
         Bout.bz = Bz;
         Bout.bphi = zeros(size(Br));
         ierr = 0;
+    case 'xdr'
+        [Br,Bz,Bphi,ierr] = bint_xdr(R,Z,phi_radian,bfield.xdr,nowarn);
+        Bout.br = Br;
+        Bout.bphi = Bphi;
+        Bout.bz = Bz;
     otherwise
         fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
@@ -51,8 +61,10 @@ switch bfield.type
 %         fprintf('     xpand_vac\n')
 %         fprintf('     xpand_pert\n')
         fprintf('     Bgrid\n')
-        fprintf('     Agrid\n')
+        fprintf('     Aspline\n')
+        fprintf('     Bspline\n')        
         fprintf('      MPEX\n')
+        fprintf('      xdr\n')
         error('quitting')
         ierr = 1;
         return;

@@ -68,6 +68,7 @@ fpol = polyval(g.fpol_coeffs,psiN);
 bt1 = g.bcentr*g.rzero./R1;
 ic = find(psiN <= 1.0);
 if ~isempty(ic)
+%     fpol(ic) = dbsval(psiN,3,g.xk,g.mw,g.fpol_coeffs_spline);
     bt1(ic) = fpol(ic)./R1(ic).';
 end
 

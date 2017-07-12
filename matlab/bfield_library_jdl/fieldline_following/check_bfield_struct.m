@@ -159,7 +159,14 @@ switch bfield.type
             fprintf([errstr,errstr2,'type structure must contain field "Arcoeff"\n'])
             ierr = 1;
             return;
-        end            
+        end        
+    case {'xdr'}
+        errstr2 = 'for xdr';
+        if ~isfield(bfield,'xdr')
+            fprintf([errstr,errstr2,'type structure must contain field "xdr"\n'])
+            ierr = 1;
+            return;
+        end        
     otherwise
         fprintf([errstr,'Did not recognize bfield type\n'])
         fprintf('Supported types are:\n')
@@ -176,6 +183,7 @@ switch bfield.type
         fprintf('     xpand_pert\n') 
         fprintf('     xpand_vac\n') 
         fprintf('     Bgrid\n')
+        fprintf('     xdr\n')
         ierr = 1;
         error('Throwing error')        
         return;

@@ -48,6 +48,8 @@ g.ip_sign = -sign(g.cpasma);
 
 g.bicub_coeffs = get_psi_bicub_coeffs(g);
 g.fpol_coeffs = polyfit(g.pn,g.fpol,7);
+g.xk = dbsnak(g.mw,g.pn,3);
+g.fpol_coeffs_spline = dbsint(g.mw,g.pn,g.fpol,3,g.xk);
 g.filename = filename;
 
 disp(' >> Saving .mat version of gfile')

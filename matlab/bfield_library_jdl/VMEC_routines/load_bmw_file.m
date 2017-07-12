@@ -4,9 +4,9 @@ fprintf('Reading bmw file\n')
 ncid = netcdf.open(fname,'NC_NOWRITE');
 
 % DIMENSIONS
-dimid = netcdf.inqDimID(ncid,'r'); [~,bmw.nr]= netcdf.inqDim(ncid,dimid);
-dimid = netcdf.inqDimID(ncid,'z'); [~,bmw.nz]= netcdf.inqDim(ncid,dimid);
-dimid = netcdf.inqDimID(ncid,'phi'); [~,bmw.nphi]= netcdf.inqDim(ncid,dimid);
+dimid = netcdf.inqDimID(ncid,'r');   [~,bmw.nr  ] = netcdf.inqDim(ncid,dimid);
+dimid = netcdf.inqDimID(ncid,'z');   [~,bmw.nz  ] = netcdf.inqDim(ncid,dimid);
+dimid = netcdf.inqDimID(ncid,'phi'); [~,bmw.nphi] = netcdf.inqDim(ncid,dimid);
 
 % VARIABLES
 varid = netcdf.inqVarID(ncid,'rmin'); bmw.rmin = netcdf.getVar(ncid,varid);
@@ -19,6 +19,10 @@ i = 1;
 name = 'ar_grid'; varid = netcdf.inqVarID(ncid,name); bmw.Ar{i}   = netcdf.getVar(ncid,varid);
 name = 'ap_grid'; varid = netcdf.inqVarID(ncid,name); bmw.Aphi{i} = netcdf.getVar(ncid,varid);
 name = 'az_grid'; varid = netcdf.inqVarID(ncid,name); bmw.Az{i}   = netcdf.getVar(ncid,varid);
+
+name = 'br_grid'; varid = netcdf.inqVarID(ncid,name); bmw.Br{i}   = netcdf.getVar(ncid,varid);
+name = 'bp_grid'; varid = netcdf.inqVarID(ncid,name); bmw.Bphi{i} = netcdf.getVar(ncid,varid);
+name = 'bz_grid'; varid = netcdf.inqVarID(ncid,name); bmw.Bz{i}   = netcdf.getVar(ncid,varid);
 
 
 netcdf.close(ncid);

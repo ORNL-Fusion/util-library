@@ -1,15 +1,12 @@
-function b = read_xdr_dump_file(out_path,fname)
+function xdr = read_xdr_dump_file(out_path,fname)
 % clearvars;
 
 % out_path = 'C:\Work\Stellarator\ALL_W7X_WORK\xdr_dump_read\OUTPUT\';
 % fname = 'field181x181x96.w7x.1000_1000_1000_1000_+0750_+0750.vac.out';
 
-
-
-
 % check for mat file, create it if it does not exist
 fn_mat = [out_path,fname(1:end-3),'mat'];
-if exist(fn_mat) ~= 2
+if exist(fn_mat,'file') ~= 2
     fn_out = [out_path,fname];
     disp('Loading data from .out file and writing .mat file');
     fid = fopen(fn_out,'r');
@@ -64,37 +61,35 @@ if exist(fn_mat) ~= 2
     disp('Saving .mat file')
     save(fn_mat);
     
-    
-    
 else
     disp('Loading data from .mat file');
     load(fn_mat);
 end
 
-b.fname = fname;
-b.i1 = i1;
-b.i2 = i2;
-b.rnull = rnull;
-b.ronull = ronull;
-b.eta = eta;
-b.fnull = fnull;
-b.nperio = nperio;
-b.ialfa = ialfa;
-b.knull = knull;
-b.iganz = iganz;
-b.ampby0 = ampby0;
-b.bz0 = bz0;
-b.bfak = bfak;
-b.k2 = k2;
-b.iald21 = iald21;
-b.brg = brg;
-b.bfg = bfg;
-b.bzg = bzg;
+xdr.fname = fname;
+xdr.i1 = i1;
+xdr.i2 = i2;
+xdr.rnull = rnull;
+xdr.ronull = ronull;
+xdr.eta = eta;
+xdr.fnull = fnull;
+xdr.nperio = nperio;
+xdr.ialfa = ialfa;
+xdr.knull = knull;
+xdr.iganz = iganz;
+xdr.ampby0 = ampby0;
+xdr.bz0 = bz0;
+xdr.bfak = bfak;
+xdr.k2 = k2;
+xdr.iald21 = iald21;
+xdr.brg = brg;
+xdr.bfg = bfg;
+xdr.bzg = bzg;
 
 
 if iganz ~= 0
     error('I think this means no stellarator symmetry!')
 end
-if iganz ~= 0 | ampby0 ~= 0 | bz0 ~= 0 | fnull ~= 1
+if iganz ~= 0 || ampby0 ~= 0 || bz0 ~= 0 || fnull ~= 1
     error('old variables I have assumed have these values')
 end

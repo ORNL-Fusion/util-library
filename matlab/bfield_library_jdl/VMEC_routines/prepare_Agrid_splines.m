@@ -2,6 +2,10 @@ function [Arcoeff,Azcoeff,Aphicoeff,spline_info] = prepare_Agrid_splines(mgrid_o
 
 nord = 5;
 
+% Check that last plane is missing
+if abs(diff(mod(mgrid_or_bmw.phi([1,end]),2*pi/mgrid_or_bmw.nsym))) < 2*eps
+    error('This routine assumes that the grid does not include the last periodic plane, would be easy to generalize')
+end
 
 nr = mgrid_or_bmw.nr;
 nz = mgrid_or_bmw.nz;
@@ -12,8 +16,8 @@ Z =  mgrid_or_bmw.Z;
 phi= mgrid_or_bmw.phi; phi(nphi) = 2*pi/mgrid_or_bmw.nsym;
 
 % Prepare grid nodes
-Rnot = dbsnak(nr,R,nord);
-Znot = dbsnak(nz,Z,nord);
+Rnot   = dbsnak(nr,R,nord);
+Znot   = dbsnak(nz,Z,nord);
 Phinot = dbsnak(nphi,phi,nord);
 
 tic
@@ -21,19 +25,17 @@ fprintf('Preparing B-spline coefficients for A\n')
 tic;
 nc = length(mgrid_or_bmw.scale_factor);
 for ic = 1:nc
-    
-    
     fprintf('Working on ic %d of %d\n',ic,nc)
-    Ar = mgrid_or_bmw.Ar{ic};
-    Ar(:,:,nphi) = Ar(:,:,1);
-    Az = mgrid_or_bmw.Az{ic};
-    Az(:,:,nphi) = Az(:,:,1);
+    Ar   = mgrid_or_bmw.Ar{ic};    
+    Az   = mgrid_or_bmw.Az{ic};
     Aphi = mgrid_or_bmw.Aphi{ic};
+    Ar(:,:,nphi)   = Ar(:,:,1);
+    Az(:,:,nphi)   = Az(:,:,1);
     Aphi(:,:,nphi) = Aphi(:,:,1);
 
-    Arcoeff{ic}=dbs3in(nr,R,nz,Z,nphi,phi,Ar,nr,nz,nord,nord,nord,Rnot,Znot,Phinot);
-    Azcoeff{ic}=dbs3in(nr,R,nz,Z,nphi,phi,Az,nr,nz,nord,nord,nord,Rnot,Znot,Phinot);
-    Aphicoeff{ic}=dbs3in(nr,R,nz,Z,nphi,phi,Aphi,nr,nz,nord,nord,nord,Rnot,Znot,Phinot);
+    Arcoeff{ic}  = dbs3in(nr,R,nz,Z,nphi,phi,Ar  ,nr,nz,nord,nord,nord,Rnot,Znot,Phinot);
+    Azcoeff{ic}  = dbs3in(nr,R,nz,Z,nphi,phi,Az  ,nr,nz,nord,nord,nord,Rnot,Znot,Phinot);
+    Aphicoeff{ic}= dbs3in(nr,R,nz,Z,nphi,phi,Aphi,nr,nz,nord,nord,nord,Rnot,Znot,Phinot);
 end
 fprintf('Spline prep took %f seconds.\n',toc); tic;
 
