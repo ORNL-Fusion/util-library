@@ -1,4 +1,4 @@
-function [geo] = get_Proto_geometry(plotit,newfig,add_skimmer,target_position,add_sleeve)
+function [geo] = get_Proto_geometry(plotit,newfig,add_skimmer,target_position,add_sleeve,add_reflector)
 % target_position = 1, target is at 7.5  (+1")
 % target_position = 2, target is at 11.5 (+5")
 if nargin < 1
@@ -8,13 +8,16 @@ if nargin < 2
     newfig = 1;
 end
 % if nargin < 3 
-%     add_skimmer = 0;
+%     add_skimmer = 1;
 % end
 % if nargin < 4
-%     target_position = 1;
+%     target_position = 3;
 % end
 % if nargin < 5
-%     add_sleeve = 0;
+%     add_sleeve = 1;
+% end
+% if nargin < 6
+%     add_reflector = 1;
 % end
 
 in2m = 0.0254;
@@ -31,9 +34,19 @@ if target_position == 1
 elseif target_position == 2
     target.z = mean([cmax(11),cmin(12)]) + 5*in2m;  % 11.5 + 5"
     target.r = 4.5*in2m/2;  %4.5" diameter
+elseif target_position == 3
+    target.z = mean([cmax(11),cmin(12)]);  % 11.5 
+    target.r = 4.5*in2m/2;  %4.5" diameter    
 else
     error(['Did not recognize target_position:',num2str(target_position)])
 end
+
+% Subreflector
+reflector.r = 5.8e-2;
+reflector.zmid = (cmax(6) + cmin(7))/2;
+reflector.z1 = reflector.zmid - 2.5e-2;  % Finite width for finding intersections
+reflector.z2 = reflector.zmid + 2.5e-2;  % Finite width for finding intersections
+reflector.z = [reflector.z1,reflector.z2];
 
 % "Sleeve"
 sleeve.r = 0.08/2;  % ID = 80mm
@@ -90,6 +103,9 @@ if add_sleeve
     vessel.z(kill_inds) = [];
     vessel.r(kill_inds) = [];
 end
+if add_reflector
+    ves_add.reflector = reflector; 
+end
 
 % OVERLY COMPLICATED METHOD TO ADD COMPONENTS
 if ~isempty(ves_add)
@@ -97,31 +113,32 @@ if ~isempty(ves_add)
     for i = 1:length(names)
         vessel.z = [vessel.z,ves_add.(names{i}).z];
         vessel.r = [vessel.r,ves_add.(names{i}).r.*ones(size(ves_add.(names{i}).z))];
-    end
-    [vessel.z,sortinds] = sort(vessel.z);
-    vessel.r = vessel.r(sortinds);
-    
-    vessel.z2 = vessel.z(1);
-    vessel.r2 = vessel.r(1);
-    for i=2:length(vessel.z)-1
-        if (vessel.r(i) ~= vessel.r(i-1)) && ~(vessel.z(i) == vessel.z(i-1))
-            if vessel.r(i) > vessel.r(i-1)
-                vessel.z2(end+1) = vessel.z(i-1);
-                vessel.r2(end+1) = vessel.r(i);
-            else
-                vessel.z2(end+1) = vessel.z(i);
-                vessel.r2(end+1) = vessel.r(i-1);
+        
+        [vessel.z,sortinds] = sort(vessel.z);
+        vessel.r = vessel.r(sortinds);
+        
+        vessel.z2 = vessel.z(1);
+        vessel.r2 = vessel.r(1);
+        for j=2:length(vessel.z)-1
+            if (vessel.r(j) ~= vessel.r(j-1)) && ~(vessel.z(j) == vessel.z(j-1))
+                if vessel.r(j) > vessel.r(j-1)
+                    vessel.z2(end+1) = vessel.z(j-1);
+                    vessel.r2(end+1) = vessel.r(j);
+                else
+                    vessel.z2(end+1) = vessel.z(j);
+                    vessel.r2(end+1) = vessel.r(j-1);
+                end
             end
+            vessel.z2(end+1) = vessel.z(j);
+            vessel.r2(end+1) = vessel.r(j);
         end
-        vessel.z2(end+1) = vessel.z(i);
-        vessel.r2(end+1) = vessel.r(i);
+        vessel.z2(end+1) = vessel.z(end);
+        vessel.r2(end+1) = vessel.r(end);
+        vessel.r = vessel.r2;
+        vessel.z = vessel.z2;
+        vessel = rmfield(vessel,'r2');
+        vessel = rmfield(vessel,'z2');
     end
-    vessel.z2(end+1) = vessel.z(end);
-    vessel.r2(end+1) = vessel.r(end);
-    vessel.r = vessel.r2;
-    vessel.z = vessel.z2;
-    vessel = rmfield(vessel,'r2');
-    vessel = rmfield(vessel,'z2');
 end
 
 % USED FOR TERMINATING FIELDLINES
@@ -140,7 +157,7 @@ geo.cmin = cmin;
 geo.vessel_clip_r = vessel_clip_r;
 geo.vessel_clip_z = vessel_clip_z;
 geo.sleeve = sleeve;
-    
+geo.refelector = reflector;
 
 if plotit
     if newfig
