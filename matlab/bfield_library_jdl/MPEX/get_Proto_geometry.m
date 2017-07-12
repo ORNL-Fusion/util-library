@@ -49,7 +49,7 @@ reflector.z2 = reflector.zmid + 2.5e-2;  % Finite width for finding intersection
 reflector.z = [reflector.z1,reflector.z2];
 
 % "Sleeve"
-sleeve.r = 0.08/2;  % ID = 80mm
+sleeve.r = 0.086/2;  % ID = 86mm
 sleeve.z1 = cmin(7);
 sleeve.z2 = sleeve.z1 + 24*in2m; %upstream coil 7, to down 9.  24" 
 sleeve.z = [sleeve.z1,sleeve.z2];
