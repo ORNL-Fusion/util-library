@@ -63,7 +63,8 @@ if MAKE_PLOT
     skimmer = 1;
     target_position = 2;
     sleeve = 1;
-    geo = get_Proto_geometry(1,1,skimmer,target_position,sleeve);    
+    add_reflector = 1;
+    geo = get_Proto_geometry(1,1,skimmer,target_position,sleeve,add_reflector);    
     plot(Zeval,Reval,'ko')
     plot(f.z,f.r,'b','linewidth',2)
     plot(f.z(end),f.r(end),'rx','markersize',12)
@@ -86,7 +87,8 @@ fprintf('Point (R,Z) = (%6.3f,%6.3f) [m] maps to radius %8.5f [m] at Z = %6.3f [
 skimmer = 1;
 target_position = 2;
 sleeve = 1;
-geo = get_Proto_geometry(1,1,skimmer,target_position,sleeve);
+add_reflector = 1;
+geo = get_Proto_geometry(1,1,skimmer,target_position,sleeve,add_reflector);
 plot(Zeval,Reval,'ko')
 plot(f.z,f.r,'b','linewidth',2)
 plot(f.z(end),f.r(end),'rx','markersize',12)
@@ -120,7 +122,8 @@ psi_eval = calc_psi_mpex(coil,current,Reval,Zeval);
 skimmer = 1;
 target_position = 2;
 sleeve = 1;
-geo = get_Proto_geometry(1,1,skimmer,target_position,sleeve);
+add_reflector = 1;
+geo = get_Proto_geometry(1,1,skimmer,target_position,sleeve,add_reflector);
 plot(Zeval,Reval,'ko')
 contour(Z1d,R1d,psi2d.',logspace(-5.5,log10(max(max(psi2d))),20))
 contour(Z1d,R1d,psi2d.',[1,1]*psi_eval,'k','linewidth',3)

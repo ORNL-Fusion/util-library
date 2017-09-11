@@ -64,7 +64,7 @@ if isempty(rguess)
     rx = rb(ix);
     zx = zb(ix);
     if quiet == 0
-        disp([' Very rough first X-point. [Bp,R,Z] = ',num2str([bpx,rx,zx])])
+        disp(['  Very rough first X-point. [Bp,R,Z] = ',num2str([bpx,rx,zx])])
     end
 else
  
@@ -74,7 +74,7 @@ else
     b=bfield_geq_bicub(g,rx,zx);
     bpx = sqrt(b.br.^2 + b.bz.^2);    
     if quiet == 0
-        disp([' Very rough first X-point is supplied: [Bp,R,Z] = ',num2str([bpx,rx,zx])])
+        disp(['  Very rough first X-point is supplied: [Bp,R,Z] = ',num2str([bpx,rx,zx])])
     end
 end
     
@@ -116,7 +116,7 @@ if refine == 1
 
   end
   if quiet == 0 
-    disp([' First Xpoint. [Bp,R,Z] = ',num2str([bpx,rx,zx])]);
+    disp(['  First Xpoint. [Bp,R,Z] = ',num2str([bpx,rx,zx])]);
   end
 end
 
@@ -170,7 +170,7 @@ if second == 1
           end
       end
       if quiet == 0
-          disp([' Second Xpoint. [Bp,R,Z] = ',num2str([bpx2,rx2,zx2])]);
+          disp(['  Second Xpoint. [Bp,R,Z] = ',num2str([bpx2,rx2,zx2])]);
       end
   end
 

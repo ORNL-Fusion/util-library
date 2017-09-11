@@ -15,18 +15,21 @@ if 1
     plasma_radius_cm = 1;
     target_position = 2;
     sleeve = 1;
+    add_reflector = 0;
 else
     shot = 7477;
     [helicon_current,current_A,current_B,config,skimmer] = get_Proto_current(shot);
 end
 
-if 1
-    [coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C);
+if 0
+    current_in = [helicon_current,current_A,current_B,current_C];
+    [coil,current] = build_Proto_coils(current_in,config,verbose);
     bfield.coil = coil;
     bfield.current = current;
     bfield.type = 'just_coils';
 else
-    [coil,current] = build_Proto_coils_jackson(helicon_current,current_A,current_B,config,verbose,current_C);
+    current_in = [helicon_current,current_A,current_B,current_C];
+    [coil,current] = build_Proto_coils_jackson(current_in,config,verbose);
     bfield.coil = coil;
     bfield.current = current;
     bfield.type = 'MPEX';    
@@ -69,8 +72,8 @@ if 1
     [rcoil,zcoil] = get_coil_cross_sections;
     for i = 1:size(rcoil,1)
         plot(zcoil(i,:),rcoil(i,:),'r')
-    end
-    geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve);
+    end    
+    geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve,add_reflector);
 end
 toc
 

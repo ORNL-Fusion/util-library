@@ -26,7 +26,7 @@ fname = ['C:\Work\ADAS\adf11_all\acd',suffix,'\','acd',suffix,'_',element,'.dat'
 [te_acd,ne_acd,acd] = read_adas_adf11_file(fname); acd1 = squeeze(acd(1,:,:));
 
 if 1
-    add_slow = 0;
+    add_slow = 1;
 
     n0_mfp = 1/(sqrt(2)*n0_coll_xs*nn0)
     

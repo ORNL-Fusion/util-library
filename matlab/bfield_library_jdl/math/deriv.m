@@ -1,6 +1,7 @@
 function yp = deriv(x,y)
 % function yp = deriv(x,y)
 % Should be the same as idl deriv
+% Uses 3 pt Lagrange interpolating polynomial
 
 % clearvars;
 % tic;
@@ -19,7 +20,7 @@ yp(i) = y(i)*(dx1(i) + dx2(i))/(dx1(i)*dx2(i)) - y(i+1)*dx2(i)/(dx1(i)*dx1(i+1))
 yp(2:n-1) = y(1:n-2).*dx1(2:n-1)./(dx1(1:n-2).*dx2(1:n-2)) + y(2:n-1)./dx1(2:n-1) - y(2:n-1)./dx1(1:n-2) - y(3:n).*dx1(1:n-2)./(dx2(1:n-2).*dx1(2:n-1));
 i = n;
 yp(i) = -y(i-2)*dx1(i-1)/(dx1(i-2)*dx2(i-2)) + y(i-1)*dx2(i-2)/(dx1(i-2)*dx1(i-1)) - y(i)*(dx2(i-2) + dx1(i-1))/(dx2(i-2)*dx1(i-1));
-toc
+% toc
 
 % figure; hold on;
 % plot(x,y,'b-.')

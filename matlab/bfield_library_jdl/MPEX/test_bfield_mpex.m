@@ -9,19 +9,20 @@ current_C = [];
 config = 'flat';
 verbose = 1;
 
-
-[coil,current] = build_Proto_coils(helicon_current,current_A,current_B,config,verbose,current_C);
+current_in = [helicon_current,current_A,current_B,current_C];
+[coil,current] = build_Proto_coils(current_in,config,verbose);
 bfield.coil = coil;
 bfield.current = current;
 bfield.type = 'just_coils';
 
-[coil2,current2] = build_Proto_coils_jackson(helicon_current,current_A,current_B,config,verbose,current_C);
+current_in = [helicon_current,current_A,current_B,current_C];
+[coil2,current2] = build_Proto_coils_jackson(current_in,config);
 bfield2.coil = coil2;
 bfield2.current = current2;
 bfield2.type = 'MPEX';
 
 nowarn = 0;
-npts = 100;
+npts = 5;
 Z = linspace(0,5,npts);
 R = linspace(0.001,.15,npts);
 phi_radian = linspace(-pi,pi,npts);

@@ -14,7 +14,7 @@ if 0
     plasma_radius_cm = 1;
     target_position = 2;
     sleeve = 1;
-    
+    add_reflector = 0;
 else
     
 %     shot = 7418;  mytitle = 'I_A = 6368 A, no skimmer';  x0_guess = -.5512;y0_guess = -2.533; force_guess = 1; %shots = 7400 + [0,3:6,8,10,12:13,16,17,18];
@@ -34,11 +34,12 @@ else
     [helicon_current,current_A,current_B,config,skimmer,current_C] = get_Proto_current(shot);
     target_position = 1;
     sleeve = 0;
+    add_reflector = 0;
     
 end
 drawnow;
 [coil,current] = build_Proto_coils([helicon_current, current_A, current_B, current_C],config,verbose);
-geo = get_Proto_geometry(0,0,skimmer,target_position,sleeve);
+geo = get_Proto_geometry(0,0,skimmer,target_position,sleeve,add_reflector);
 
 bfield.coil = coil;
 bfield.current = current;
@@ -49,7 +50,7 @@ bfield.vessel_clip_phi = 0;
 bfield.stop_at_vessel = 1;
 bfield.nsym = 1;
 
-num_lines = 25; 
+num_lines = 6; 
 % rr = linspace(1e-3,0.04,num_lines);
 rr = linspace(1e-3,2.0*plasma_radius_cm/100,num_lines);  % Initial R positions
 zz = geo.target.z*ones(size(rr));                        % Initial Z positions
@@ -81,7 +82,7 @@ set(gca,'fontsize',14)
 xlabel('Z [m]','fontsize',14)
 ylabel('R [m]','fontsize',14)
 title(['Shot ',num2str(shot)])
-geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve);
+geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve,add_reflector);
 axis([0.5,3.5,0,0.15])
 
 figure; hold on; box on;
@@ -109,7 +110,7 @@ for i = 1:size(rcoil,1)
     plot(zcoil(i,:),rcoil(i,:),'r')
 end
 % geo = get_Proto_geometry(1,0,skimmer);
-geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve);
+geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve,add_reflector);
 plot(geo.target.z*[1,1],geo.target.r*[0,1],'k','linewidth',3)
 plot([geo.helicon.z1,geo.helicon.z2],geo.helicon.r*[1,1],'k','linewidth',3)
 axis([0.5,3.5,0,0.15])
@@ -121,7 +122,7 @@ figure; hold on; box on;
 xlabel('Z [m]','fontsize',14)
 ylabel('R [m]','fontsize',14)
 set(gca,'fontsize',14)
-geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve);
+geo = get_Proto_geometry(1,0,skimmer,target_position,sleeve,add_reflector);
 colorbar;
 title(['Shot ',num2str(shot)])
 

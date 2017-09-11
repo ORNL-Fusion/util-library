@@ -4,7 +4,7 @@ fname_mat = [filename,'.mat'];
 if exist(fname_mat,'file') ~= 2
     disp([' >>>> Reading gfile ',filename])
 else
-    disp([' >>>> Reading .mat version of gfile ',fname_mat])    
+    disp(['>>>> Reading .mat version of gfile ',fname_mat])    
     load(fname_mat);
     return;    
 end
@@ -13,16 +13,18 @@ fid = fopen(filename,'r');
 if fid == -1
     error(['Could not open file: ',filename])
 end
-line = fgetl(fid); g.ecase = sscanf(line(1:8),'%8s'); sscanf(line(8*6+1:8*6+3),'%4i'); g.mw = sscanf(line(53:56),'%4i'); g.mh = sscanf(line(57:60),'%4i');
+line = fgetl(fid); g.ecase = sscanf(line(1:8),'%8s'); sscanf(line(8*6+1:8*6+3),'%4i'); 
+g.mw = sscanf(line(53:56),'%4i');  % Number of horizontal R grid points
+g.mh = sscanf(line(57:60),'%4i');  % Number of vertical Z grid points
 line = fscanf(fid,'%f%f%f%f%f',5); g.xdim = line(1); g.zdim = line(2); g.rzero = line(3); g.rgrid1 = line(4); g.zmid = line(5);
 line = fscanf(fid,'%f%f%f%f%f',5); g.rmaxis = line(1); g.zmaxis = line(2); g.ssimag = line(3); g.ssibry = line(4); g.bcentr = line(5);
 line = fscanf(fid,'%f',5); g.cpasma = line(1);
 fscanf(fid,'%f',5);
-g.fpol = fscanf(fid,'%f',g.mw);
-g.pres = fscanf(fid,'%f',g.mw);
-g.ffprim = fscanf(fid,'%f',g.mw);
-g.pprime = fscanf(fid,'%f',g.mw);
-g.psirz = fscanf(fid,'%f',[g.mw,g.mh]);
+g.fpol = fscanf(fid,'%f',g.mw);  % Poloidal current function in m-T = RBt
+g.pres = fscanf(fid,'%f',g.mw);  % Plasma pressure in Nt/m2
+g.ffprim = fscanf(fid,'%f',g.mw); % FF'(psi) in (mT)%2/(Wb/rad)
+g.pprime = fscanf(fid,'%f',g.mw); % P'(psi) in (Nt/m2)/(Wb/rad)
+g.psirz = fscanf(fid,'%f',[g.mw,g.mh]);  % Poloidal flux in Weber/rad
 g.qpsi = fscanf(fid,'%f',g.mw);
 line = fscanf(fid,'%i',2); g.nbdry = line(1); g.limitr = line(2);
 g.bdry = fscanf(fid,'%f',[2,g.nbdry]);
@@ -52,6 +54,11 @@ g.xk = dbsnak(g.mw,g.pn,3);
 g.fpol_coeffs_spline = dbsint(g.mw,g.pn,g.fpol,3,g.xk);
 g.filename = filename;
 
-disp(' >> Saving .mat version of gfile')
+%try to parse filename for shot and time
+[~,f2,f3] = fileparts(filename);
+g.shot = sscanf(f2(2:end),'%d');
+g.gfilename = [f2,f3];
+
+disp('>>> Saving .mat version of gfile')
 save(fname_mat,'g');
 
