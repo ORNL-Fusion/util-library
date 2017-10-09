@@ -1,16 +1,15 @@
-function [te,ne,cc] = read_adas_adf11_file(fname)
-% te = eV, ne = cm^-3, cc = cc(iz,ne,te)
-% coeff = zeros(iz1max,idmaxd,itmaxd);
-% clearvars; 
-
-% type = 'scd';
-
-% fname = ['C:\Work\ADAS\ADF11\','scd96_h.dat'];
-% fname = ['C:\Work\ADAS\adf11_all\scd96\','scd96_n.dat'];
+function data = read_adas_adf11_file(fname)
+% reads scd, acd, plt, prb, ccd, etc
+%
+% Note: Old call:
+%   [te,ne,cc] = read_adas_adf11_file(fname)
+%   te = eV, ne = cm^-3, cc = cc(iz,ne,te)
+%   old cc was (iz,ne,te), new rate is (ne,te,iz)
+%   
 
 fid = fopen(fname,'r');
 if fid == -1    
-    error(['Did not find output file: ',fname])
+    error('Did not find output file: %s\n',fname)
 end
 
 % First line
@@ -19,10 +18,10 @@ strs = fscanf(fid,'%s',1); species_name = strs(2:end);
 strs = fgetl(fid); note = strs(2:end);
 
 fprintf('Reading file: %s\n',fname);
-fprintf('Species: %s\n',species_name);
-fprintf('Nuclear charge %d\n',izmax);
-fprintf('Number of densities, temperatures = [%d,%d]\n',idmaxd,itmaxd);
-fprintf('Lowest, highest charge = [%d,%d]\n',iz1min,iz1max);
+fprintf('    Species, nuclear charge: %s, %d\n',species_name,izmax);
+% fprintf('    Nuclear charge %d\n',izmax);
+% fprintf('    Number of densities, temperatures = [%d,%d]\n',idmaxd,itmaxd);
+% fprintf('    Lowest, highest charge = [%d,%d]\n',iz1min,iz1max);
 
 % Read ne, Te
 junk = fgetl(fid);
@@ -30,25 +29,31 @@ ddensd = fscanf(fid,'%f\n',idmaxd);  %log10(ne) (cm-3)
 dtevd = fscanf(fid,'%f\n',itmaxd);   %log10(Te) (eV)
 
 % Loop over charge state and read collisional radiative coefficients
-% coeff = zeros(iz1max,idmaxd,itmaxd);
+% coeff = zeros(idmaxd,itmaxd,iz1max);
 for iz = 1:iz1max
     junk = fgetl(fid);  % could mine this a bit
     coeff_tmp = fscanf(fid,'%f\n',itmaxd*idmaxd);
-    coeff(iz,:,:) = reshape(coeff_tmp,idmaxd,itmaxd);  % Should be log10 of coefficient    
+    coeff(:,:,iz) = reshape(coeff_tmp,idmaxd,itmaxd);  % Should be log10 of coefficient    
 end
+fclose(fid);
 % 
 % figure; hold on; box on;
 % for iz = 1:iz1max
 %     plot(dtevd,squeeze(coeff(iz,:,:)))
 % end
 
-ne = 10.^ddensd;
-te = 10.^dtevd;
-cc = 10.^coeff;
+data.ne_log10    = ddensd;
+data.te_log10    = dtevd;
+data.coeff_log10 = coeff;
+data.ne          = 10.^ddensd;
+data.te          = 10.^dtevd;
+data.coeff       = 10.^coeff;
+data.charge      = izmax;
+
 % figure; hold on; box on;
 % for iz = 1:iz1max
-% %     plot(te,squeeze(cc(iz,:,:)))
-%     plot(te,squeeze(cc(iz,1,:)))
+% %     plot(te,squeeze(coeff(:,:,iz)))
+%     plot(te,squeeze(coeff(1,:,iz)))
 % end
 % set(gca,'xscale','log')
 % set(gca,'yscale','log')
