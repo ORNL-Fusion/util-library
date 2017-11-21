@@ -17,8 +17,12 @@ nums = fscanf(fid,'%d %d %d %d %d'); izmax = nums(1); idmaxd = nums(2); itmaxd =
 strs = fscanf(fid,'%s',1); species_name = strs(2:end);
 strs = fgetl(fid); note = strs(2:end);
 
-fprintf('Reading file: %s\n',fname);
-fprintf('    Species, nuclear charge: %s, %d\n',species_name,izmax);
+if izmax ~= iz1max
+    error('Have to update this')
+end
+
+fprintf('Reading %s file: %s\n',species_name,fname);
+% fprintf('    Species, nuclear charge: %s, %d\n',species_name,izmax);
 % fprintf('    Nuclear charge %d\n',izmax);
 % fprintf('    Number of densities, temperatures = [%d,%d]\n',idmaxd,itmaxd);
 % fprintf('    Lowest, highest charge = [%d,%d]\n',iz1min,iz1max);
@@ -42,13 +46,22 @@ fclose(fid);
 %     plot(dtevd,squeeze(coeff(iz,:,:)))
 % end
 
+for iz = 1:iz1max
+    [tt,nn] = ndgrid(dtevd,ddensd);
+    data.interp_log10(iz).interpolant = griddedInterpolant(tt,nn,coeff(:,:,iz).','spline');
+end
+    
+
+
+
 data.ne_log10    = ddensd;
 data.te_log10    = dtevd;
 data.coeff_log10 = coeff;
 data.ne          = 10.^ddensd;
 data.te          = 10.^dtevd;
 data.coeff       = 10.^coeff;
-data.charge      = izmax;
+data.charge      = iz1max;
+% data.interpolant_log10 = interpolant_log10;
 
 % figure; hold on; box on;
 % for iz = 1:iz1max

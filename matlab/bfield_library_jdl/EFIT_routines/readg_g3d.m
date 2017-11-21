@@ -5,7 +5,8 @@ if exist(fname_mat,'file') ~= 2
     disp([' >>>> Reading gfile ',filename])
 else
     disp(['>>>> Reading .mat version of gfile ',fname_mat])    
-    load(fname_mat);
+    S = load(fname_mat);
+    g = S.g;
     return;    
 end
 
