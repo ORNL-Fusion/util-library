@@ -84,7 +84,7 @@ fprintf('Poincare took %f seconds.\n',toc); tic;
 
 if sort_it
 %     [Rax,Zax] = find_axis(bfield,phistart,Rax_guess,Zax_guess);
-    warning('NOT FINDING AXIS, USING GUESS!!')
+    warning('NOT FINDING AXIS FOR SORTING, USING GUESS!!')
     Rax = Rax_guess;
     Zax = Zax_guess;
     tpoinc = atan2(Zpoinc-Zax,Rpoinc-Rax);
@@ -113,7 +113,7 @@ if plot_settings.plotit
     xlabel('R [m]','fontsize',14)
     ylabel('Z [m]','fontsize',14)
     set(gca,'fontsize',14);
-    title(strcat('\Phi = ',sprintf('%f',phi_want*180/pi)));
+    title(strcat('\phi = ',sprintf('%f',phi_want*180/pi)));
 end
 poinc.Rpoinc = Rpoinc;
 poinc.Zpoinc = Zpoinc;

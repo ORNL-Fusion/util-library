@@ -1,5 +1,6 @@
 clearvars;
 
+This is replaced by make_bgrid.m
 
 if 0
     out_dir = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\';

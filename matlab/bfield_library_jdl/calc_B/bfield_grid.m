@@ -1,5 +1,9 @@
 function [Br,Bz,Bphi]=bfield_grid(R,Z,P_rad,Bgrid,nowarn)
 % Bgrid has, R,Z,phi,nr,nz,nphi,dR,dZ,dphi,nsym,Br,Bz,Bphi
+persistent already_warned
+if isempty(already_warned)
+    already_warned = 0;
+end
 
 npts = length(R);
 Br=zeros(npts,1);
@@ -33,8 +37,9 @@ for i = 1:npts
         iz = floor(interp1(Bgrid.Z(:),1:Bgrid.nz,Z(i)));
         iphi = floor(interp1(Bgrid.phi,1:Bgrid.nphi,P_rad_tmp));
         if isnan(ir) || isnan(iz)
-            if ~nowarn
+            if ~nowarn && ~already_warned
                 warning('Point(s) off grid in bfield_grid --> returning toroidal field = 1 there')
+                already_warned = 1;
             end
             Bphi(i) = 1;
             continue;
@@ -48,8 +53,9 @@ for i = 1:npts
         iz = floor( (Z(i) - Bgrid.Z(1))/dz_grid ) + 1;
         iphi = floor( (P_rad_tmp(i) - Bgrid.phi(1)) / dphi_grid ) + 1;
         if ir < 1 || ir >= Bgrid.nr || iz < 1 || iz >= Bgrid.nz
-            if ~nowarn
+            if ~nowarn && ~already_warned
                 warning('Point(s) off grid in bfield_grid --> returning toroidal field = 1 there')
+                already_warned = 1;
             end
             Bphi(i) = 1;
             continue;
