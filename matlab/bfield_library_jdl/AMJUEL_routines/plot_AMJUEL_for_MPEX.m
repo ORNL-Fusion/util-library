@@ -19,11 +19,12 @@ n0_coll_xs = pi*(2*rH2)^2;
 nn0 = 3.3e19;
 
 % suffix = '50'; element='w';
-suffix = '96'; element='h';
-fname = ['C:\Work\ADAS\adf11_all\scd',suffix,'\','scd',suffix,'_',element,'.dat'];  % Effective ionization coefficients (cm^-3/s)
-[te_scd,ne_scd,scd] = read_adas_adf11_file(fname); scd1 = squeeze(scd(1,:,:));
-fname = ['C:\Work\ADAS\adf11_all\acd',suffix,'\','acd',suffix,'_',element,'.dat'];  % Effective recombination coefficients (cm^-3/s)
-[te_acd,ne_acd,acd] = read_adas_adf11_file(fname); acd1 = squeeze(acd(1,:,:));
+% suffix = '96'; element='h';
+suffix = '12'; element='h';
+fname = ['C:\Work\ADAS\scd',suffix,'\','scd',suffix,'_',element,'.dat'];  % Effective ionization coefficients (cm^-3/s)
+scd = read_adas_adf11_file(fname); scd1 = squeeze(scd.coeff(:,:,1));
+fname = ['C:\Work\ADAS\acd',suffix,'\','acd',suffix,'_',element,'.dat'];  % Effective recombination coefficients (cm^-3/s)
+acd = read_adas_adf11_file(fname); acd1 = squeeze(acd.coeff(:,:,1));
 
 if 1
     add_slow = 1;
@@ -37,10 +38,10 @@ if 1
     ne_test = logspace(log10(1e13),log10(1e13),1);  % cm3
     
     for i=1:length(ne_test)
-        sv_iz_adas(:,i) = interp_adas_rate_coefficient(Te_test,ne_test,te_scd,ne_scd,scd1);
+        sv_iz_adas(:,i) = interp_adas_rate_coefficient(Te_test,ne_test,scd.te,scd.ne,scd1);
         sv_iz(:,i) = eval_AMJUEL_H4_fit(data.H4.reaction_215,ne_test(i),Te_test);               
         sv_rc(:,i) = eval_AMJUEL_H4_fit(data.H4.reaction_218,ne_test(i),Te_test);
-        sv_rc_adas(:,i) = interp_adas_rate_coefficient(Te_test,ne_test,te_acd,ne_acd,acd1);
+        sv_rc_adas(:,i) = interp_adas_rate_coefficient(Te_test,ne_test,acd.te,acd.ne,acd1);
         sv_H2_diss_iz(:,i) = ...
             eval_AMJUEL_H4_fit(data.H4.reaction_225 ,ne_test(i),Te_test) + ...
             eval_AMJUEL_H4_fit(data.H4.reaction_229 ,ne_test(i),Te_test) + ...

@@ -15,7 +15,7 @@ end
 
 extrap_val = NaN;
 if log_interp == 1
-    sigma_v = exp(interp2(log(te_adas),log(ne_adas),log(coeff_adas),log(Te),log(ne),my_method,extrap_val));    
+    sigma_v = 10.^(interp2(log10(te_adas),log10(ne_adas),log10(coeff_adas),log10(Te),log10(ne),my_method,extrap_val));    
 else
     sigma_v = interp2(te_adas,ne_adas,coeff_adas,Te,ne,my_method,extrap_val);
 end
