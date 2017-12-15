@@ -150,6 +150,7 @@ Contains
   ! *********************************************
   ! ***************    G+M3DC1 ******************
   ! *********************************************
+#ifdef HAVE_M3DC1
   Subroutine setup_bfield_g_and_m3dc1
     Use g3d_module, Only : readg_g3d
     Use M3DC1_routines_mod, Only : prepare_m3dc1_fields, m3dc1_factors, &
@@ -235,7 +236,7 @@ Contains
     If (setup_bfield_verbose) Write(*,*) '---------> M3DC1 scale factor: ',m3dc1_factors(1:m3dc1_nsets)
     If (m3dc1_toroidal_on_err .AND. setup_bfield_verbose) Write(*,'(a)') '---------> M3DC1 fields will be set to B=Bt=1 off grid!'
   End Subroutine setup_bfield_m3dc1_as
-  
+#endif
   ! *********************************************
   ! *************** IPEC ************************
   ! *********************************************    

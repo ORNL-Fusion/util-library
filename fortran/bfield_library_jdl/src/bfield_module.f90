@@ -85,7 +85,9 @@ Contains
   Subroutine calc_B_rzphi_general(bfield,r,z,phi,n,br,bz,bphi,ierr_out)
     Use kind_mod, Only: real64, int32
     Use g3d_module, Only : bfield_geq_bicub
+#ifdef HAVE_M3DC1
     Use M3DC1_routines_mod, Only : bfield_m3dc1, bfield_m3dc1_2d
+#endif
     Use ipec_module, Only : bfield_ipec
     Use xpand_module, Only: bfield_xpand
     Use biotsavart_module, Only : bfield_bs_cyl
@@ -125,6 +127,7 @@ Contains
       Write(*,*) 'method == 2, pavel screening not implemented'
       Stop "Quitting from bfield general"
     Case (3) ! g+m3dc1
+#ifdef HAVE_M3DC1  
       Call bfield_geq_bicub(bfield%g,r,z,n,btmp,ierr)
       br   = btmp(:,1)
       bz   = btmp(:,2)
@@ -132,17 +135,24 @@ Contains
       Call bfield_m3dc1(r,phi,z,n,btmp,ierr)
       br   = btmp(:,1) + br
       bz   = btmp(:,2) + bz 
-      bphi = btmp(:,3) + bphi      
+      bphi = btmp(:,3) + bphi
+#else
+      Stop "Compiled without m3dc1 support"
+#endif
     Case (4)  ! m3dc1 only
       Call bfield_m3dc1(r,phi,z,n,btmp,ierr)
       br   = btmp(:,1)
       bz   = btmp(:,2)
       bphi = btmp(:,3)
     Case (5)  ! m3dc1 2d
+#ifdef HAVE_M3DC1  
       Call bfield_m3dc1_2d(r,z,n,btmp,ierr)
       br   = btmp(:,1)
       bz   = btmp(:,2)
       bphi = btmp(:,3)
+#else
+      Stop "Compiled without m3dc1 support"
+#endif      
     Case (6) ! just coils
       Call bfield_bs_cyl(r,phi,z,n,bfield%coil,br,bphi,bz)
     Case (7) ! ipec eq only

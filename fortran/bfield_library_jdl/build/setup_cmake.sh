@@ -41,6 +41,10 @@ then
 	  -DCMAKE_C_COMPILER=gcc                \
 	  -DCMAKE_CXX_COMPILER=g++              \
 	  ..
+elif [ "$MACHINE_ID" == "LAP111076" ]
+then
+    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
+	  ..
 elif [ "$MACHINE_ID" == "fusion2.ornl.gov" ]
 then
     # fusion2

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.5)
 project ( bjdl_lib )
 enable_language (Fortran)
 
@@ -26,7 +26,7 @@ enable_language (Fortran)
 
 
 # M3D-C1 Options
-set (USE_M3DC1 1)  
+set (USE_M3DC1 0)  
 set ( M3DC1_INCLUDE_PATH $ENV{FIO_INSTALL_DIR}/include)
 
 # Compiler flags
@@ -61,7 +61,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 
 add_library( bjdl STATIC
-  ${SRC_DIR}/bfield_module.f90
+  ${SRC_DIR}/bfield_module.F90
   ${SRC_DIR}/bspline90_22.f90
   ${SRC_DIR}/DIIID_routines_mod.f90
   ${SRC_DIR}/fieldline_follow_mod.F90
@@ -78,7 +78,7 @@ add_library( bjdl STATIC
   ${SRC_DIR}/biotsavart_module.f90
   ${SRC_DIR}/coil_typedef.f90
   ${SRC_DIR}/bnorm_routines.f90
-  ${SRC_DIR}/setup_bfield.f90
+  ${SRC_DIR}/setup_bfield.F90
   ${SRC_DIR}/VMEC_routines_mod.f90
   ${SRC_DIR}/xdr_routines_mod.f90
   ${SRC_DIR}/bgrid_routines_mod.f90
