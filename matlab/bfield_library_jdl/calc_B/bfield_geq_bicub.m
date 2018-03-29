@@ -78,10 +78,10 @@ Bout.bphi = bt1.';
 
 if ~isempty(iroff) | ~isempty(izoff) %#ok<*OR2>
     if ~nowarn & ~isempty(iroff)
-        warning(['Point off grid in R: R = ',num2str(R1(iroff)),'. [Rmin,Rmax] = [',num2str(g.r(1)),',',num2str(g.r(g.mw)),']'])
+        warning(['Point off grid in R: R = ',num2str(R1(iroff)),'. [Rmin,Rmax] = [',num2str(g.r(2)),',',num2str(g.r(g.mw-1)),']'])
     end
     if ~nowarn & ~isempty(izoff)
-        warning(['Point off grid in Z: Z = ',num2str(Z1(izoff)),'. [Zmin,Zmax] = [',num2str(g.z(1)),',',num2str(g.z(g.mh)),']'])
+        warning(['Point off grid in Z: Z = ',num2str(Z1(izoff)),'. [Zmin,Zmax] = [',num2str(g.z(2)),',',num2str(g.z(g.mh-1)),']'])
     end
     if toroidal_off_grid
         if ~nowarn

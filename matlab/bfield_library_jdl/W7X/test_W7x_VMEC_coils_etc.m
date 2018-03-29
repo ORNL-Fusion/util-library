@@ -3,7 +3,7 @@ clearvars;
 
 
 
-if 1
+if 0
     coils_file = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\coils.w7x';
     nfp_coil_plot = 5;
     coil = load_vmec_coils_file(coils_file);
@@ -29,7 +29,8 @@ if 1
     bfield.current = coil.current;
     bfield.nsym = coil.num_periods;
 else
-    temp = load('C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\Bgrid_w7x_0kA_mimic_180x164x132.mat');
+    temp = load('C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_w7x_standard_1MA_90x82x65.mat');
+%     temp = load('C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\Bgrid_w7x_0kA_mimic_180x164x132.mat');
     Bgrid = temp.Bgrid;
     
     bfield.type = 'Bgrid';
@@ -66,8 +67,8 @@ fprintf('B0 = %f\n',B0)
 %
 nsurf = 10;
 
-if 0
-    Rstart = linspace(Rax+.275,Rax+1,nsurf);
+if 1
+    Rstart = linspace(Rax+.1,Rax+.3,nsurf);
     Zstart = Zax;
 elseif 0
     % Define by distance from axis to point
@@ -97,9 +98,10 @@ else
     Zstart = 0;    
 end
 
-poincare_save_name = 'C:\Work\Stellarator\W7X EMC3 modeling\mimic_configs\VAC\0kA\poincare_0deg_3surf_25pt.mat';
+% poincare_save_name = 'C:\Work\Stellarator\W7X EMC3 modeling\mimic_configs\VAC\0kA\poincare_0deg_3surf_25pt.mat';
+poincare_save_name = 'C:\Work\test.poinc.mat';
 
-npoints_want = 30;
+npoints_want = 100;
 dphi = 0.5*pi/180;
 sort_it = 1;
 

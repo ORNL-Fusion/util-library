@@ -5,6 +5,9 @@ function plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty,quiet)
 % gfile_name = 'C:\Work\EMC3_revival\gfiles\g1090814013.00743_604';
 % g = readg_g3d(gfile_name);
 
+if isstr(g)
+    g = readg_g3d(g);
+end
 if nargin < 2
     npsi = 50;
     psi_min = 0.6;
@@ -54,12 +57,13 @@ set(h,'interpreter','none');
 
 
 % Find the xpt(s)
-% xpt_info = find_xpt_jl(g,1,1,1e-8,1,[],[],0.1);
-xpt_info = find_xpt_jl(g,1,1,1e-8,quiet);
+xpt_info = find_xpt_jl(g,1,1,1e-8,1);
 xr1 = xpt_info.rx;
 xz1 = xpt_info.zx;
 xr2 = xpt_info.rx2;
 xz2 = xpt_info.zx2;
+
+contour(g.r,g.z,psiN_g.',[1,1]*calc_psiN(g,xr2,xz2),'k-','linewidth',2)
 
 plot(xr1,xz1,'bx'); text(xr1+0.01,xz1,'x1','fontsize',8)
 plot(xr2,xz2,'b*'); text(xr2+0.02,xz2,'x2','fontsize',8)
