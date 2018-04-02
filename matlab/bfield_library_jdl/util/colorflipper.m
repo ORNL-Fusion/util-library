@@ -23,7 +23,9 @@ end
 
 switch lower(cmap)
     case {'jet'}
-        num_colors = 64;
+        if isempty(num_colors)
+            num_colors = 64;
+        end
         cf = jet(num_colors);
         return;
     case {'jet_to_white'}
