@@ -1,4 +1,5 @@
 function [icurve_near_L,err_near_L,R_L,Z_L] = move_L_on_C(L,rline,zline)
+% [icurve_near_L,err_near_L,R_L,Z_L] = move_L_on_C(L,rline,zline)
 % Moves a distance L along the curve defined by
 % arrays rline,zline.  dL is defined as the
 % linear distance between curve points.

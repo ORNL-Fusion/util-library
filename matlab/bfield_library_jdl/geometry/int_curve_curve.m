@@ -1,4 +1,5 @@
 function [pint1,ierr,found_ind1,found_ind2,int_count]=int_curve_curve(line1_r,line1_z,line2_r,line2_z,first,verbose)
+% [pint1,ierr,found_ind1,found_ind2,int_count]=int_curve_curve(line1_r,line1_z,line2_r,line2_z,first,verbose)
 % Curve is defined by array of points,
 % First curve is stepped and both curves linearly interpolated to find intersection with second curve.
 % If first == true then first int is returned, else last int is.
