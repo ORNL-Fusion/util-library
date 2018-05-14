@@ -6,7 +6,7 @@ if nargin < 1
     error('fname required')
 end
 if nargin < 2
-    psin_range = [0.95,1.1];
+    psin_range = [0.90,1.1];
 end
 if nargin < 3
     te_max = [];
@@ -64,7 +64,9 @@ if BIN_TS
 end
 
 tefit = evaluate_tanh_fit(profs.tetanh,psiNfit-shift);
-tifit = evaluate_tanh_fit(profs.titanh,psiNfit-shift);
+if profs.titanhok
+    tifit = evaluate_tanh_fit(profs.titanh,psiNfit-shift);
+end
 nefit = evaluate_tanh_fit(profs.ntanh,psiNfit-shift);        
 
 if SCALE_TI == 1
@@ -91,7 +93,7 @@ else
 end
 plot(psiNfit+shift,tefit,[col,'-'],'linewidth',3)
 ylabel('T_e [keV]','fontsize',12)
-title('Profiles vs \Psi_N','fontsize',12)
+title('Profiles vs \psi_N','fontsize',12)
 set(gca,'fontsize',12)
 
 subplot(n1_sub,n2_sub,2); hold on; box on; set(gca,'xlim',xrange); 
@@ -112,8 +114,10 @@ if ~isempty(ti_max)
     set(gca,'ylim',[0,ti_max]);
 end
 errorbar(profs.psi_ti+shift,profs.tidat,profs.ti_err,col,'marker','none','linestyle','none')
-plot(psiNfit+shift,tifit,[col,'-'],'linewidth',3)
-xlabel('\Psi_N','fontsize',12)
+if profs.titanhok
+    plot(psiNfit+shift,tifit,[col,'-'],'linewidth',3)
+end
+xlabel('\psi_N','fontsize',12)
 ylabel('T_i [keV]','fontsize',12)
 set(gca,'fontsize',12)
 

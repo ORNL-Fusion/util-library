@@ -1,10 +1,46 @@
 clearvars;
 
 check_Ralph_plot = 0;
-check_cx_data = 1; 
+check_cx_data = 0; 
 sanity_check_H3_323 = 0;  % Try to reproduce AMJUEL plot
 
 data = return_AMJUEL_data;
+
+check_236A0 = 1;
+if check_236A0
+    Te_test = logspace(0,4,25);
+    ne_test = [1e10,1e12,1e13,1e14,1e15];
+    
+    for i=1:length(ne_test)
+        sv_rc(:,i) = eval_AMJUEL_H4_fit(data.H4.reaction_236A0,ne_test(i),Te_test);
+    end
+    
+    s = styflipper(length(ne_test));
+    syms = ['o','x','.','>','s'];
+    figure; hold on; box on
+    for i=1:length(ne_test)
+        plot(Te_test,sv_rc(:,i),'b','linewidth',2,'linestyle',char(s{i}),'marker',syms(i))
+    end
+    set(gca,'xscale','log')
+    set(gca,'yscale','log')
+    xlabel('T_e (eV)','fontsize',12)
+    ylabel('<\sigmav> (cm^3/s)','fontsize',12)
+    set(gca,'fontsize',12)
+    axis([1e0,1e4,10^-16,10^-11])
+    grid on;
+    
+    suffix = '93'; element='c';
+    fname = ['C:\Work\ADAS\adf11_all\acd',suffix,'\','acd',suffix,'_',element,'.dat'];  % Effective recombination coefficients (cm^-3/s)
+    acd = read_adas_adf11_file(fname);
+    charge_index = 1;
+    for i = 1:length(ne_test)
+        sv_rc_adas(:,i) = interp_adas_rate_coefficient(Te_test,ne_test(i),acd.te,acd.ne,acd.coeff(:,:,charge_index));
+    end
+    for i=1:length(ne_test)
+        plot(Te_test,sv_rc_adas(:,i),'r','linewidth',2,'linestyle',char(s{i}),'marker',syms(i))
+    end
+%     aa=1;
+end
 
 if sanity_check_H3_323
     Ti_test = logspace(-1,3,100);

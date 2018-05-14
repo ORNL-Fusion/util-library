@@ -1,6 +1,7 @@
 clearvars;
 
-suffix = '96'; element='h';
+% suffix = '96'; element='h';
+suffix = '96'; element='c';
 % suffix = '50'; element='w';
 
 fprintf('Reading scd\n');
