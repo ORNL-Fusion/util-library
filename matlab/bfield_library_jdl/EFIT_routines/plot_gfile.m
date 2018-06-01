@@ -65,6 +65,8 @@ xz2 = xpt_info.zx2;
 
 contour(g.r,g.z,psiN_g.',[1,1]*calc_psiN(g,xr2,xz2),'k-','linewidth',2)
 
+% contour(g.r,g.z,psiN_g.',[1,1]*2.25,'k-','linewidth',2)
+
 plot(xr1,xz1,'bx'); text(xr1+0.01,xz1,'x1','fontsize',8)
 plot(xr2,xz2,'b*'); text(xr2+0.02,xz2,'x2','fontsize',8)
 

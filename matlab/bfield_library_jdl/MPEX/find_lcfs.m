@@ -1,4 +1,4 @@
-function f = find_lcfs(shot,plotit,num_lines,rmax)
+    function f = find_lcfs(shot,plotit,num_lines,rmax)
 if length(shot) > 1
     helicon_current = shot{1};
     current_A = shot{2};
