@@ -1,4 +1,5 @@
 function [pint1,ierr,found_ind,int_count]=int_line_curve(p1,p2,line_r,line_z,first,verbose)
+%     [pint1,ierr,found_ind,int_count]=int_line_curve(p1,p2,line_r,line_z,first,verbose)
 % Curve is defined by array of points,
 % linearly interpolated to find intersection with line.
 % JL 2/2011

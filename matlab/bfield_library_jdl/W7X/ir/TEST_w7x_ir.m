@@ -6,10 +6,10 @@ clearvars;
 ir_path = 'C:\Users\jjl\Dropbox (ORNL)\W7X\OP12a_Data\IR';
 scene_path = 'C:\Users\jjl\Dropbox (ORNL)\W7X\scene_models';
 
-PLOT_RAW = 0;
+PLOT_RAW = 1;
 
 % myshots = [41,39,32,44,21];  % H 2MW density scan (0,11,22,32,43)
-myshots = [10];
+myshots = [32];
 % myshots = [30,36];
 
 % myshots = [40,37,27,43,10]; % He 2MW density scan (0,11,22,32,43)
@@ -58,7 +58,7 @@ for shot = myshots
                     title(['Cam ',cam_str,' IR temperature shot ',num2str(shot)])
                     
                     % Line checking
-                    [p1_blob,p2_blob,p1_edge,p2_edge] = define_W7X_divertor_1d_lines();
+                    [p1_blob,p2_blob,p1_edge,p2_edge] = define_W7X_divertor_1d_lines(0);
                     icount_blob = 1;
                     icount_edge = 1;
                     dist_tol = 0.001;

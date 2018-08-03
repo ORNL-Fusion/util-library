@@ -9,9 +9,11 @@ BFIELD = -1;
 
 switch BFIELD
     case -1
-        poincare_out = '0kA_vac_poincare_0deg_50surf_100pt.mat';
-    
-        grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_vac_0kA_mimic_90x82x65.mat';
+        poincare_out = 'low_iota_90_vac_poincare_0deg_50surf_100pt.mat';
+        
+        grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_w7x_low_iota_90_1MA_90x82x65.mat';
+        
+%         grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_vac_0kA_mimic_90x82x65.mat';
 %             grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_vac_43kA_mimic_90x82x65.mat';
         bdata = load(grid_file);
         bfield.type = 'Bgrid';
@@ -142,6 +144,8 @@ end
 ves = load_W7X_vessel(0,0,phistart);
 plot(ves.cut.r,ves.cut.z,'k')
 
+
+asdfadf
 run_path = 'C:\Work\EMC3\EMC3_runs\runs\W7X\mimic_22kA\VAC\block1_expand7\baserun';
 run_info.run_path = run_path;
 lim = load_all_limiter_files(run_info);

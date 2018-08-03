@@ -19,7 +19,13 @@ if RECALC_MAT
 %         taper = [12359	12230	12487	13775	13904	5600	-5987  2500 -2500]; out_file = 'Bgrid_vac_32kA_mimic_90x82x65'; % 32kA mimic, run in OP1.2a EGS001+252
 %         taper = [12477	12347	12607	13907	14037	4679	-7019  2500 -2500]; out_file = 'Bgrid_vac_43kA_mimic_90x82x65'; % 43kA mimic, run in OP1.2a FHS+252
 
-        taper = [1, 1, 1, 1, 1, 0, 0, 0, 0]*1e6; out_file = 'Bgrid_w7x_standard_1MA_90x82x65.mat'; % 22kA mimic
+%         taper = [1, 1, 1, 1, 1, 0, 0, 0, 0]*1e6; out_file = 'Bgrid_w7x_standard_1MA_90x82x65.mat'; % 
+%         taper = [1, 1, 1, 1, 1, -0.18, -0.18, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_-180_1MA_90x82x65'; %        
+%         taper = [1, 1, 1, 1, 1, 0.030, 0.030, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_30_1MA_90x82x65'; %
+        taper = [1, 1, 1, 1, 1, 0.105, 0.105, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_105_1MA_90x82x65'; %
+%         taper = [1, 1, 1, 1, 1, 0.360, 0.360, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_360_1MA_90x82x65'; %
+%         taper = [1, 1, 1, 1, 1, 0.480, 0.480, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_480_1MA_90x82x65'; %
+%         taper = [1, 1, 1, 1, 1, 0.750, 0.750, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_750_1MA_90x82x65'; %
         coil = set_w7x_current(coil,taper); % taper = [I1,I2,I3,I4,I5,IA,IB,IS1,IS2];
         out_file = fullfile(out_dir,out_file);
         
