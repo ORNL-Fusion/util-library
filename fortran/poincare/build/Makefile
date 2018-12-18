@@ -35,8 +35,8 @@ EXEC2 = $(BIN_DIR)poincare_driver_2d.x
 #-----------------------------------------------------------------------
 
 # Libraries needed to build the executable
-LIBDIR = -L$(LIBBJDL_DIR) -L$(LIBM3DC1_DIR)
-LIBS = -lbjdl -lfusionio -lm3dc1 -lz -lhdf5 -lstdc++ -llapack
+LIBDIR = -L$(LIBBJDL_DIR) -L$(LIBM3DC1_DIR) 
+LIBS = -lbjdl -lfusionio -lm3dc1 -lz -L/usr/lib/x86_64-linux-gnu/hdf5/openmpi -lhdf5 -lstdc++ -llapack
 
 # Objects needed to build the executable that use the default rule
 OBJS90 =  \

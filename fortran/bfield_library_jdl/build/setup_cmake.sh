@@ -19,11 +19,11 @@ fi
 echo cmake configured to generate a $BUILD_TYPE build.
 if [ "$BUILD_TYPE" == Debug ]
 then
-	echo "    cmake may be reconfigured to generate a Release build by running this script with no arguments or using the commmand"	
+	echo "    cmake may be reconfigured to generate a Release build by running this script with no arguments or using the command"	
 	echo
 	echo "    cmake -DCMAKE_BUILD_TYPE=Release"
 else
-	echo "    cmake may be reconfigured to generate a Debug build by running this script with a Debug argument or using the commmand"
+	echo "    cmake may be reconfigured to generate a Debug build by running this script with a Debug argument or using the command"
 	echo
 	echo "    cmake -DCMAKE_BUILD_TYPE=Debug"
 fi
@@ -41,13 +41,15 @@ then
 	  -DCMAKE_C_COMPILER=gcc                \
 	  -DCMAKE_CXX_COMPILER=g++              \
 	  ..
-elif [ "$MACHINE_ID" == "LAP111076" ]
-then
-    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
-	  ..
 elif [ "$MACHINE_ID" == "fusion2.ornl.gov" ]
 then
     # fusion2
+    #
+    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
+	  ..
+elif [ "$MACHINE_ID" == "fusion3" ]
+then
+    # fusion3
     #
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
 	  ..
