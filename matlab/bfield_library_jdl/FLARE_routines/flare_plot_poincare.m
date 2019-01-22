@@ -40,15 +40,20 @@ function flare_plot_poincare(fname,newfig,sortit,plotstr)
   if size(d,2) > 3
     psi   = d(:,4);
   end
-  if size(d,2) > 4
-    ind   = d(:,5);
-  end
+
+   if size(d,2) > 4
+      ind   = d(:,5);
+   else
+       ind = [];
+   end
   
-  if ~sortit
-    plot(R,Z,plotstr);
+  if ~sortit || isempty(ind)
+    plot(R./100,Z./100,'.');
     return
   end
 
+
+  
   fstarts = find(diff(ind) <= 0) + 1;
   istarts = [1;fstarts];
   iends   = [fstarts - 1;length(R)];

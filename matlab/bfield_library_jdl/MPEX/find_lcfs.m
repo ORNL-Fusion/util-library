@@ -1,4 +1,4 @@
-    function f = find_lcfs(shot,plotit,num_lines,rmax)
+function f = find_lcfs(shot,plotit,num_lines,rmax)
 if length(shot) > 1
     helicon_current = shot{1};
     current_A = shot{2};
@@ -23,7 +23,7 @@ end
 if nargin < 5
     nresolve = 3;
 end
-    
+
 ZMIN = 1;  % Below this Z lines are not checked for cutoff
 
 
@@ -41,7 +41,7 @@ end
 if icount > 1
     error(['Found multiple files matching shot: ',num2str(shot)])
 end
-if icount == 0    
+if icount == 0
     fprintf('Could not find saved LCFS data for shot %s\n',num2str(shot))
     fprintf('This may be slow\n')
 else
@@ -107,7 +107,7 @@ for iresolve = 1:nresolve
             axis([0.5,3.5,0,0.2])
         else
             plot(f2a.z,f2a.r,'linewidth',2,'color',cf(iresolve,:));
-            plot(f2a.z(:,ilcfs),f2a.r(:,ilcfs),'r')            
+            plot(f2a.z(:,ilcfs),f2a.r(:,ilcfs),'r')
         end
         
     end
@@ -117,9 +117,9 @@ f.z = f2a.z(:,ilcfs);
 f.hit_rz = hit_rz;
 
 % if notashot == 0
-    fname = [data_path,'shot_',num2str(shot),'.mat'];
-    fprintf('saving LCFS data as %s\n',fname)
-    save(fname,'f')
+fname = [data_path,'shot_',num2str(shot),'.mat'];
+fprintf('saving LCFS data as %s\n',fname)
+save(fname,'f')
 % end
 time=toc;
 

@@ -2,7 +2,7 @@ clearvars;
 
 FIND_AXIS = 1;
 % LOAD_POINCARE = 1;
-BFIELD = -1;
+BFIELD = 0;  %-1
 
 
 
@@ -24,20 +24,28 @@ switch BFIELD
     case 0
         poincare_out = 'delete_me_22kA_ref_coils_poincare_0deg_101surf_100pt.mat';
         
-        coils_file = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\coils.w7x';
+        coils_file = 'C:\Work_archive\RUN_ARCHIVE\VMEC_RUNS\W7X_mark_coils_and_input\coils.w7x';
         coil = load_vmec_coils_file(coils_file);
         winding_array = [108,108,108,108,108,36,36,8,8];
         
+        if 1
+%         taper = [12022	11897	12148	13399	13524	8219	-3005  2500 -2500]; out_file = 'Bgrid_vac_0kA_mimic_90x82x65';  % 0kA mimic, run in OP1.2a EES+252
+%         taper = [12129	12002	12255	13519	13645	7391	-3980  2500 -2500]; out_file = 'Bgrid_vac_11kA_mimic_90x82x65'; % 11kA mimic, run in OP1.2a EFS+252
+%         taper = [12243	12116	12371	13646	13774	6504	-4973  2500 -2500]; out_file = 'Bgrid_vac_22kA_mimic_90x82x65'; % 22kA mimic, run in OP1.2a EGS+252
+%         taper = [12359	12230	12487	13775	13904	5600	-5987  2500 -2500]; out_file = 'Bgrid_vac_32kA_mimic_90x82x65'; % 32kA mimic, run in OP1.2a EGS001+252
+        taper = [12477	12347	12607	13907	14037	4679	-7019  2500 -2500]; out_file = 'Bgrid_vac_43kA_mimic_90x82x65'; % 43kA mimic, run in OP1.2a FHS+252
+        else
         % First make poincare with vacuum coils, OP2 22kA
 %         taper_norm = [12130, 12000, 12255, 13541, 13635, 9000, -2900, 0, 0].*winding_array; Inorm = 1; Rax = 5.915735; Zax = 0.000000; % 22kA OP2
-        taper_norm = [1, 1.02, 1.08, 0.97, 0.88, 0.15, -0.15, 0, 0].*winding_array; Inorm = 12556; Rax = 5.931; Zax = 0.000000; % Narrow mirror
+%         taper_norm = [1, 1.02, 1.08, 0.97, 0.88, 0.15, -0.15, 0, 0].*winding_array; Inorm = 12556; Rax = 5.931; Zax = 0.000000; % Narrow mirror
+%          taper_norm = [1, 1, 1, 1, 1, 0, 0, 0, 0].*winding_array; Inorm = 12883; Rax = 5.931; Zax = 0.000000; % Standard
         % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.2200, -0.0800, 0.0150, -0.0150]; Inorm = 1340931;%  0kA mimic
         % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1950, -0.1050, 0.0150, -0.0150]; Inorm = 1353630; % 11kA mimic
         % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1700, -0.1300, 0.0150, -0.0150]; Inorm = 1366546; % 22kA mimic  -- corrected IS1
         % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1450, -0.1550, 0.0150, -0.0150]; Inorm = 1379685; % 32kA mimic
         % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, 0.0150, -0.0150]; Inorm = 1393054; % 43kA mimic
-        
         taper = Inorm*taper_norm./winding_array;
+        end
         coil = set_w7x_current(coil,taper); % taper = [I1,I2,I3,I4,I5,IA,IB,IS1,IS2];
         
         bfield.type = 'just_coils';
@@ -85,7 +93,12 @@ switch BFIELD
         Rax = 5.915735; Zax = 0.000000; % 22kA OP2
         
         case 2
-            grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_xdr_altern_22kA_90x82x65.mat';
+
+%             grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_xdr_altern_22kA_90x82x65.mat';
+%             grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_xdr_altern_OP2_00kA_90x82x65.mat';
+%             poincare_out = 'poincare_xdr_altern_OP2_00kA_90x82x65_100s.out';
+            grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_xdr_altern_OP2_43kA_90x82x65.mat';
+            poincare_out = 'poincare_xdr_altern_OP2_43kA_90x82x65_100s.out';            
             temp = load(grid_file);
             bfield.Bgrid = temp.Bgrid;
             bfield.type = 'Bgrid';
@@ -96,6 +109,8 @@ switch BFIELD
 end
 
 phistart = 0*pi/180; Rax_guess = 5.92; Zax_guess = 0;
+% phistart = -145.75*pi/180; Rax_guess = 5.92; Zax_guess = 0;
+% phistart = -160.75*pi/180; Rax_guess = 5.92; Zax_guess = 0;
 % phistart = 36*pi/180; Rax_guess = 5.16; Zax_guess = 0;
 
 if FIND_AXIS
@@ -107,7 +122,7 @@ end
 
 % afsasdf
 
-nsurf = 50;
+nsurf = 100;
 
 if 0
     Rstart = 5.66; Rend = 5.60;
@@ -146,7 +161,7 @@ plot(ves.cut.r,ves.cut.z,'k')
 
 
 asdfadf
-run_path = 'C:\Work\EMC3\EMC3_runs\runs\W7X\mimic_22kA\VAC\block1_expand7\baserun';
+run_path = 'C:\Work_archive\RUN_ARCHIVE\EMC3_RUNS\W7X\mimic_22kA\VAC\block1_expand7\baserun';
 run_info.run_path = run_path;
 lim = load_all_limiter_files(run_info);
 plot_emc3_plates_at_phi(lim,phistart);

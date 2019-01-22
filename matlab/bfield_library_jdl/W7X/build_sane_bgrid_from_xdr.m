@@ -1,7 +1,11 @@
 % function build_sane_bgrid_from_xdr(b)
 
-out_path = 'C:\Work\Stellarator\ALL_W7X_WORK\xdr_dump_read\OUTPUT\';
-fname = 'field181x181x96.w7x.1000_1000_1000_1000_+0750_+0750.vac.out';
+% out_path = 'C:\Work\Stellarator\ALL_W7X_WORK\xdr_dump_read\OUTPUT\';
+% fname = 'field181x181x96.w7x.1000_1000_1000_1000_+0750_+0750.vac.out';
+
+out_path = 'C:\Work\Stellarator\';
+fname = 'fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_000.dat';
+
 xdr = read_xdr_dump_file(out_path,fname);
 
 rmin = xdr.rnull - xdr.ronull;

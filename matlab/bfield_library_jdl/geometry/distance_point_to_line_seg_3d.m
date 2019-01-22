@@ -6,7 +6,7 @@ function [dist,pu,CUTOFF,pu_unchecked,dist_unchecked,u] = distance_point_to_line
     % pu is point on line seg closest to p0
     % -- If an endpoint is used, CUTOFF = 1
     % in either case pu_unchecked is the closest point on the full line (not limited by end points), similar for dist_unchecked
-    
+    % u is relative distance
     DEBUG = 0;
     
     nm21 = norm(p2-p1);    

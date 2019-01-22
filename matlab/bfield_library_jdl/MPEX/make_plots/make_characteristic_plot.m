@@ -1,6 +1,6 @@
 function make_characteristic_plot(shot)
 
-% shot = 7477;
+shot = 7477;
 
 ZMIN = 1;
 

@@ -17,10 +17,10 @@ for ifile = 1:2
     numlines = dat(2); poinc.numlines = numlines;
     num_pts = dat(3);
     
-    rline{ifile} = zeros(numlines,num_pts);
-    zline{ifile} = zeros(numlines,num_pts);
-    psiNline{ifile} = zeros(numlines,num_pts);
-    iline{ifile} = zeros(numlines,1);
+    rline{ifile} = NaN(numlines,num_pts);
+    zline{ifile} = NaN(numlines,num_pts);
+    psiNline{ifile} = NaN(numlines,num_pts);
+    iline{ifile} = NaN(numlines,1);
     for i = 1:numlines
         iline{ifile}(i) = fscanf(fid,'%i',1);
         try

@@ -4,17 +4,17 @@ save_dir = 'C:\Users\jjl\Dropbox (ORNL)\W7X\OP12a_Data';
 
 mydate = '29-Nov-2017';
   
-% myshots = [41,39,32,44,21];  % H 2MW density scan (0,11,22,32,43)
+myshots = [41,39,32,44,21];  % H 2MW density scan (0,11,22,32,43)
 % myshots = [41,42];
 
 % myshots = [40,37,27,43,10]; % He 2MW density scan (0,11,22,32,43)
 
-myshots = [36,30]
+% myshots = [36,30]
 JUST_BASICS = 0;
 USE_REAL_TS = 1;
 GET_XICS = 0;
 
-coils_file = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\coils.w7x';
+coils_file = 'C:\Work_archive\RUN_ARCHIVE\VMEC_RUNS\W7X_mark_coils_and_input\coils.w7x';
 coil = load_vmec_coils_file(coils_file);
 
 

@@ -10,19 +10,25 @@ if RECALC_MAT
 
         
 
-        coils_file = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\coils.w7x';
+        coils_file = 'C:\Work_archive\RUN_ARCHIVE\VMEC_RUNS\W7X_mark_coils_and_input\coils.w7x';
         coil = load_vmec_coils_file(coils_file);
         winding_array = [108,108,108,108,108,36,36,8,8];
 %         taper = [12022	11897	12148	13399	13524	8219	-3005  2500 -2500]; out_file = 'Bgrid_vac_0kA_mimic_90x82x65';  % 0kA mimic, run in OP1.2a EES+252
 %         taper = [12129	12002	12255	13519	13645	7391	-3980  2500 -2500]; out_file = 'Bgrid_vac_11kA_mimic_90x82x65'; % 11kA mimic, run in OP1.2a EFS+252
 %         taper = [12243	12116	12371	13646	13774	6504	-4973  2500 -2500]; out_file = 'Bgrid_vac_22kA_mimic_90x82x65'; % 22kA mimic, run in OP1.2a EGS+252
+        taper = [12243	12116	12371	13646	13774	7754       -3723  2500 -2500]; out_file = 'Bgrid_vac_22kA_2pct_iota_red_mimic_90x82x65'; % 22kA mimic, run in OP1.2a EGS+252
 %         taper = [12359	12230	12487	13775	13904	5600	-5987  2500 -2500]; out_file = 'Bgrid_vac_32kA_mimic_90x82x65'; % 32kA mimic, run in OP1.2a EGS001+252
 %         taper = [12477	12347	12607	13907	14037	4679	-7019  2500 -2500]; out_file = 'Bgrid_vac_43kA_mimic_90x82x65'; % 43kA mimic, run in OP1.2a FHS+252
+%           taper = [12477	12347	12607	13907	14037	5879	-5819  2500 -2500]; out_file = 'Bgrid_vac_43kA_2pct_iota_red_mimic_90x82x65'; % 43kA mimic, run in OP1.2a FHS+252
+%          taper = [12477	12347	12607	13907	14037	4679	-7019  1250 -1250]; out_file = 'Bgrid_vac_43kA_+1250_mimic_90x82x65'; % 43kA mimic, run in OP1.2a FHS+252
+%         taper = [12477	12347	12607	13907	14037	4679	-7019  0 0]; out_file = 'Bgrid_vac_43kA_0_mimic_90x82x65'; % 43kA mimic, run in OP1.2a FHS+252
+%         taper = [12477	12347	12607	13907	14037	4679	-7019  -1250 1250]; out_file = 'Bgrid_vac_43kA_-1250_mimic_90x82x65'; % 43kA mimic, run in OP1.2a FHS+252
+%         taper = [12477	12347	12607	13907	14037	4679	-7019  -2500 2500]; out_file = 'Bgrid_vac_43kA_-2500_mimic_90x82x65'; % 43kA mimic, run in OP1.2a FHS+252
 
 %         taper = [1, 1, 1, 1, 1, 0, 0, 0, 0]*1e6; out_file = 'Bgrid_w7x_standard_1MA_90x82x65.mat'; % 
 %         taper = [1, 1, 1, 1, 1, -0.18, -0.18, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_-180_1MA_90x82x65'; %        
 %         taper = [1, 1, 1, 1, 1, 0.030, 0.030, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_30_1MA_90x82x65'; %
-        taper = [1, 1, 1, 1, 1, 0.105, 0.105, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_105_1MA_90x82x65'; %
+%         taper = [1, 1, 1, 1, 1, 0.105, 0.105, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_105_1MA_90x82x65'; %
 %         taper = [1, 1, 1, 1, 1, 0.360, 0.360, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_360_1MA_90x82x65'; %
 %         taper = [1, 1, 1, 1, 1, 0.480, 0.480, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_480_1MA_90x82x65'; %
 %         taper = [1, 1, 1, 1, 1, 0.750, 0.750, 0, 0]*1e6; out_file = 'Bgrid_w7x_low_iota_750_1MA_90x82x65'; %
@@ -40,7 +46,8 @@ if RECALC_MAT
         out_dir = 'C:\Work\FLARE\coils';        
         % out_file = 'Bgrid_vac_22kA_mimic_45x41x32_v2'; % 22kA mimic  -- corrected IS1
         % out_file = 'Bgrid_vac_22kA_mimic_90x82x65_v2'; % 22kA mimic  -- corrected IS1
-        out_file = 'Bgrid_vac_narrow_mirror_90x82x65'; % Narrow mirror
+%         out_file = 'Bgrid_vac_narrow_mirror_90x82x65'; % Narrow mirror
+        out_file = 'Bgrid_vac_43kA_mimic_+2500_90x82x65';
         out_file = fullfile(out_dir,out_file);
         
         coils_file = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\coils.w7x';
@@ -51,10 +58,13 @@ if RECALC_MAT
         % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1950, -0.1050, 0.0150, -0.0150]; Inorm = 1.354e6; % 11kA mimic
 %         taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1700, -0.1300, 0.0150, -0.0150]; Inorm = 1.367e6; % 22kA mimic  -- corrected IS1
         % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1450, -0.1550, 0.0150, -0.0150]; Inorm = 1.380e6; % 32kA mimic
-        % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, 0.0150, -0.0150]; Inorm = 1.393e6; % 43kA mimic
+%         taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, 0.0150, -0.0150]; Inorm = 1.393e6; % 43kA mimic
         
         
-        
+%         taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, 0.01436, -0.01436]; Inorm = 1.393e6; % 43kA mimic +2500
+%         taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, 0.007178750, -0.007178750]; Inorm = 1.393e6; % 43kA mimic +1250
+%         taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, +0.007178750, 0.007178750]; Inorm = 1.393e6; % 43kA mimic -1250
+%         taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.1200, -0.1800, 0, 0]; Inorm = 1.393e6; % 43kA mimic +0
         
         
         %     taper_norm = [1,1,1,1,1,1,1,1]; Inorm = 1; out_file = 'Bgrid_coil1_1Amp.txt';
@@ -95,15 +105,27 @@ if RECALC_MAT
         
         bfield.nsym = bmw.nsym;
         
-    elseif 1
+    elseif 0
 
         xdr_path = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\';
 
+%         fname_xdr_dump = 'fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_000.dat';        
+%         out_file = 'Bgrid_xdr_altern_OP2_00kA_90x82x65';
+%         fname_xdr_dump = 'fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_011.dat';        
+%         out_file = 'Bgrid_xdr_altern_OP2_11kA_90x82x65';
+%         fname_xdr_dump = 'fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.dat';        
+%         out_file = 'Bgrid_xdr_altern_OP2_22kA_90x82x65';
+%         fname_xdr_dump = 'fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_032.dat';        
+%         out_file = 'Bgrid_xdr_altern_OP2_32kA_90x82x65';
+        fname_xdr_dump = 'fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_043.dat';        
+        out_file = 'Bgrid_xdr_altern_OP2_43kA_90x82x65';        
+        
 %         fname_xdr_dump = 'fieldn_mfbe181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.dat';
 %         out_file = 'Bgrid_xdr_mfbe_22kA_90x82x65';
         
-        fname_xdr_dump = 'fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.dat';
-        out_file = 'Bgrid_xdr_altern_22kA_90x82x65';
+%         fname_xdr_dump = 'fieldn_altern181x181x96_w7x.0989_1010_1114_1124_+0742_-0239.09.20_022.dat';
+%         out_file = 'Bgrid_xdr_altern_22kA_90x82x65';
+
 
         out_dir = xdr_path;
 

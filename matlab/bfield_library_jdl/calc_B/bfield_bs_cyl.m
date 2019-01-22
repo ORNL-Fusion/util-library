@@ -20,6 +20,7 @@ P_y = P_r.*sp;
 Br = Bx.*cp + By.*sp;
 Bphi = -Bx.*sp + By.*cp;
 
+
 if nargout > 3
     Btot = sqrt(Br.^2 + Bphi.^2 + Bz.^2);
 end

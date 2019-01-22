@@ -1,5 +1,10 @@
 function g = readg_g3d(filename)
 
+    if isempty(filename)
+        g = [];        
+        return;
+    end
+    
 fname_mat = [filename,'.mat'];
 if exist(fname_mat,'file') ~= 2
     disp([' >>>> Reading gfile ',filename])

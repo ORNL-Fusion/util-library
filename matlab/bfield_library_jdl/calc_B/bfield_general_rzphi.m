@@ -69,3 +69,7 @@ switch bfield.type
         ierr = 1;
         return;
 end
+
+
+% Bx = Br.*cp - Bphi.*sp;
+% By = Br.*sp + Bphi.*cp;

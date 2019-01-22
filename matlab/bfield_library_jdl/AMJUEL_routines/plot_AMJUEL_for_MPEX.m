@@ -21,9 +21,9 @@ nn0 = 3.3e19;
 % suffix = '50'; element='w';
 % suffix = '96'; element='h';
 suffix = '12'; element='h';
-fname = ['C:\Work\ADAS\scd',suffix,'\','scd',suffix,'_',element,'.dat'];  % Effective ionization coefficients (cm^-3/s)
+fname = ['C:\Work\ADAS\adf11_all\scd',suffix,'\','scd',suffix,'_',element,'.dat'];  % Effective ionization coefficients (cm^-3/s)
 scd = read_adas_adf11_file(fname); scd1 = squeeze(scd.coeff(:,:,1));
-fname = ['C:\Work\ADAS\acd',suffix,'\','acd',suffix,'_',element,'.dat'];  % Effective recombination coefficients (cm^-3/s)
+fname = ['C:\Work\ADAS\adf11_all\acd',suffix,'\','acd',suffix,'_',element,'.dat'];  % Effective recombination coefficients (cm^-3/s)
 acd = read_adas_adf11_file(fname); acd1 = squeeze(acd.coeff(:,:,1));
 
 if 1
@@ -34,7 +34,7 @@ if 1
     % Te_test = logspace(log10(1),4,20);
     % ne_test = logspace(8,16,5);
     %
-    Te_test = linspace(.1,10,100);
+    Te_test = linspace(.1,20,100);
     ne_test = logspace(log10(1e13),log10(1e13),1);  % cm3
     
     for i=1:length(ne_test)
@@ -103,7 +103,7 @@ if 1
     xlabel('T_e_,_i (eV)','fontsize',12)
     ylabel('\lambda_{mfp} (m)','fontsize',12)
     set(gca,'fontsize',12)
-    axis([.1,10,10^-3,10^3])
+    axis([.1,20,10^-3,10^3])
     if add_slow
         h = legend('D iz','D rc (rad+3bdy)','D2 iz+ds','D iz (slow)','D rc slow (rad+3bdy)','D cx','D2-D2');
     else

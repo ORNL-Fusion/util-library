@@ -49,7 +49,7 @@ if 0
 run_path = 'C:\Work\fortran\test_poincare\vmec_coils_to_fil\'; suffix = ''; mytitle = 'test';
 end
 
-if 1
+if 0
     % 165274 <------------------------*********************--------------------
 %     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = 'test'; mytitle='165274';shot = 165274;% times = 3750;
     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '-120'; mytitle='165274';shot = 165274;% times = 3750;    
@@ -62,22 +62,40 @@ if 1
     gfile_name = 'C:\Work\DIII-D\165274\kinetic\g165274.02120';
 end
 
-if 0
+if 1
 %     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '60surf';mytitle = 'bmw';
 % run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\mfbe\'; suffix = '60surf';mytitle = 'mfbe';
 % run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '40surf_v2';mytitle = 'extender';
-run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '60surf';mytitle = 'extender';
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '60surf';mytitle = 'extender';
 % run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '40surf_18deg';mytitle = 'bmw';
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA_altern\'; suffix = '0deg_200tran_60surf';mytitle = 'extender';
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '0deg_200tran_60surf';mytitle = 'extender';% 1.75 parts
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '-160.75_200tran_60surf';mytitle = 'extender'; % 16.75 parts
+
+% MPM scan
+run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\0kA_mimic\'; suffix = '15.2deg_test1';mytitle = ''; 
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\11kA_mimic\'; suffix = '15.2deg_test1';mytitle = '11kA'; 
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '15.2deg_test1';mytitle = ''; 
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\32kA_mimic\'; suffix = '15.2deg_test1';mytitle = '32kA'; 
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\43kA_mimic\'; suffix = '15.2deg_test1';mytitle = '43kA'; 
+
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_+2500\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg +2500';
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_+1250\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg +1250';
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_0\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg 0';
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_-1250\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg -1250';
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_-2500\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg -2500';
+
+% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA_altern\'; suffix = '-145.75deg_200tran_60surf';mytitle = 'extender';
 end
 
-if 0 
+if 0
 %     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = 'find_lcfs';mytitle = 'bmw';
 %     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\mfbe\'; suffix = 'find_lcfs';mytitle = 'mfbe';
 end
 
 MYCOL = 'k';
-NEWFIG = 0;
-TITLE = 0;
+NEWFIG = 1;
+TITLE = 1;
 AXES_LABELS = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % DONE SETTING RUN PATH
