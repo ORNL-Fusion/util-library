@@ -34,7 +34,7 @@ for i = 1:npts
         continue;
     end
     
-    z_fac = (Z - Bgrid.Z(iz))/dZ_grid;
+    z_fac = (Z(i) - Bgrid.Z(iz))/dZ_grid;
     
     dx2 = Bgrid.X(ix+1) - X(i);
     dx1 = dX_grid - dx2;
