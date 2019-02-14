@@ -11,6 +11,7 @@ fil = define_MPEX_coil_filaments; % Get areas
 % J_transport = [6.372e7,2.37e7,5.62e7];
 % J_target = [4.64e7,3.2e7,6.48e7];
 
+% JE options 70 GHz and 105 GHz
 J_helicon = [4.92e7,4.92e7,2.92e6,2.92e6,3.92e7,3.92e7];
 J_ECH = [8.5e7,8.5e7,5.6e7,4.3e7]; 
 J_ICH = [5.83e7,5.41e7,5.35e7,5.98e7,4.28e7]; 
@@ -127,13 +128,14 @@ end
 % Make a 2D contour plot and highlight the contour=field line from a point
 %--------------------------------------------------------------------------
 nr = 100; nz = 500;
-Z1d = linspace(-6,8,nz);
+Z1d = linspace(-8,8,nz);
 R1d = linspace(0,1.8,nr);
 % R1d = linspace(0,0.175,nr);
 [R2d,Z2d] = meshgrid(R1d,Z1d);
 psi2d = calc_psi_mpex(coil,current,R2d,Z2d);
 
-Reval = 10e-2; Zeval = -2.85;
+% Reval = 10e-2; Zeval = -2.85;
+Reval = 4.75*0.0254/2; Zeval = -2743.20e-3 ;
 psi_eval = calc_psi_mpex(coil,current,Reval,Zeval);
 
 % skimmer = 1;
@@ -161,3 +163,12 @@ end
 colorbar; cc=get(gca,'clim'); set(gca,'clim',[0,cc(2)]);
 xlabel('Z relative to ECH center (m)')
 ylabel('|B|_{ax} (T)')
+
+figure; hold on; box on; grid on;
+plot(Z,Bout.bz)
+for i = 1:size(rcoil,1)
+    patch(zcoil(i,:),rcoil(i,:),J_array(i)./1e7)
+end
+colorbar; cc=get(gca,'clim'); set(gca,'clim',[0,cc(2)]);
+xlabel('Z relative to ECH center (m)')
+ylabel('B^z_{ax} (T)')

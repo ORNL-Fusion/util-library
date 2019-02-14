@@ -23,8 +23,8 @@ function fil = define_MPEX_coil_filaments
 
 fil.ncoils = 21;
 omat = ones(1,fil.ncoils);
-fil.nturns  = 2*omat;
-fil.nlayers = 2*omat;
+fil.nturns  = 1*omat;
+fil.nlayers = 1*omat;
 fil.nwind = fil.nturns.*fil.nlayers;
 
 

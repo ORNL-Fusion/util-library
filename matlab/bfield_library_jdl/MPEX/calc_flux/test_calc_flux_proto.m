@@ -110,13 +110,14 @@ end
 % Make a 2D contour plot and highlight the contour=field line from a point
 %--------------------------------------------------------------------------
 nr = 100; nz = 500;
-Z1d = linspace(0.5,5,nz);
-R1d = linspace(0,0.075,nr);
+Z1d = linspace(0.0,5,nz);
+R1d = linspace(0,0.1,nr);
 % R1d = linspace(0,0.175,nr);
 [R2d,Z2d] = meshgrid(R1d,Z1d);
 psi2d = calc_psi_mpex(coil,current,R2d,Z2d);
 
-Reval = 0.045; Zeval = 1.75;
+% Reval = 0.045; Zeval = 1.75;
+Reval = 0.0628  ; Zeval = 1.75;
 psi_eval = calc_psi_mpex(coil,current,Reval,Zeval);
 
 skimmer = 1;
