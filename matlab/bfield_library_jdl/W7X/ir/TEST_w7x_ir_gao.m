@@ -7,9 +7,9 @@ PLOT_UNAVERAGED = 0;
 
 % myshots = [41,39,32,44,21];  % H 2MW density scan (0,11,22,32,43)
 % myshots = [14,15,16];
-myshots = [21];
+myshots = [32];
 
-CAM = 2;
+CAM = 4;
 
 if CAM == 4
     fname_scene_h = fullfile(scene_path,'s4lh_3Dlines_coordinate.txt');
@@ -80,7 +80,9 @@ for shot = myshots
     icount_blob = 1;
     icount_edge = 1;
     dist_tol = 0.005;
+    warning('should this be looped over xuse?')
     for i = 1:length(xuse_h)
+
         p0 = [xuse(i),yuse(i),zuse(i)];
         [dist,pu,CUTOFF,pu_unchecked,dist_unchecked,u] = distance_point_to_line_seg_3d(p1_blobd,p2_blobd,p0);
         if CUTOFF == 0 && dist < dist_tol

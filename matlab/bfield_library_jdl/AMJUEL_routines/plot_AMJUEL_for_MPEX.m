@@ -38,10 +38,10 @@ if 1
     ne_test = logspace(log10(1e13),log10(1e13),1);  % cm3
     
     for i=1:length(ne_test)
-        sv_iz_adas(:,i) = interp_adas_rate_coefficient(Te_test,ne_test,scd.te,scd.ne,scd1);
+        sv_iz_adas(:,i) = interp_adas_rate_coefficient(Te_test,ne_test(i),scd.te,scd.ne,scd1);
         sv_iz(:,i) = eval_AMJUEL_H4_fit(data.H4.reaction_215,ne_test(i),Te_test);               
         sv_rc(:,i) = eval_AMJUEL_H4_fit(data.H4.reaction_218,ne_test(i),Te_test);
-        sv_rc_adas(:,i) = interp_adas_rate_coefficient(Te_test,ne_test,acd.te,acd.ne,acd1);
+        sv_rc_adas(:,i) = interp_adas_rate_coefficient(Te_test,ne_test(i),acd.te,acd.ne,acd1);
         sv_H2_diss_iz(:,i) = ...
             eval_AMJUEL_H4_fit(data.H4.reaction_225 ,ne_test(i),Te_test) + ...
             eval_AMJUEL_H4_fit(data.H4.reaction_229 ,ne_test(i),Te_test) + ...
