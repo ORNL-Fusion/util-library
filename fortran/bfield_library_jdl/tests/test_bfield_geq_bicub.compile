@@ -1,0 +1,2 @@
+gfortran test_bfield_geq_bicub.f90 -L../lib -lbjdl -I../include
+#-L/home/jjl/m3dc1/install/lib/_X86_64 -lfusionio -lm3dc1  -lstdc++ -lz -lhdf5

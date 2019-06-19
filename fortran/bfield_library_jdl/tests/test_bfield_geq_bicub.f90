@@ -15,23 +15,20 @@ Program test_bfield_geq_bicub
 ! Author(s): J. Lore - current
 
 Use kind_mod                     ! Import rknd, iknd specifications
-Use gfile_var_pass
 Use g3d_module
 Use bspline
-!Use g3df_functions_mod, Only : &
-!  bfield_geq_bicub
 Implicit None
 
 ! Local variables (scalar)
-Real(rknd),Allocatable :: Btest(:,:),Rtest(:),Ztest(:)
+Real(real64),Allocatable :: Btest(:,:),Rtest(:),Ztest(:)
 Real  :: tarray(2),tres
 ! Local variables (array)
 Character(Len=100) :: gfilename
 
-Integer(iknd),parameter :: npts_line  = 10000
+Integer(int32),parameter :: npts_line  = 10000
 Integer :: i,ierr_b,Ntest
 
-Real(rknd),dimension(npts_line+1) :: rout,zout,phiout
+Real(real64),dimension(npts_line+1) :: rout,zout,phiout
 
 !- End of header -------------------------------------------------------------
 

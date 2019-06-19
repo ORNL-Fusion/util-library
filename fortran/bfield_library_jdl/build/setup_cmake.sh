@@ -53,6 +53,12 @@ then
     #
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
 	  ..
+elif [ "$MACHINE_ID" == "ultrabucky" ]
+then
+    # fusion3
+    #
+    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
+	  ..
 else
     echo $MACHINE_ID is not supported by this script.
     echo Please add your machine.

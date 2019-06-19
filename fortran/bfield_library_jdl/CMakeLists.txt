@@ -26,14 +26,14 @@ enable_language (Fortran)
 
 
 # M3D-C1 Options
-set (USE_M3DC1 1)  
+set (USE_M3DC1 1)
 set ( M3DC1_INCLUDE_PATH $ENV{FIO_INSTALL_DIR}/include)
 
 # Compiler flags
 if (CMAKE_COMPILER_IS_GNUCC)
   # gfortran
   Message ("Using gfortran flags")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-cpp -O3")
 #  set (CMAKE_Fortran_FLAGS_DEBUG "-g -frange-check -fbounds-check -Wall -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fcheck=all -fbacktrace")
   set (CMAKE_Fortran_FLAGS_DEBUG "-g -Og")  
   #-ffpe-trap=zero,underflow,overflow,invalid)

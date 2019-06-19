@@ -11,7 +11,7 @@ Implicit None
 ! Local variables (scalar)
 Real(real64),Allocatable :: Bftest(:,:),Rtest(:),Ztest(:)
 ! Local variables (array)
-Character(Len=100) :: gfilename, fname, run_path
+Character(Len=100) :: fname, run_path
 
 Integer :: Ntest,ierr,ifield_type
 
