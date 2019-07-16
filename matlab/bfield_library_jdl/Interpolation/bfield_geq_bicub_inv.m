@@ -1,5 +1,5 @@
-function [Bout,ierr] = bfield_geq_bicub(g,R1,Z1,nowarn)
-%[Bout,ierr] = bfield_geq_bicub(g,R1,Z1,nowarn)
+function [Bout,ierr] = bfield_geq_bicub_inv(g,R1,Z1,nowarn)
+%[Bout,ierr] = bfield_geq_bicub_inv(g,R1,Z1,nowarn)
 if nargin < 4
     nowarn = 0;
 end
@@ -31,33 +31,62 @@ mask(izoff) = 1;
 ir(mask==1) = 3;  % just a value that will not error
 iz(mask==1) = 3;
 
-dir = (R1 - g.r(ir)).'/g.dR;
-diz = (Z1 - g.z(iz)).'/g.dZ;
+dr = (R1 - g.r(ir))/g.dR;
+dz = (Z1 - g.z(iz))/g.dZ;
 
-dir2 = dir.*dir;
-dir3 = dir2.*dir;
-diz2 = diz.*diz;
-diz3 = diz2.*diz;
+index = ir + (g.mw-1)*(iz-1);
+c = g.bicub_coeffs_inv;
 
-index = iz + g.mh*(ir-1);
-c_bi = g.bicub_coeffs(index,:,:);
+c00 = c.c00(index);
+c10 = c.c10(index);
+c20 = c.c20(index);
+c30 = c.c30(index);
 
-psi1 = c_bi(:,1,1)        + c_bi(:,2,1).*dir        + c_bi(:,3,1).*dir2        + c_bi(:,4,1).*dir3       + ...
-       c_bi(:,1,2).*diz   + c_bi(:,2,2).*dir.*diz   + c_bi(:,3,2).*dir2.*diz   + c_bi(:,4,2).*dir3.*diz  + ...
-       c_bi(:,1,3).*diz2  + c_bi(:,2,3).*dir.*diz2  + c_bi(:,3,3).*dir2.*diz2  + c_bi(:,4,3).*dir3.*diz2 + ...
-       c_bi(:,1,4).*diz3  + c_bi(:,2,4).*dir.*diz3  + c_bi(:,3,4).*dir2.*diz3  + c_bi(:,4,4).*dir3.*diz3;
-psi1 = psi1.';
-   
-dsdr1 = c_bi(:,2,1)        + 2*c_bi(:,3,1).*dir        + 3*c_bi(:,4,1).*dir2       + ...
-        c_bi(:,2,2).*diz   + 2*c_bi(:,3,2).*dir.*diz   + 3*c_bi(:,4,2).*dir2.*diz  + ...
-        c_bi(:,2,3).*diz2  + 2*c_bi(:,3,3).*dir.*diz2  + 3*c_bi(:,4,3).*dir2.*diz2 + ...
-        c_bi(:,2,4).*diz3  + 2*c_bi(:,3,4).*dir.*diz3  + 3*c_bi(:,4,4).*dir2.*diz3;
-dsdr1 = dsdr1.'/g.dR;
+c01 = c.c01(index);
+c11 = c.c11(index);
+c21 = c.c21(index);
+c31 = c.c31(index);
 
-dsdz1 =   c_bi(:,1,2)       +   c_bi(:,2,2).*dir       +   c_bi(:,3,2).*dir2       +   c_bi(:,4,2).*dir3       + ...
-        2*c_bi(:,1,3).*diz  + 2*c_bi(:,2,3).*dir.*diz  + 2*c_bi(:,3,3).*dir2.*diz  + 2*c_bi(:,4,3).*dir3.*diz  + ...
-        3*c_bi(:,1,4).*diz2 + 3*c_bi(:,2,4).*dir.*diz2 + 3*c_bi(:,3,4).*dir2.*diz2 + 3*c_bi(:,4,4).*dir3.*diz2;
-dsdz1 = dsdz1.'/g.dZ;
+c02 = c.c02(index);
+c12 = c.c12(index);
+c22 = c.c22(index);
+c32 = c.c32(index);
+
+c03 = c.c03(index);
+c13 = c.c13(index);
+c23 = c.c23(index);
+c33 = c.c33(index);
+
+drr = dr.*dr;
+drrr = drr.*dr;
+dzz = dz.*dz;
+dzzz = dzz.*dz;
+
+drz   = dr.*dz;
+drzz  = dr.*dzz;
+drzzz = dr.*dzzz;
+drrz  = drr.*dz;
+drrzz = drr.*dzz;
+drrzzz = drr.*dzzz;
+drrrz  = drrr.*dz;
+drrrzz = drrr.*dzz;
+
+psi1 = c00       + c10.*dr    + c20.*drr    + c30.*drrr   + ...
+       c01.*dz   + c11.*drz   + c21.*drrz   + c31.*drrrz  + ...
+       c02.*dzz  + c12.*drzz  + c22.*drrzz  + c32.*drrrzz + ...
+       c03.*dzzz + c13.*drzzz + c23.*drrzzz + c33.*drrr.*dzzz;
+
+dsdr1 = c10       + 2*c20.*dr    + 3*c30.*drr   + ...
+        c11.*dz   + 2*c21.*drz   + 3*c31.*drrz  + ...
+        c12.*dzz  + 2*c22.*drzz  + 3*c32.*drrzz + ...
+        c13.*dzzz + 2*c23.*drzzz + 3*c33.*drrzzz;
+dsdr1 = dsdr1/g.dR;
+
+dsdz1 =   c01      +   c11.*dr   +   c21.*drr   +   c31.*drrr   + ...
+        2*c02.*dz  + 2*c12.*drz  + 2*c22.*drrz  + 2*c32.*drrrz  + ...
+        3*c03.*dzz + 3*c13.*drzz + 3*c23.*drrzz + 3*c33.*drrrzz;
+    
+dsdz1 = dsdz1./g.dZ;
 
 R1_inv = 1./R1;
 br1 = -dsdz1.*R1_inv;
