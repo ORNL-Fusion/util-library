@@ -1,28 +1,71 @@
-function [exists,new] = check_file_exist_and_new(fname1,fname2,iwarn,purge)
-    % Check if fname1 exists (output as logical "exists")
-    % If it exists, check if fname2 exists. If it does, output "new" is set to 1 if
-    % fname1 is newer or the same timestamp as fname2. If fname2 does not exist new = 1;
-    % if purge == 1 then fname2 is deleted
-    % Example call: [exists,new] = check_file_exist_and_new("mydata.raw","mydata.mat",1,0)
-    
-    new = 1;
-    exists = 1;
-    if exist(fname1,'file') ~= 2
-        if iwarn
-            fprintf('Did not find output file: %s\n',fname1)
-        end
-        exists = 0;
-        return;
+function [read_raw,read_mat,ierr] = check_file_exist_and_new(fname_raw,fname_mat,iwarn,purge)
+% 
+% Typically there is a data file that is slow to read, which is then saved 
+% as a file with the same name with ".mat" appended, which can be loaded
+% more quickly on subsequent reads. However, if the original file has 
+% been updated, then we want to reread it and replace the .mat file.
+% 
+
+if nargout < 3
+    error('Routine has been updated, check returns')
+end
+
+read_mat = [];
+read_raw = [];
+ierr = 1;
+
+if exist(fname_raw,'file') == 2
+    raw_exists = 1;
+else
+    if iwarn
+        fprintf('Did not find raw output file: %s\n',fname_raw)
+    end    
+    raw_exists = 0;
+end
+
+if exist(fname_mat,'file') == 2
+    if purge == 1
+        delete(fname_mat);
+        mat_exists = 0;
+    else
+        mat_exists = 1;
     end
-    if exist(fname2,'file') == 2
-        if purge == 1
-            delete(fname2);
-            return;
-        end
-        finfo1 = dir(fname1);
-        finfo2 = dir(fname2);
-        if datenum(finfo2.date) > datenum(finfo1.date)
-            new = 0;
-        end
+else
+    mat_exists = 0;
+end
+
+if ~raw_exists && ~mat_exists
+    ierr = 1;
+    read_raw = 0;
+    read_mat = 0;    
+    if iwarn
+        fprintf('Did not find raw or mat output file: %s, %s\n',fname_raw,fname_mat)
     end
+    return;
+elseif raw_exists && ~mat_exists
+    ierr = 0;
+    read_raw = 1;
+    read_mat = 0;    
+    return;
+elseif ~raw_exists && mat_exists
+    ierr = 0;
+    read_raw = 0;
+    read_mat = 1;    
+    if iwarn
+        fprintf('No raw file but found mat version: %s, %s\n',fname_raw,fname_mat)
+    end    
+    return;
+end
+
+% Both files exist, check timestamps
+finfo_raw = dir(fname_raw);
+finfo_mat = dir(fname_mat);
+if finfo_mat.datenum > finfo_raw.datenum
+    ierr = 0;
+    read_raw = 0;
+    read_mat = 1;
+else
+    ierr = 0;
+    read_raw = 1;
+    read_mat = 0;    
 end
