@@ -1,5 +1,4 @@
 function y = evaluate_tanh_fit(c,x,param)
-% x should be r-rsep
 %
 % ; tanh function with cubic or quartic inner and linear
 % ;                                to quadratic outer extensions and derivative=0 at param

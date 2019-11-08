@@ -1,4 +1,5 @@
-function pc = phys_const
+function pc = phys_const(want_name)
+% If a name is provided, only that variable is returned
 
 % M_m         = 4.028;
 % M_a         = 2.014;
@@ -15,3 +16,11 @@ pc.kB   = 1.38064852e-23;      % J/K
 pc.convert.Pa_to_mTorr = 7.5;
 pc.convert.K_to_eV     = pc.kB/pc.eV;
 pc.convert.eV_to_K     = pc.eV/pc.kB;
+
+if nargin == 1
+    try
+        pc = pc.(want_name);
+    catch
+        error('Did not recognize name %s',want_name)
+    end
+end
