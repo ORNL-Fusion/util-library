@@ -63,11 +63,13 @@ for i = 1:n_in_elm_cycle
     igood = find(x >= dr_min_cut_out & x <= dr_max_cut_out);
     ir_smooth_all_out(1:nsmooth,i) = interp1(x(igood),y(igood),dr_smooth_out);
 end
-ir_smooth_out = mean(ir_smooth_all_out,2,'omitnan');
+q_smooth_out = mean(ir_smooth_all_out,2,'omitnan');
+dq_smooth_out = std(ir_smooth_all_out,[],2,'omitnan');
 
 
-irtv.ir_out = ir_smooth_out;
-irtv.q_out = ir_smooth_out;
+irtv.dr_out = dr_smooth_out./100;
+irtv.q_out  = q_smooth_out;
+irtv.q_out_std  = dq_smooth_out;
 
 % dr_min_cut_in = -15; % cm -- trim data due to poor fit to dr_sep far from sep
 % dr_max_cut_in = 50; % cm -- trim data due to poor fit to dr_sep far from sep
