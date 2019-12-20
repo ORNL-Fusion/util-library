@@ -3,8 +3,8 @@ function sigma_v = interp_adas_rate_coefficient(Te,ne,te_adas,ne_adas,coeff_adas
 % coefficient cm^3/s  
 
 log_interp = 1;
-my_method = 'spline';
-% my_method = 'linear';
+% my_method = 'spline';
+my_method = 'linear';
 
 ind_oob = find(ne > max(ne_adas));
 if ~isempty(ind_oob)

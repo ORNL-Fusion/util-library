@@ -47,10 +47,6 @@ set(hc,'fontsize',14);
 colormap(colorflipper(512,'jet'));
 axis equal; axis tight;
 % axis([1,2.4,-1.5,1.5])
-set(gca,'fontsize',14)
-title('\Psi_N contours','fontsize',14)
-xlabel('R (m)','fontsize',14)
-ylabel('Z (m)','fontsize',14)
 ax = axis;
 h=text(ax(1)+(ax(2)-ax(1))*0.48,ax(3)+(ax(4)-ax(3))*0.97,g.gfilename,'fontsize',8);
 set(h,'interpreter','none');
