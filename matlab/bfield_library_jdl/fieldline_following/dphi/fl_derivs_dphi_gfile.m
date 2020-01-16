@@ -14,6 +14,6 @@ if ierr == 1
     return;
 end    
 
-df(1:2:N-1) = RZ(1:2:N-1).'.*Bout.br./Bout.bphi;
-df(2:2:N)   = RZ(1:2:N-1).'.*Bout.bz./Bout.bphi;
+df(1:2:N-1) = RZ(1:2:N-1).*Bout.br./Bout.bphi;
+df(2:2:N)   = RZ(1:2:N-1).*Bout.bz./Bout.bphi;
 ierr = 0;
