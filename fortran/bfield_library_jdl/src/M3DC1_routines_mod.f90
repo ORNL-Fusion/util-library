@@ -19,6 +19,7 @@
 !-----------------------------------------------------------------------------
 Module M3DC1_routines_mod
 Use kind_mod, Only: real64, int32
+Use fusion_io
 Implicit None
 Integer(int32), Parameter  :: num_sets_max = 10
 Integer(int32), Save :: m3dc1_itime = -1
@@ -30,6 +31,7 @@ Logical :: m3dc1_toroidal_on_err = .false.
 Integer, Private, Save :: num_sets
 Integer(int32), Private, Save :: isrc(num_sets_max), imag(num_sets_max), imag_2d, ivec_2d
 Real(real64), Private, Save   :: psi_axis, psi_lcfs
+type(fio_search_hint), Private, Save :: hint(num_sets_max)
 
 Contains
 
@@ -122,8 +124,13 @@ Do iset = 1,num_sets
 !  Call fio_set_real_option_f(FIO_LINEAR_SCALE, m3dc1_factors(iset), ierr)
 !  Call fio_get_field_f(isrc(iset), FIO_MAGNETIC_FIELD, imag_pert(iset), ierr)
 
+! Initialize hint
+call fio_allocate_search_hint_f(isrc(iset), hint(iset), ierr)
+
   
 Enddo
+
+
 
 End Subroutine prepare_m3dc1_fields
 
@@ -155,7 +162,7 @@ Do i=1,Npts
   Do iset = 1,num_sets
     x(2) = x(2) + m3dc1_phases_deg(iset)*pi/180._real64
     b_tmp = 0._Real64
-    Call fio_eval_field_f(imag(iset), x, b_tmp, ierr_b)  ! b_tmp(R,phi,Z)
+    Call fio_eval_field_f(imag(iset), x, b_tmp, ierr_b, hint=hint(iset))  ! b_tmp(R,phi,Z)
     
     If (ierr_b .ne. 0) Then
       If (m3dc1_toroidal_on_err) Then
@@ -205,7 +212,7 @@ Do i=1,Npts
   x(3) = z(i)
   b_tmp = 0._real64
 
-  Call fio_eval_field_f(imag_2d, x, b_tmp, ierr_b)  ! b_tmp(R,phi,Z)
+  Call fio_eval_field_f(imag_2d, x, b_tmp, ierr_b, hint=hint(1))  ! b_tmp(R,phi,Z)
 
   If (ierr_b .ne. 0) Then
     If (m3dc1_toroidal_on_err) Then
@@ -266,7 +273,7 @@ Do i=1,Npts
   x(3) = z(i)
   a_tmp = 0._real64
   
-  Call fio_eval_field_f(ivec_2d, x, a_tmp, ierr_a)  ! A(R,phi,Z)
+  Call fio_eval_field_f(ivec_2d, x, a_tmp, ierr_a, hint=hint(1))  ! A(R,phi,Z)
   If (ierr_a .ne. 0) Then
     ierr = 1
   Endif
@@ -312,7 +319,10 @@ Do iset = 1,num_sets
     Call fio_close_field_f(ivec_2d, ierr)
   Endif
   Call fio_close_source_f(isrc(iset), ierr)
+  call fio_deallocate_search_hint_f(isrc(iset), hint(iset), ierr)
 Enddo
+
+
 End Subroutine close_m3dc1_fields
 
 End Module M3DC1_routines_mod
