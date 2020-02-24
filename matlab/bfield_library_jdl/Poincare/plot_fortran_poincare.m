@@ -6,34 +6,37 @@ plot_glim = 0;
 
 fname_psimin = []; fname_psimin2 = []; gfile_name =[];
 
-
-
-if 0
-% 164723 <------------------------*********************--------------------
- gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410'; 
-% run_path = 'C:\Work\fortran\test_poincare\164723\1FL_AS\'; suffix = '30deg2'; mytitle = '1FL \phi = 30';
-%  run_path = 'C:\Work\fortran\test_poincare\164723\1FL\'; suffix = '30deg'; mytitle = '1FL \phi = 30';
-% run_path = 'C:\Work\fortran\test_poincare\164723\2FL\'; suffix = '30deg'; mytitle = '2FL \phi = 30';
-% run_path = 'C:\Work\fortran\test_poincare\164723\AS\'; suffix = '0deg'; mytitle = 'AS \phi = 0';
-run_path = 'C:\Work\fortran\test_poincare\164723\VAC\'; suffix = '0deg';  mytitle = 'VAC \phi = 0';
-% run_path = 'C:\Work\fortran\test_poincare\164723\1FL_VAC\'; suffix = '30deg';  mytitle = '1FL VAC \phi = 30';
-% run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_eq\'; suffix = '0deg'; mytitle = 'IPEC eq \phi = 0';
-% run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_vac\'; suffix = '30deg'; mytitle = 'IPEC VAC \phi = 30';
-% run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_pert\'; suffix = '0deg'; mytitle = 'IPEC pert \phi = 0';
-% run_path = 'C:\Work\fortran\test_poincare\164723\gpec_high_pert\'; suffix = '0deg'; mytitle = 'GPEC pert \phi = 0';
-% run_path = 'C:\Work\fortran\test_poincare\164723\XPAND_pert\'; suffix = '0deg'; mytitle = 'XPAND pert \phi = 0';
-% run_path = 'C:\Work\fortran\test_poincare\164723\XPAND_vac\'; suffix = '0deg'; mytitle = 'XPAND vac \phi = 0';
+if 1
+%    run_path = '/home/jjl/util-library/fortran/poincare/examples/M3DC1_14170'; suffix = 'test'; mytitle = 'test';
+   run_path = '/home/jjl/util-library/fortran/poincare/examples/M3DC1_14170'; suffix = 'm3dc1_test'; mytitle = 'test';
 end
 
 if 0
-% 160884 <------------------------*********************--------------------
-% gfile_name = 'C:\Work\DIII-D\160884\efits\g160884.05009_537';
-% run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC\'; suffix = '0deg';  mytitle = 'VAC \phi = 0';
-gfile_name = 'C:\Work\M3DC1\160884\5000\g160884.05000_m3dc1';
-% run_path = 'C:\Work\fortran\test_poincare\160884\5009\1FL\'; suffix = '30deg';  mytitle = '1FL \phi = 30';
-% run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC_m3dc1\'; suffix = '0deg';  mytitle = 'VAC_m3dc1 \phi = 0';
-% run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC_m3dc1\'; suffix = '30deg';  mytitle = 'VAC_m3dc1 \phi = 30';
-run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC_m3dc1\'; suffix = '-30deg';  mytitle = 'VAC_m3dc1 \phi = -30';
+    % 164723 <------------------------*********************--------------------
+    gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\1FL_AS\'; suffix = '30deg2'; mytitle = '1FL \phi = 30';
+    %  run_path = 'C:\Work\fortran\test_poincare\164723\1FL\'; suffix = '30deg'; mytitle = '1FL \phi = 30';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\2FL\'; suffix = '30deg'; mytitle = '2FL \phi = 30';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\AS\'; suffix = '0deg'; mytitle = 'AS \phi = 0';
+    run_path = 'C:\Work\fortran\test_poincare\164723\VAC\'; suffix = '0deg';  mytitle = 'VAC \phi = 0';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\1FL_VAC\'; suffix = '30deg';  mytitle = '1FL VAC \phi = 30';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_eq\'; suffix = '0deg'; mytitle = 'IPEC eq \phi = 0';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_vac\'; suffix = '30deg'; mytitle = 'IPEC VAC \phi = 30';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\ipec_high_pert\'; suffix = '0deg'; mytitle = 'IPEC pert \phi = 0';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\gpec_high_pert\'; suffix = '0deg'; mytitle = 'GPEC pert \phi = 0';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\XPAND_pert\'; suffix = '0deg'; mytitle = 'XPAND pert \phi = 0';
+    % run_path = 'C:\Work\fortran\test_poincare\164723\XPAND_vac\'; suffix = '0deg'; mytitle = 'XPAND vac \phi = 0';
+end
+
+if 0
+    % 160884 <------------------------*********************--------------------
+    % gfile_name = 'C:\Work\DIII-D\160884\efits\g160884.05009_537';
+    % run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC\'; suffix = '0deg';  mytitle = 'VAC \phi = 0';
+    gfile_name = 'C:\Work\M3DC1\160884\5000\g160884.05000_m3dc1';
+    % run_path = 'C:\Work\fortran\test_poincare\160884\5009\1FL\'; suffix = '30deg';  mytitle = '1FL \phi = 30';
+    % run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC_m3dc1\'; suffix = '0deg';  mytitle = 'VAC_m3dc1 \phi = 0';
+    % run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC_m3dc1\'; suffix = '30deg';  mytitle = 'VAC_m3dc1 \phi = 30';
+    run_path = 'C:\Work\fortran\test_poincare\160884\5009\VAC_m3dc1\'; suffix = '-30deg';  mytitle = 'VAC_m3dc1 \phi = -30';
 end
 
 % run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '-120'; gfile_name = 'C:\Work\DIII-D\165274\kinetic\g165274.02120'; mytitle = '\phi = 0'; plot_ts = 0; plot_ece=0;
@@ -41,56 +44,56 @@ end
 if 0
     % 154929 <------------------------*********************--------------------
     run_path = 'C:\Work\fortran\test_poincare\154929\rmp\'; suffix = '_60_n100_fake_diag2'; mytitle='test';shot = 154921; times = 3750;
-%     run_path = 'C:\Work\fortran\test_poincare\154929\rmp\'; suffix = '240_n250_fake_diag2'; mytitle='test';shot = 154921; times = 3750;
-    gfile_name = 'C:\Work\DIII-D\154929\kinetic\g154929.03750';  
+    %     run_path = 'C:\Work\fortran\test_poincare\154929\rmp\'; suffix = '240_n250_fake_diag2'; mytitle='test';shot = 154921; times = 3750;
+    gfile_name = 'C:\Work\DIII-D\154929\kinetic\g154929.03750';
 end
 
 if 0
-run_path = 'C:\Work\fortran\test_poincare\vmec_coils_to_fil\'; suffix = ''; mytitle = 'test';
+    run_path = 'C:\Work\fortran\test_poincare\vmec_coils_to_fil\'; suffix = ''; mytitle = 'test';
 end
 
 if 0
     % 165274 <------------------------*********************--------------------
-%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = 'test'; mytitle='165274';shot = 165274;% times = 3750;
-    run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '-120'; mytitle='165274';shot = 165274;% times = 3750;    
-%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '2_1'; mytitle='2/1';shot = 165274;% times = 3750;    
-%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '3_1'; mytitle='3/1';shot = 165274;% times = 3750;    
-%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '4_1'; mytitle='4/1';shot = 165274;% times = 3750;    
-%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '4_1_3turns'; mytitle='4/1';shot = 165274;% times = 3750;    
-%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = 'normal_to_compare_to_3'; mytitle='4/1';shot = 165274;% times = 3750;   
-%     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '3turn_test'; mytitle='4/1';shot = 165274;% times = 3750; 
+    %     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = 'test'; mytitle='165274';shot = 165274;% times = 3750;
+    run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '-120'; mytitle='165274';shot = 165274;% times = 3750;
+    %     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '2_1'; mytitle='2/1';shot = 165274;% times = 3750;
+    %     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '3_1'; mytitle='3/1';shot = 165274;% times = 3750;
+    %     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '4_1'; mytitle='4/1';shot = 165274;% times = 3750;
+    %     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '4_1_3turns'; mytitle='4/1';shot = 165274;% times = 3750;
+    %     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = 'normal_to_compare_to_3'; mytitle='4/1';shot = 165274;% times = 3750;
+    %     run_path = 'C:\Work\fortran\test_poincare\165274\'; suffix = '3turn_test'; mytitle='4/1';shot = 165274;% times = 3750;
     gfile_name = 'C:\Work\DIII-D\165274\kinetic\g165274.02120';
 end
 
-if 1
-%     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '60surf';mytitle = 'bmw';
-% run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\mfbe\'; suffix = '60surf';mytitle = 'mfbe';
-% run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '40surf_v2';mytitle = 'extender';
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '60surf';mytitle = 'extender';
-% run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '40surf_18deg';mytitle = 'bmw';
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA_altern\'; suffix = '0deg_200tran_60surf';mytitle = 'extender';
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '0deg_200tran_60surf';mytitle = 'extender';% 1.75 parts
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '-160.75_200tran_60surf';mytitle = 'extender'; % 16.75 parts
-
-% MPM scan
-run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\0kA_mimic\'; suffix = '15.2deg_test1';mytitle = ''; 
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\11kA_mimic\'; suffix = '15.2deg_test1';mytitle = '11kA'; 
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '15.2deg_test1';mytitle = ''; 
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\32kA_mimic\'; suffix = '15.2deg_test1';mytitle = '32kA'; 
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\43kA_mimic\'; suffix = '15.2deg_test1';mytitle = '43kA'; 
-
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_+2500\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg +2500';
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_+1250\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg +1250';
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_0\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg 0';
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_-1250\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg -1250';
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_-2500\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg -2500';
-
-% run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA_altern\'; suffix = '-145.75deg_200tran_60surf';mytitle = 'extender';
+if 0
+    %     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '60surf';mytitle = 'bmw';
+    % run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\mfbe\'; suffix = '60surf';mytitle = 'mfbe';
+    % run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '40surf_v2';mytitle = 'extender';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '60surf';mytitle = 'extender';
+    % run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '40surf_18deg';mytitle = 'bmw';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA_altern\'; suffix = '0deg_200tran_60surf';mytitle = 'extender';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '0deg_200tran_60surf';mytitle = 'extender';% 1.75 parts
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '-160.75_200tran_60surf';mytitle = 'extender'; % 16.75 parts
+    
+    % MPM scan
+    run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\0kA_mimic\'; suffix = '15.2deg_test1';mytitle = '';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\11kA_mimic\'; suffix = '15.2deg_test1';mytitle = '11kA';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '15.2deg_test1';mytitle = '';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\32kA_mimic\'; suffix = '15.2deg_test1';mytitle = '32kA';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\43kA_mimic\'; suffix = '15.2deg_test1';mytitle = '43kA';
+    
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_+2500\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg +2500';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_+1250\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg +1250';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_0\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg 0';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_-1250\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg -1250';
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12b\43kA_Icc_scan\Icc_-2500\'; suffix = '0deg_200tran_100surf'; mytitle = '0deg -2500';
+    
+    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA_altern\'; suffix = '-145.75deg_200tran_60surf';mytitle = 'extender';
 end
 
 if 0
-%     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = 'find_lcfs';mytitle = 'bmw';
-%     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\mfbe\'; suffix = 'find_lcfs';mytitle = 'mfbe';
+    %     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = 'find_lcfs';mytitle = 'bmw';
+    %     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\mfbe\'; suffix = 'find_lcfs';mytitle = 'mfbe';
 end
 
 MYCOL = 'k';
@@ -132,14 +135,14 @@ if 1
         plot(poinc.rline{ifile},poinc.zline{ifile},strcat(MYCOL,'.'),'markersize',2)
     end
     if AXES_LABELS
-    xlabel('R (m)','fontsize',12)
-    ylabel('Z (m)','fontsize',12)
-    set(gca,'fontsize',12)
+        xlabel('R (m)','fontsize',12)
+        ylabel('Z (m)','fontsize',12)
+        set(gca,'fontsize',12)
     end
     if TITLE
         title(mytitle)
     end
-%     contour(g.r,g.z,psiN_g.',[0.5,0.6,0.7,0.8,0.9,1.0],'linewidth',2);
+    %     contour(g.r,g.z,psiN_g.',[0.5,0.6,0.7,0.8,0.9,1.0],'linewidth',2);
     if plot_ts
         R(1:40)=1.94;
         Z=[0.0430,0.1720,0.2810,0.3320,0.3590,0.3910,0.4210,0.4770,0.5310,0.5630,0.5790,0.5950,0.6080,0.6230,0.6350,0.6410,0.6480,0.6540,0.6610,0.6680,...
@@ -181,21 +184,21 @@ if 0
     title(mytitle)
     % contour(g.r,g.z,psiN_g.',[0.5,0.6,0.7,0.8,0.9,1.0],'linewidth',2);
     
-
-%     figure; hold on; box on;
-%     c = colormap(colorflipper(256,'jet'));    
-%     for ifile = 1:2
-%         for i = 1:size(tline{ifile},1)
-%             cind = round(interp1([0,1],[1,size(c,1)],i/(size(tline{ifile},1)+1)));
-%             plot(poinc.psiNline{ifile}(i,:),tline{ifile}(i,:)/pi,'.','markersize',2,'color',c(cind,:))
-%         end
-%     end
-%     xlabel('\psi_N','fontsize',12)
-%     ylabel('\theta (\pi rad.)','fontsize',12)
-%     set(gca,'fontsize',12)
-%     title(mytitle)
-
-
+    
+    %     figure; hold on; box on;
+    %     c = colormap(colorflipper(256,'jet'));
+    %     for ifile = 1:2
+    %         for i = 1:size(tline{ifile},1)
+    %             cind = round(interp1([0,1],[1,size(c,1)],i/(size(tline{ifile},1)+1)));
+    %             plot(poinc.psiNline{ifile}(i,:),tline{ifile}(i,:)/pi,'.','markersize',2,'color',c(cind,:))
+    %         end
+    %     end
+    %     xlabel('\psi_N','fontsize',12)
+    %     ylabel('\theta (\pi rad.)','fontsize',12)
+    %     set(gca,'fontsize',12)
+    %     title(mytitle)
+    
+    
     if plot_ts
         R(1:40)=1.94;
         Z=[0.0430,0.1720,0.2810,0.3320,0.3590,0.3910,0.4210,0.4770,0.5310,0.5630,0.5790,0.5950,0.6080,0.6230,0.6350,0.6410,0.6480,0.6540,0.6610,0.6680,...
@@ -247,7 +250,7 @@ end
 %------------------------------------------------------------------------------------------------------------------------------------
 %------------------------------------------------------------------------------------------------------------------------------------
 if 0
-%     2 = ~isempty(fname_psimin2) + ~isempty(fname_psimin);
+    %     2 = ~isempty(fname_psimin2) + ~isempty(fname_psimin);
     for ifile = 1:2
         if ifile == 1
             fname_psimin_tmp = fname_psimin;

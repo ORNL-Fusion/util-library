@@ -52,6 +52,7 @@ MODS90 =
 all: $(EXEC) #$(EXEC2)
 
 $(EXEC): $(OBJS90) $(LIBBJDL_DIR)/libbjdl.a 
+	mkdir -p $(BIN_DIR)
 	@echo "Creating "$@" in directory "$(BIN_DIR)
 	${FC} -o $@ $(FF) $^ $(LIBDIR) $(LIBS)
 

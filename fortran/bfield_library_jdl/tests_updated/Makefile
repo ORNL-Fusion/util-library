@@ -23,6 +23,8 @@ USE_M3DC1 = 1  # Set to 1 to compile with m3dc1
 
 SOURCEPATH = ./
 
+HDF5_DIR = /usr/lib/x86_64-linux-gnu/hdf5/serial
+
 # Location of bfield library 
 LIBBJDL_DIR = $(HOME)/util-library/fortran/bfield_library_jdl/lib
 # Location of bfield library include
@@ -37,7 +39,7 @@ INC  = -I$(INCJDL_DIR)
 ifeq ($(strip $(USE_M3DC1)),1)
   DEFINES = -DHAVE_M3DC1
   LIBDIR_m3dc1 = -L$(FIO_INSTALL_DIR)/lib
-  LIBS_m3dc1 = -lfusionio -lm3dc1_fortran -lm3dc1 -lstdc++ -lhdf5
+  LIBS_m3dc1 = -lfusionio -lm3dc1_fortran -lm3dc1 -lstdc++ -L$(HDF5_DIR) -lhdf5
 #  LIBS_m3dc1_full = libfusionio.a libm3dc1_fortran.a libm3dc1.a
   INCLUDE_m3dc1 = -I$(FIO_INSTALL_DIR)/include
 endif

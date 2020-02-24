@@ -8,9 +8,10 @@ for ifile = 1:2
     else
         fname_tmp = fname2;
     end
-    fid = fopen([run_path,fname_tmp]);
+    thisName = fullfile(run_path,fname_tmp);
+    fid = fopen(thisName);
     if fid == -1
-        error('ERROR: cannot open %s\n',[run_path,fname_tmp])
+        error('ERROR: cannot open %s\n',thisName)
     end
     dat = sscanf(fgets(fid),'%f %i %i',3);
     phi_plot_deg = dat(1);
