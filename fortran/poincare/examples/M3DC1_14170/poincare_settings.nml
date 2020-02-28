@@ -5,16 +5,14 @@ gfile_name = '/home/jjl/Florian/g147170.02300'
 !rmp_type = 'g3d' ! options: 'g3d', 'g3d+rmpcoil', 'm3dc1_full_field', 'g3d+m3dc1'
 
 rmp_type = 'm3dc1_full_field' ! options: 'g3d', 'g3d+rmpcoil', 'm3dc1_full_field', 'g3d+m3dc1'
-m3dc1_nsets = 1
+m3dc1_nsets = 4
 m3dc1_filenames(1) = '/home/jjl/M3DC1_runs/orlov_2300/n=1/eb1_1f_probeg/C1.h5'
-!m3dc1_filenames(2) = '/home/jjl/M3DC1_runs/orlov_2300/n=2/eb1_1f_probeg/C1.h5'
-!m3dc1_filenames(3) = '/home/jjl/M3DC1_runs/orlov_2300/n=3/eb1_1f_probeg/C1.h5'
-!m3dc1_filenames(4) = '/home/jjl/M3DC1_runs/orlov_2300/n=4/eb1_1f_probeg/C1.h5'
-m3dc1_scale_factors = 1*2.
-m3dc1_phase_shift_deg = 1*0.
-m3dc1_time = 0  ! 0 vacuum, 1 response
-
-
+m3dc1_filenames(2) = '/home/jjl/M3DC1_runs/orlov_2300/n=2/eb1_1f_probeg/C1.h5'
+m3dc1_filenames(3) = '/home/jjl/M3DC1_runs/orlov_2300/n=3/eb1_1f_probeg/C1.h5'
+m3dc1_filenames(4) = '/home/jjl/M3DC1_runs/orlov_2300/n=4/eb1_1f_probeg/C1.h5'
+m3dc1_scale_factors = 4*2.
+m3dc1_phase_shift_deg = 4*0.
+m3dc1_time = 1  ! 0 vacuum, 1 response
 
 /
 
@@ -23,13 +21,13 @@ m3dc1_time = 0  ! 0 vacuum, 1 response
 Nsym = 3
 
 rstart = 1.95d0
-rend = 2.1d0
+rend = 2.4d0
 zstart = 0.d0
 zend = 0.d0
 
 num_pts = 10
 phistart_deg = 0.d0
-ntransits = 100
+ntransits = 10
 dphi_line_deg = 0.5d0
 
 follow_both_ways = .true.

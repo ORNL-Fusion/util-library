@@ -124,8 +124,8 @@ Do iset = 1,num_sets
 !  Call fio_set_real_option_f(FIO_LINEAR_SCALE, m3dc1_factors(iset), ierr)
 !  Call fio_get_field_f(isrc(iset), FIO_MAGNETIC_FIELD, imag_pert(iset), ierr)
 
-! Initialize hint
-call fio_allocate_search_hint_f(isrc(iset), hint(iset), ierr)
+  ! Initialize hint
+  call fio_allocate_search_hint_f(isrc(iset), hint(iset), ierr)
 
   
 Enddo

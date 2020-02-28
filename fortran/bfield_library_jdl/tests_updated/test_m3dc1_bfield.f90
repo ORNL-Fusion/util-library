@@ -1,4 +1,4 @@
-Program test_m3dc1_bfield
+program test_m3dc1_bfield
 Use kind_mod
 Use m3dc1_routines_mod
 Implicit None
@@ -14,8 +14,8 @@ m3dc1_filenames(3) = '/home/jjl/M3DC1_runs/orlov_2300/n=3/eb1_1f_probeg/C1.h5'
 m3dc1_filenames(4) = '/home/jjl/M3DC1_runs/orlov_2300/n=4/eb1_1f_probeg/C1.h5'
 m3dc1_factors(1:4) = 2.
 m3dc1_phases_deg(1:4) = 0.
-m3dc1_itime = 0  ! 0 vacuum, 1 response
-m3dc1_field_type = 0 ! total (0) or perturbed only (1)
+m3dc1_itime = 1  ! 0 vacuum, 1 response
+m3dc1_field_type = 1 ! total (0) or perturbed only (1)
 m3dc1_toroidal_on_err = .false.
 
 Call Etime(tarray,tres0)
@@ -42,6 +42,11 @@ write(*,*) 'Bout [Br,Bz,Bphi] = ',bg2
 Call Etime(tarray,tres)
 Write(*,*) ' First call took ',tres-tres0,' seconds'
 Call Etime(tarray,tres0)
+
+
+rg = 2.4d0
+zg = 0.d0
+pg = 30.d0*3.14159d0/180.d0
 
 
 Write(*,*) 'Evaluating B at [R,Z,phi] = ',rg,zg,pg

@@ -17,17 +17,14 @@ Use setup_bfield_module
 Implicit none
 
 
-Integer(int32) :: ntor_pts_coil, i, nstart_fl, nsteps
-Integer(int32) :: iocheck, itest, ierr_b, ind_poin, ierr
+Integer(int32) :: i, nstart_fl, nsteps
+Integer(int32) :: iocheck, ind_poin, ierr
 Real(real64), Allocatable :: r1d(:), z1d(:),phistart_arr(:), fl_r(:,:), fl_z(:,:), fl_p(:,:), &
      psiout(:), psiNout(:), fl_r2(:,:), fl_z2(:,:), fl_p2(:,:)
 Integer(int32), Allocatable :: ilg(:), fl_ierr(:), ilg2(:), fl_ierr2(:)
 Real(real64) :: dphi_line, Adphirat
-character(10) :: junk
 Real(Kind=4)  :: tarray(2),tres,tres0
 Logical :: calc_psiN_min = .false., follow_both_ways = .false.
-
-Real(real64),Dimension(1) :: br_test,bz_test,bphi_test
 
 !---------------------------------------------------------------------------
 ! Namelist variables:
