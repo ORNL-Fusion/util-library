@@ -16,6 +16,7 @@ pc.kB   = 1.38064852e-23;      % J/K
 pc.convert.Pa_to_mTorr = 7.5;
 pc.convert.K_to_eV     = pc.kB/pc.eV;
 pc.convert.eV_to_K     = pc.eV/pc.kB;
+pc.NAvogadro = 6.0221409e+23;
 
 if nargin == 1
     try
