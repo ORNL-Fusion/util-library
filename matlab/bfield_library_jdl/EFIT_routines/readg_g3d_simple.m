@@ -1,22 +1,27 @@
 function g = readg_g3d_simple(filename)
 % Simple reading of gfile
 
+if ~isfile(filename)
+    error('File not found: %s',filename)
+end
+
 fid = fopen(filename,'r');
 if fid == -1
     error(['Could not open file: ',filename])
 end
 
 % Line 1, part 1
-line = fgetl(fid);
-g.ecase = sscanf(line(1:8),'%8s');
-sscanf(line(8*6+1:8*6+3),'%4i');   % time
-g.mw = sscanf(line(53:56),'%4i');  % Number of horizontal R grid points
-g.mh = sscanf(line(57:60),'%4i');  % Number of vertical Z grid points
+line1 = fgetl(fid);
+g.ecase = sscanf(line1(1:8),'%8s');
+sscanf(line1(8*6+1:8*6+3),'%4i');   % time
+g.mw = sscanf(line1(53:56),'%4i');  % Number of horizontal R grid points
+g.mh = sscanf(line1(57:60),'%4i');  % Number of vertical Z grid points
 if (length(g.mw) ~= 1) || (length(g.mh) ~= 1) % some gfiles seem to have this shifted by a space or two
-    temp = sscanf(line(50:end),'%d %d %d');
+    temp = sscanf(line1(50:end),'%d %d %d');
     g.mw = temp(2);
     g.mh = temp(3);
 end
+g.line1 = line1;
 
 % Line 2
 line = fgetl(fid);
@@ -26,6 +31,7 @@ g.zdim = data(2);
 g.rzero = data(3);
 g.rgrid1 = data(4);
 g.zmid = data(5);
+
 % Line 3
 line = fgetl(fid);
 data = sscanf(line,'%f%f%f%f%f',5);
