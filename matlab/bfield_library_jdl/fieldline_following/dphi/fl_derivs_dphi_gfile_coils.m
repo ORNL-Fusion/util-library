@@ -20,6 +20,6 @@ Bout.br = Bout.br + Br;
 Bout.bphi = Bout.bphi + Bphi;
 Bout.bz = Bout.bz + Bz;
    
-df(1:2:N-1) = RZ(1:2:N-1).'.*Bout.br./Bout.bphi;
-df(2:2:N)   = RZ(1:2:N-1).'.*Bout.bz./Bout.bphi;
+df(1:2:N-1) = RZ(1:2:N-1).*Bout.br./Bout.bphi;
+df(2:2:N)   = RZ(1:2:N-1).*Bout.bz./Bout.bphi;
 ierr = 0;

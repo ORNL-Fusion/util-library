@@ -4,12 +4,6 @@ if nargin < 6
     nowarn = 0;
 end
     
-if isrow(P_r)
-    P_r = P_r.';
-    P_phi = P_phi.';
-    P_z = P_z.';
-end
-
 cp = cos(P_phi);
 sp = sin(P_phi);
 

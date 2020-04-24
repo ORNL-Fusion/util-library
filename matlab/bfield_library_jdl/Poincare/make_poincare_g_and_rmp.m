@@ -2,7 +2,7 @@ clearvars;
 tic;
 connect_dots = 0;
 
-gfile_name = 'C:\Work\DIII-D\164723\g164723.03059_410';
+gfile_name = 'C:\Work\DIII-D\164273\g164723.03059_410';
 g = readg_g3d(gfile_name);
 
 % bfield.type = 'gfile';
@@ -18,7 +18,7 @@ bfield.type = 'gfile+coils';
 bfield.coil = rmp.coil;
 bfield.current = rmp.current;
 isaxisym = 0;
-nsym = 3;
+bfield.nsym = 3;
 
 
 Rend   = 2.25;    % if [] this is set to max radius of g.bdry
@@ -72,7 +72,7 @@ if connect_dots
         z(:,i) = z(sort_inds,i);
         phi = phi(sort_inds);
         if ~isaxisym
-            phi = mod(phi,2*pi/nsym);
+            phi = mod(phi,2*pi/bfield.nsym);
             inds = find(abs(phi - phistart_deg) < 1e-6);
             rfinal(:,i) = r(inds,i);
             zfinal(:,i) = z(inds,i);
@@ -82,8 +82,8 @@ if connect_dots
     z = zfinal;
 else
     if ~isaxisym
-        phi = mod(phi,2*pi/nsym);
-        phi(abs(phi - 2*pi/nsym) < 1e-6) = 0;
+        phi = mod(phi,2*pi/bfield.nsym);
+        phi(abs(phi - 2*pi/bfield.nsym) < 1e-6) = 0;
         inds = find(abs(phi - phistart) < 1e-6);
         r = r(inds,:);
         z = z(inds,:);

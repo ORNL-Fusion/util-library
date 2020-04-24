@@ -3,9 +3,10 @@ function [Bx,By,Bz,Btot]=bfield_bs_jdl(P_x,P_y,P_z,coil,current)
 
 I=current.*1e-7; %this is mu0*I/4pi
 npts = length(P_x);
-Bx=zeros(npts,1);
-By=zeros(npts,1);
-Bz=zeros(npts,1);
+sz = size(P_x);
+Bx = zeros(sz);
+By = zeros(sz);
+Bz = zeros(sz);
 
 coils_x = coil(:,1);
 coils_y = coil(:,2);
