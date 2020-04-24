@@ -40,10 +40,12 @@ nwind = nturns*nlayers;
 
 
 
-fw = dz/nturns;
-fh = (r2-r1)/nlayers;
-zwind0 = repmat([z1+fw/2:fw:z1+dz-fw/2],1,nlayers);
-rwind0 = repmat([r1+fh/2:fh:r2-fh/2],1,nturns);
+fw = dz/nturns; % Width (axial length) of each turn
+fh = (r2-r1)/nlayers; % Thickness (radial length) of each layer
+
+% r,z positions of the center of each filament
+zwind0 = repmat(linspace(z1+fw/2,z1+dz-fw/2,nturns),1,nlayers);
+rwind0 = repmat(linspace(r1+fh/2,r2-fh/2,nlayers),1,nturns);
 
 thetas = linspace(0,2*pi,ntheta_per_wind);
 
