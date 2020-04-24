@@ -39,7 +39,9 @@ end
 
 
 % figure; hold on; box on;
-plot(g.lim(1,g.lim(1,:)>0),g.lim(2,g.lim(1,:)>0),con_linesty,'linewidth',2)
+if isfield(g,'lim')
+    plot(g.lim(1,g.lim(1,:)>0),g.lim(2,g.lim(1,:)>0),con_linesty,'linewidth',2)
+end
 contour(g.r,g.z,psiN_g.',linspace(psi_min,psi_max,npsi),'-','linewidth',1);
 contour(g.r,g.z,psiN_g.',[1,1],'k-','linewidth',2);
 hc = colorbar;
@@ -48,8 +50,11 @@ colormap(colorflipper(512,'jet'));
 axis equal; axis tight;
 % axis([1,2.4,-1.5,1.5])
 ax = axis;
-h=text(ax(1)+(ax(2)-ax(1))*0.48,ax(3)+(ax(4)-ax(3))*0.97,g.gfilename,'fontsize',8);
-set(h,'interpreter','none');
+if isfield(g,'gfilename')
+    h=text(ax(1)+(ax(2)-ax(1))*0.48,ax(3)+(ax(4)-ax(3))*0.97,g.gfilename,'fontsize',8);
+    set(h,'interpreter','none');
+end
+
 
 
 % Find the xpt(s)

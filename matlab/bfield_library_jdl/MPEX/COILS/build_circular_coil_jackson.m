@@ -16,8 +16,6 @@ function coil = build_circular_coil_jackson(r1,r2,z1,dz,nturns,nlayers)
 
 fw = dz/nturns;
 fh = (r2-r1)/nlayers;
-% zwind = repmat(z1+fw/2:fw:z1+dz-fw/2+eps,1,nlayers);
-% rwind = repmat(r1+fh/2:fh:r2-fh/2,1,nturns);
 
 zwind = repmat(linspace(z1+fw/2,z1+dz-fw/2,nturns),1,nlayers);
 rwind = repmat(linspace(r1+fh/2,r2-fh/2,nlayers),1,nturns);
