@@ -1,25 +1,25 @@
 % test_adas_interp
 clearvars;
 
+% This is not general for non-Hydrogen cases, must then choose/squeeze coefficients!
+
 fname = ['C:\Work\ADAS\adf11_all\scd96\','scd96_h.dat'];  % Effective ionization coefficients (cm^-3/s) 
-[te_scd,ne_scd,scd] = read_adas_adf11_file(fname);
+scd = read_adas_adf11_file(fname);
 fname = ['C:\Work\ADAS\adf11_all\acd96\','acd96_h.dat'];  % Effective recombination coefficients (cm^-3/s)
-[te_acd,ne_acd,acd] = read_adas_adf11_file(fname);
+acd = read_adas_adf11_file(fname);
 fname = ['C:\Work\ADAS\adf11_all\ccd96\','ccd96_h.dat'];  % Effective cx coefficients (cm^-3/s)
-[te_ccd,ne_ccd,ccd] = read_adas_adf11_file(fname);
+ccd = read_adas_adf11_file(fname);
 
 
 % Te_test = linspace(0.1,5,100);
 Te_test = logspace(-1,4,100);
 ne_test = logspace(13,15,3);
 
-scd1 = squeeze(scd(1,:,:));
-acd1 = squeeze(acd(1,:,:));
-ccd1 = squeeze(ccd(1,:,:));
+
 for i=1:length(ne_test)
-    sv_iz(:,i) = interp_adas_rate_coefficient(Te_test,ne_test(i),te_scd,ne_scd,scd1);
-    sv_rc(:,i) = interp_adas_rate_coefficient(Te_test,ne_test(i),te_acd,ne_acd,acd1);
-    sv_cx(:,i) = interp_adas_rate_coefficient(Te_test,ne_test(i),te_ccd,ne_ccd,ccd1);
+    sv_iz(:,i) = interp_adas_rate_coefficient(Te_test,ne_test(i),scd.te,scd.ne,scd.coeff);
+    sv_rc(:,i) = interp_adas_rate_coefficient(Te_test,ne_test(i),acd.te,acd.ne,acd.coeff);
+    sv_cx(:,i) = interp_adas_rate_coefficient(Te_test,ne_test(i),ccd.te,ccd.ne,ccd.coeff);
 end
 
 s = styflipper(length(ne_test));

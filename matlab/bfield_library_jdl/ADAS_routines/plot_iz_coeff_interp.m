@@ -3,7 +3,9 @@ clearvars;
 % suffix = '12'; element='h';
 suffix = '96'; element='he';
 fname = ['C:\Work\ADAS\adf11_all\scd',suffix,'\','scd',suffix,'_',element,'.dat'];  % Effective ionization coefficients (cm^-3/s)
-scd = read_adas_adf11_file(fname); scd1 = squeeze(scd.coeff(:,:,1));
+scd = read_adas_adf11_file(fname); 
+
+scd1 = squeeze(scd.coeff(:,:,1));  % Choose charge 
 
 Te_test = linspace(.1,20,100);
 ne_test = logspace(log10(1e11),log10(1e13),3);  % cm3
@@ -15,11 +17,11 @@ end
 
 s = styflipper(length(ne_test));
 
-% figure; hold on; box on
+figure; hold on; box on
 for i=1:length(ne_test)
     plot(Te_test,sv_iz_adas(:,i)./1e6,'b','linewidth',2,'linestyle',char(s{i}))
 end
-% set(gca,'xscale','log')
+set(gca,'xscale','log')
 set(gca,'yscale','log')
 xlabel('T_e (eV)','fontsize',12)
 ylabel('<\sigmav> (m^3/s)','fontsize',12)

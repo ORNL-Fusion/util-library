@@ -1,6 +1,13 @@
 function sigma_v = interp_adas_rate_coefficient(Te,ne,te_adas,ne_adas,coeff_adas)
 % Te in eV, ne in cm^-3
-% coefficient cm^3/s  
+% coefficient cm^3/s   (Wcm^3 for plt)
+
+nTeAdas = length(te_adas);
+nNeAdas = length(ne_adas);
+
+if ~all(size(coeff_adas) == [nNeAdas,nTeAdas])
+    error('sizes do not match!')
+end
 
 log_interp = 1;
 % my_method = 'spline';

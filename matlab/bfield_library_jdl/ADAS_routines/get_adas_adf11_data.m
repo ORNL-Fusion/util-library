@@ -5,7 +5,8 @@ url_base = 'http://open.adas.ac.uk/download/adf11/';
 
 
 types = {'acd','plt','scd','ccd','prb','prc'};
-species = {'c','h','he','li','be','ar','o','ne','n','w','fe','xe'};
+% species = {'c','h','he','li','be','ar','o','ne','n','w','fe','xe'};
+species = {'he'};
 years = {'89','93','96','12'};
 
 outname_base = 'C:\Work\ADAS\adf11_all';
