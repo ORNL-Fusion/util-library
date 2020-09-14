@@ -6,8 +6,9 @@ if nargin < 2
 end
 
 % Version identifies changes to routine that may require re-creating .mat file
-version_ = 3;
+version_ = 4;
 % v3: Changed outputs to row vectors and added bicub inverse
+% v4: Added aminor and nGW
 
 if isempty(filename)
     g = [];
@@ -53,6 +54,10 @@ for i = 0:g.mh-1
 end
 
 if ~isempty(g.qpsi)  % Do not postprocess truncated file
+    
+    g.aminor = (max(g.bdry(1,:))-min(g.bdry(1,:)))/2;
+    g.nGW = g.cpasma/1e6/pi/g.aminor^2*1e20;
+    
     g.ip_sign = -sign(g.cpasma);
     
     g.bicub_coeffs = get_psi_bicub_coeffs(g);

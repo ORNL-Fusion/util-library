@@ -6,7 +6,7 @@ plot_glim = 0;
 
 fname_psimin = []; fname_psimin2 = []; gfile_name =[];
 
-if 1
+if 0
 %    run_path = '/home/jjl/util-library/fortran/poincare/examples/M3DC1_14170'; suffix = 'test'; mytitle = 'test';
    run_path = '/home/jjl/util-library/fortran/poincare/examples/M3DC1_14170'; suffix = 'm3dc1_test'; mytitle = 'test';
 end
@@ -65,18 +65,20 @@ if 0
     gfile_name = 'C:\Work\DIII-D\165274\kinetic\g165274.02120';
 end
 
-if 0
+if 1
     %     run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '60surf';mytitle = 'bmw';
     % run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\mfbe\'; suffix = '60surf';mytitle = 'mfbe';
     % run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '40surf_v2';mytitle = 'extender';
     % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA\extender\'; suffix = '60surf';mytitle = 'extender';
     % run_path = 'C:\Work\fortran\test_poincare\W7-X\OP2\22kA\bmw\'; suffix = '40surf_18deg';mytitle = 'bmw';
     % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP2\22kA_altern\'; suffix = '0deg_200tran_60surf';mytitle = 'extender';
-    % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '0deg_200tran_60surf';mytitle = 'extender';% 1.75 parts
+%     run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic'; suffix = '0deg_200tran_60surf';mytitle = 'extender';% 1.75 parts
     % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '-160.75_200tran_60surf';mytitle = 'extender'; % 16.75 parts
     
+    run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\43kA_mimic\'; suffix = '-145.75_200tran_100surf';mytitle = '43kA mimic';  Zfac = -1;
+    
     % MPM scan
-    run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\0kA_mimic\'; suffix = '15.2deg_test1';mytitle = '';
+%     run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\0kA_mimic\'; suffix = '15.2deg_test1';mytitle = '';
     % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\11kA_mimic\'; suffix = '15.2deg_test1';mytitle = '11kA';
     % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\22kA_mimic\'; suffix = '15.2deg_test1';mytitle = '';
     % run_path = 'C:\Work_archive\fortran\test_poincare\W7-X\OP12a\32kA_mimic\'; suffix = '15.2deg_test1';mytitle = '32kA';

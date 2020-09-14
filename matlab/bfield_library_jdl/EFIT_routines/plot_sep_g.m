@@ -10,23 +10,23 @@ if nargin < 4
     linewid = 1;
 end
 
-%(run_path,g,newfig,plotit,sep_file_name,rguess,zguess,de,SECOND_SEP,save_in_dir)
-
-
-
 clip_at_glim = 1;
 
 if newfig == 1
     figure; hold on;   
 end
 
-
+DEBUG = 0;
 
 box_r = [g.r(1),g.r(g.mw),g.r(g.mw),g.r(1),g.r(1)];
 box_z = [g.z(1),g.z(1),g.z(g.mh),g.z(g.mh),g.z(1)];
 
 [pathstr,fn,ext] = fileparts(g.filename);
 fname = fullfile(pathstr,strcat(fn,ext,'_sep'));
+
+if DEBUG 
+    figure; hold on;
+end
 
 fid = fopen(fname,'r');
 if fid == -1
@@ -36,8 +36,10 @@ if fid == -1
     lim_r = g.lim(1,g.lim(1,:) > 0);
     lim_z = g.lim(2,g.lim(1,:) > 0);
     
-%     plot(box_r,box_z,'c-')
-%     plot(lim_r,lim_z,'r-')
+    if DEBUG 
+        plot(box_r,box_z,'c-')
+        plot(lim_r,lim_z,'r-')
+    end
     xpt_info = find_xpt_jl(g,1,1,1e-8,0);
     xr1 = xpt_info.rx;
     xz1 = xpt_info.zx;
@@ -76,8 +78,10 @@ if fid == -1
         end
         if ii == maxtries
             error('increase maxtries')
-        end        
-%         plot(rsep0,zsep0,'g')
+        end      
+        if DEBUG
+            plot(rsep0,zsep0,'g')
+        end
         if idir == 1
             rsep1 = rsep0;
             zsep1 = zsep0;
