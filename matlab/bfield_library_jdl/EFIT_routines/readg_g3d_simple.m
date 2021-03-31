@@ -64,6 +64,9 @@ g.pprime = fscanf(fid,'%f',g.mw).'; % P'(psi) in (Nt/m2)/(Wb/rad)
 g.psirz = fscanf(fid,'%f',[g.mw,g.mh]);  % Poloidal flux in Weber/rad
 %
 g.qpsi = fscanf(fid,'%f',g.mw).';
+if any(g.qpsi == 0)
+    g.qpsi = [];
+end
 if ~isempty(g.qpsi)  % file ends here in some cases
     %
     line = fscanf(fid,'%i',2);
