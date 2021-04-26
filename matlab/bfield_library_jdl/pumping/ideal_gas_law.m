@@ -97,7 +97,7 @@ fprintf('  n = %.3e (m^-3), rho = %.3e (kg/m^3)\n',n,rho)
 % pV unit conversion to get particles/s, where particles = molecules. Then if you
 % want atoms/s multiply this by 2. So convert Torr-L/s to Pa*m^3/s by dividing by
 % 7.5.  Then divide by kT, this gives 1 Torr-L/s = 3.5355e19 molecules per second 
-% and 7.07e19 atoms/s, and 11.33 A/s. 
+% and 7.07e19 atoms/s, and 11.33 A. 
 
 
 % r_m = 1.37e-10;  % radius 

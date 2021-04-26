@@ -1,4 +1,5 @@
 function y = evaluate_tanh_fit(c,x,param)
+% y = evaluate_tanh_fit(c,x,param)
 %
 % ; tanh function with cubic or quartic inner and linear
 % ;                                to quadratic outer extensions and derivative=0 at param
