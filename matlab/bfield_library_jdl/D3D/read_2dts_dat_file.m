@@ -32,7 +32,7 @@ while ~feof(fid)
         iwants = [1:3,8,24:29,30:32,35:37,40];  % Select columns to be used, must be recognized below
     elseif ncol == 91
         ver = 3;
-        iwants = [1:3,8,24:29,30:32,35:37,40];  % Select columns to be used, must be recognized below
+        iwants = [1:3,8,24:29,30:32,35:37,40,80:81];  % Select columns to be used, must be recognized below
     else
          if feof(fid)
             break;
@@ -128,7 +128,7 @@ for i = 1:length(channels)
         ts2d.chan{ic}.RmRsep_map(icount_chans(ic)) = RmRsep_map_targ_m(i);
         ts2d.chan{ic}.ZmZsep_map(icount_chans(ic)) = ZmZsep_map_targ_m(i);
         
-        if ver == 1
+        if any(ver == [1,3])
         ts2d.chan{ic}.qperp(icount_chans(ic))     = qperp_MWm2(i);
         ts2d.chan{ic}.qperp_err(icount_chans(ic)) = qperp_err_MWm2(i);
         end
