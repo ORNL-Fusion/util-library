@@ -26,8 +26,8 @@ dtThreshMS = 1;  % Discard "ELM" spikes repeated in this threshold (ms)
 % Select ir radius to find ELMS (in dR from Outer SP)
 dROutFindELMCM = -10;
 
-WRITE_FILE = 1;
-MAKE2DPLOTS = 0;
+WRITE_FILE = 0;
+MAKE2DPLOTS = 1;
 
 dROuterWantRangeCM = [-10,20];
 dRInnerWantRangeCM = [-5,8];
@@ -87,9 +87,6 @@ function writeFile(fullIR,fullFileNameOut,SHIFT_CM)
 %     fclose(fid);
 
 %% mat
-
-
-
 IR.Outer.dRSep = fullIR.Binned.Outer.dRBinCensCM./100;
 IR.Outer.dRSepShift = SHIFT_CM/100;
 IR.Outer.q = fullIR.Binned.Outer.dataMWm2*1e6;

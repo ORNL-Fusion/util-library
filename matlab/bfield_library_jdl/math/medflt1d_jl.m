@@ -30,7 +30,7 @@ if iscolumn(x)
 end
 
 
-if ~mod(m,2);
+if ~mod(m,2)
     dimin = m/2;
     dimax = m/2+1;    
 else
