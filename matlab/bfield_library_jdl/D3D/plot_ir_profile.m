@@ -21,13 +21,13 @@ elmWin = [0.8,0.95];
 sparseifyLines = 20;    % Step for time trace indices, only in plotting
 crangeElmPlot = 2;  % Colorbar control for ELM cycle plot: 1 = [0,1], else tight to elmWin set above
 
-elmThreshNorm = 0.3;   % In normalized magnitude for ELM filter
+elmThreshNorm = 0.2;   % In normalized magnitude for ELM filter
 dtThreshMS = 1;  % Discard "ELM" spikes repeated in this threshold (ms)
 % Select ir radius to find ELMS (in dR from Outer SP)
 dROutFindELMCM = -10;
 
 WRITE_FILE = 0;
-MAKE2DPLOTS = 1;
+MAKE2DPLOTS = 0;
 
 dROuterWantRangeCM = [-10,20];
 dRInnerWantRangeCM = [-5,8];
@@ -42,7 +42,7 @@ nInnerBinIR = 12;  % Number of radial bins in dR range
 
 %% Load file(s)
 IR = get_IR_data(fname,tWinMS);
-IR = filterDataElms(IR,dROutFindELMCM,elm_file,elmThreshNorm,dtThreshMS);
+IR = tagDataElms(IR,dROutFindELMCM,elm_file,elmThreshNorm,dtThreshMS);
 if MAKE2DPLOTS
     plotIR2D(IR,dROuterWantRangeCM,dRInnerWantRangeCM);
 end
@@ -196,7 +196,7 @@ end
 
 
 
-function IR = filterDataElms(IR,dROutFindELMCM,elm_file,elmThreshNorm,dtThreshMS)
+function IR = tagDataElms(IR,dROutFindELMCM,elm_file,elmThreshNorm,dtThreshMS)
 
 %% ELM Filter
 if ~isempty(elm_file)
