@@ -12,7 +12,7 @@ fname = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1743XX\irtv_174306_3
 % twin = [4300,4400];
 % twin = [3300,3700];
 % twin = [3200,4800];
-tWinMS = [3100,4000];
+tWinMS = [3200,4000];
 elmWin = [0.8,0.95];
 % elm_win = [0.9,0.95];
 
@@ -26,13 +26,13 @@ dtThreshMS = 1;  % Discard "ELM" spikes repeated in this threshold (ms)
 % Select ir radius to find ELMS (in dR from Outer SP)
 dROutFindELMCM = -10;
 
-WRITE_FILE = 0;
+WRITE_FILE = 1;
 MAKE2DPLOTS = 0;
 
-dROuterWantRangeCM = [-10,20];
-dRInnerWantRangeCM = [-5,8];
-nOuterBinIR = 12;  % Number of radial bins in dR range
-nInnerBinIR = 12;  % Number of radial bins in dR range
+dROuterWantRangeCM = [-10,22];
+dRInnerWantRangeCM = [-5,15];
+nOuterBinIR = 50;  % Number of radial bins in dR range
+nInnerBinIR = 50;  % Number of radial bins in dR range
 
 % fname_stub = 'out';
 
@@ -47,7 +47,6 @@ if MAKE2DPLOTS
     plotIR2D(IR,dROuterWantRangeCM,dRInnerWantRangeCM);
 end
 IR = elmFilter(IR,elmWin);
-% IR = binIR(IR,dROuterWantRangeCM,dRInnerWantRangeCM,nBinIR);
 IR.Binned.Outer = binIR(IR.ElmFiltered.time,IR.ElmFiltered.dROutCM,IR.ElmFiltered.dataMWm2,dROuterWantRangeCM,nOuterBinIR);
 IR.Binned.Inner = binIR(IR.ElmFiltered.time,IR.ElmFiltered.dRInCM,IR.ElmFiltered.dataMWm2,dRInnerWantRangeCM,nInnerBinIR);
 
@@ -97,6 +96,7 @@ IR.Inner.dRSepShift = SHIFT_CM/100;
 IR.Inner.q = fullIR.Binned.Inner.dataMWm2*1e6;
 IR.Inner.qErr = fullIR.Binned.Inner.errMWm2*1e6;
 
+fprintf('%s\n',fullFileNameOut);
 save(fullFileNameOut,'IR')
 
 
@@ -298,15 +298,15 @@ for ibin = 1:nBin
     for jtime = 1:length(timeMS)
         inBin = find( radiusCM(:,jtime) >= IRBinned.dRBinEdgesCM(ibin) & radiusCM(:,jtime) < IRBinned.dRBinEdgesCM(ibin+1));
         this = dataMWm2(inBin,jtime);
-        databin(jtime)    = mean(this);
-        databinvar(jtime) = var(this);
+        databin(jtime)    = mean(this,'omitnan');
+        databinvar(jtime) = var(this,'omitnan');
     end
     %     IRBinned.dataMWm2(ibin) = sum(databin./databinvar)./sum(1./databinvar);
     %     IRBinned.errMWm2(ibin) = sqrt(1./sum(1./databinvar));
     
-    IRBinned.dataMWm2(ibin) = mean(databin);
+    IRBinned.dataMWm2(ibin) = mean(databin,'omitnan');
     %     IR.Binned.Outer.errMWm2(ibin) = std(databin)./sqrt(length(databin));
-    IRBinned.errMWm2(ibin) = std(databin);
+    IRBinned.errMWm2(ibin) = std(databin,'omitnan');
     
     %     IRBinned.errMWm2(ibin) = std(databin);
 end

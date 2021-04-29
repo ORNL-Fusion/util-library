@@ -18,25 +18,32 @@ g = readg_g3d(gfile_name);
 %         fname_out_part = '5MW_detach';
 %         fname ='C:\Work\DIII-D\APS 2016\2dts_data\dts_fitted1d_osp_multishot_156871156872156873156874_remapto156855at4527msEFIT04_fuelD_ioncharge1_gamma7p539_see0p000_weightedfits.dat';        
 % end
-fname ='C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1753XX\dts_fitted1d_osp_174306_2000to5000msEFIT03_remapto3500msEFIT03_fuelD_ioncharge1_gamma7p539_see0p000_weightedfits.dat';
+run_path = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1743XX\';
+fname = fullfile(run_path,'dts_fitted1d_osp_174306_2000to5000msEFIT03_remapto3500msEFIT03_fuelD_ioncharge1_gamma7p539_see0p000_weightedfits.dat');
+outfile = fullfile(run_path,'dts_osp_174306.mat');
 
 ts2d = read_2dts_dat_file(fname);
 
-WRITE_IT = 0;
+WRITE_IT = 1;
 
 plot_log = 0;
 
 minval_Te = 0.4;
 maxval_Te = 100;
 
-minval_ne = 0.02;
-maxval_ne = 4;
+minval_ne = 0.02;  % e 20
+maxval_ne = 1;
+
+minval_q = 0;
+maxval_q = 10;
 
 PLOT_TE =1;
 PLOT_NE = 1;
 PLOT_Q = 1;
 
-% ichan_use = 1;  %0:7
+colorMapName = 'parula';
+
+% ichan_use = 0;  %0:7
 ichan_use = 0:7;  %0:7
 
 % Make 1D arrays
@@ -69,7 +76,7 @@ if PLOT_TE
     end
     colorbar;
     ncols = 1024;
-    colormap(colorflipper(ncols,'rainbow'));
+    colormap(colorflipper(ncols,colorMapName));
     if plot_log
         set(gca,'clim',log10([minval_Te,maxval_Te]))
     else
@@ -92,7 +99,7 @@ if PLOT_NE
     end
     colorbar;
     ncols = 1024;
-    colormap(colorflipper(ncols,'rainbow'));
+    colormap(colorflipper(ncols,colorMapName));
     if plot_log
         set(gca,'clim',log10([minval_ne,maxval_ne]))
     else
@@ -112,7 +119,12 @@ if PLOT_Q
     end
     colorbar;
     ncols = 1024;
-    c = colormap(colorflipper(ncols,'rainbow'));
+    colormap(colorflipper(ncols,colorMapName));
+    if plot_log
+        set(gca,'clim',log10([minval_q,maxval_q]))
+    else
+        set(gca,'clim',[minval_q,maxval_q])
+    end    
     plot_sep_g(g,1,0);
     axis([1.35,1.65,-1.25,-0.95])
     title('q perp [MW/m^2]')
@@ -157,12 +169,17 @@ if length(ichan_use) == 1
         xlabel('R [m]')
         ylabel('T_{e} [eV]')
         
+        figure; hold on; box on;
+        errorbar((R1d-Rsep)*100,ne1d,dne1d,'ko')
+        xlabel('R [m]')
+        ylabel('n_{e} []')        
+        
         % experimental
         figure; hold on; box on;
         scatter((R1d-Rsep)*100,q1d,[],time1d,'filled')
         colorbar;
         ncols = 1024;
-        colormap(colorflipper(ncols,'rainbow'));
+        colormap(colorflipper(ncols,colorMapName));
         
       
     end
@@ -172,10 +189,14 @@ end
 
 if WRITE_IT
     [pathstr] = fileparts(fname);
-    if length(ichan_use) == 1
-        fprintf('Skipping write because too many channels!\n')
+    
+    save(outfile,'ts2d');
+    
+    
+    if length(ichan_use) == 1 & 0 % Switched to mat version
+        
         if ichan_use == 0
-            fprintf('Skipping write because not channel 0!\n')
+            
             
             fname_out = fullfile(pathstr,strcat('Te_2DTS_1D_chan0_targ_',fname_out_part,'.dat'));
             fprintf('Writing Te data to file: %s\n',fname_out)
@@ -203,11 +224,14 @@ if WRITE_IT
                 fprintf(fid,'%e %e %e\n',R1d_maptarg(i),q1d(i),dq1d(i));
             end
             fclose(fid);
-            
-            
+                     
+        else
+            fprintf('Skipping write because not channel 0!\n')
             
             
         end
+    else
+        fprintf('Skipping write because too many channels!\n')
     end
 end
 
