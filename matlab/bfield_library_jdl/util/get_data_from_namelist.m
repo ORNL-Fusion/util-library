@@ -42,9 +42,9 @@ fclose(fid);
 total_line=regexprep(total_line,'([\n|\r])','','ignorecase'); %Get Rid of CR
 total_line=regexprep(total_line,' T ',' 1 ','ignorecase'); %Get Rid of T
 total_line=regexprep(total_line,' F ',' 0 ','ignorecase'); %Get Rid of F
-total_line=regexprep(total_line,' \.true\. ',' 1 ','ignorecase'); %Get Rid of .true.
-total_line=regexprep(total_line,' \.false\. ',' 0 ','ignorecase'); %Get Rid of .false.
 total_line = strrep(total_line,'=',' = ');
+total_line=regexprep(total_line,'\.true\.',' 1 ','ignorecase'); %Get Rid of .true.
+total_line=regexprep(total_line,'\.false\.',' 0 ','ignorecase'); %Get Rid of .false.
 
 var_want = strtrim(var_want);
 eqdex=strfind(total_line,'=');
@@ -59,7 +59,14 @@ for i = 1:length(eqdex)
         this_right = total_line(eqdex(i)+1:eqdex(i+1)-1);
         
         % Handle right --> get data from eq to next varname
-        find_words = find(diff(isletter(this_right)) == 1) + 1;
+        
+        % Special case for underscore not caught by isletter -- allow varnames to have underscore
+        isUnderscore = false(1,length(this_right));
+        isUnderscore(strfind(this_right,'_')) = 1;
+        
+        iTest = isletter(this_right) | isUnderscore;
+        
+        find_words = find(diff(iTest) == 1) + 1;
         if isempty(find_words)
             error('Could not find any letter strings in right side: %s',this_right)
         end
@@ -96,8 +103,28 @@ for i = 1:length(eqdex)
         error('Do not understand parentheses structure')
     end
     
+    
     if strfind(this_data,'*')
-        error('need to handle this')
+        
+        while any(strfind(this_data,'*'))
+            thisDataTmp = this_data; 
+            thisDataTmp(strfind(thisDataTmp,' ')) = ',';
+            comdexStar = strfind(thisDataTmp,',');
+        
+        
+            stardex=strfind(thisDataTmp,'*');
+            stardex = stardex(1);
+            nRepeat = thisDataTmp(comdexStar(find(comdexStar < stardex,1,'last'))+1:stardex-1);  % should be an integer
+            repeatVal = thisDataTmp(stardex+1:comdexStar(find(comdexStar > stardex,1,'first'))-1);  % should be an real or logical, I guess
+            
+            newStr = strcat(repeatVal,',');
+            for iRpt = 2:str2num(nRepeat)
+                newStr(end+1:end+length(repeatVal)+1) = strcat(repeatVal,',');
+            end
+            this_data = strcat(this_data(1:comdexStar(find(comdexStar < stardex,1,'last'))-1),newStr,this_data(comdexStar(find(comdexStar > stardex,1,'first'))+1:end));
+            
+        end
+        
     end
     
     % Should now have this_var, and this_data
