@@ -3,15 +3,23 @@ clearvars;
 % Channels 1:8 are on shelf, increasing in radius
 % 9:19 are inner div, moving down center stack then out in radius
 
+SAVE_IT = 0;
 tWinMS = [3200,4000];
+% elmWin = [0.0,1.0];
 elmWin = [0.3,0.7];
 crangeElmPlot = 2;  % Colorbar control for ELM cycle plot: 1 = [0,1], else tight to elmWin set above
 elmThreshNorm = 0.1;
 elmTimeNoRepeatMS = 1;
-signalNamePlot = 'heatflux';  % Just used to make figures
+% signalNamePlot = 'heatflux';  % Just used to make figures
+signalNamePlot = 'jsat';  % Just used to make figures
+% signalNamePlot = 'dens';  % Just used to make figures
 % gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\power13mw\g174310.03500_153';
+
 fileNameLP = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1743XX\LP_174306.mat';
 elmFile = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1743XX\fs_174306_2000_5000.mat';
+
+% fileNameLP = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1743XX\LP_174310.mat';
+% elmFile = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1743XX\fs_174310_2000_5000.mat';
 
 [filepath,name,ext] = fileparts(fileNameLP);
 outfile = fullfile(filepath,[name,'_processed',ext]);
@@ -47,7 +55,7 @@ for i = 1:length(LP.Shelf.chan)
 end
 plot(LP.Profiles.Shelf.dLSepOut,medflt1d_jl(LP.Profiles.Shelf.(signalNamePlot),100))
 % plot(LP.ProfilesELMFiltered.Shelf.dLSepOut,LP.ProfilesELMFiltered.Shelf.(signalNamePlot),'ko')
-plot(LP.ProfilesELMFiltered.Shelf.dLSepOut,medflt1d_jl(LP.ProfilesELMFiltered.Shelf.(signalNamePlot),100),'k')
+plot(LP.ProfilesELMFiltered.Shelf.dLSepOut,medflt1d_jl(LP.ProfilesELMFiltered.Shelf.(signalNamePlot),100),'k','linew',2)
 
 
 
@@ -71,6 +79,7 @@ xlabel('dL_{sep} Outer')
 ylabel(signalNamePlot)
 title('Shelf')
 colormap(colorflipper(num_col,'plasma'));
+set(gca,'clim',crange)
 
 
 figure; hold on; box on; grid on; set(gcf,'color','w');
@@ -82,10 +91,11 @@ for i = 1:length(LP.Inner.chan)
     ylabel(signalNamePlot)
     title('Inner')
 end
-plot(LP.ProfilesELMFiltered.Inner.dLSepIn,medflt1d_jl(LP.ProfilesELMFiltered.Inner.(signalNamePlot),100),'k')
+plot(LP.ProfilesELMFiltered.Inner.dLSepIn,medflt1d_jl(LP.ProfilesELMFiltered.Inner.(signalNamePlot),100),'k','linew',2)
 
+if SAVE_IT
 save(outfile,'LP');
-
+end
 
 function LP = filterLPElms(LP,Spikes,elmWin)
 

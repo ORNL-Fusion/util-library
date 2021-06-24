@@ -19,17 +19,22 @@ g = readg_g3d(gfile_name);
 %         fname ='C:\Work\DIII-D\APS 2016\2dts_data\dts_fitted1d_osp_multishot_156871156872156873156874_remapto156855at4527msEFIT04_fuelD_ioncharge1_gamma7p539_see0p000_weightedfits.dat';        
 % end
 run_path = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1743XX\';
+
 fname = fullfile(run_path,'dts_fitted1d_osp_174306_2000to5000msEFIT03_remapto3500msEFIT03_fuelD_ioncharge1_gamma7p539_see0p000_weightedfits.dat');
 outfile = fullfile(run_path,'dts_osp_174306.mat');
 
+% fname = fullfile(run_path,'dts_fitted1d_osp_174310_3000to4800msEFIT03_remapto174306at3500msEFIT03_fuelD_ioncharge1_gamma7p539_see0p000_weightedfits.dat');
+% outfile = fullfile(run_path,'dts_osp_174310.mat');
+
+
 ts2d = read_2dts_dat_file(fname);
 
-WRITE_IT = 1;
+WRITE_IT = 0;
 
 plot_log = 0;
 
-minval_Te = 0.4;
-maxval_Te = 100;
+minval_Te = 0.5;
+maxval_Te = 200;
 
 minval_ne = 0.02;  % e 20
 maxval_ne = 1;
@@ -41,7 +46,9 @@ PLOT_TE =1;
 PLOT_NE = 1;
 PLOT_Q = 1;
 
-colorMapName = 'parula';
+% colorMapName = 'parula';
+colorMapName = 'plasma';
+% colorMapName = 'rainbow';
 
 % ichan_use = 0;  %0:7
 ichan_use = 0:7;  %0:7
@@ -196,8 +203,7 @@ if WRITE_IT
     if length(ichan_use) == 1 & 0 % Switched to mat version
         
         if ichan_use == 0
-            
-            
+                        
             fname_out = fullfile(pathstr,strcat('Te_2DTS_1D_chan0_targ_',fname_out_part,'.dat'));
             fprintf('Writing Te data to file: %s\n',fname_out)
             fid = fopen(fname_out,'w');
