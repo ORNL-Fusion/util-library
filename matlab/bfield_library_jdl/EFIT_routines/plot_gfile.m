@@ -39,6 +39,7 @@ end
 
 
 % figure; hold on; box on;
+set(gcf,'color','w');
 if isfield(g,'lim')
     plot(g.lim(1,g.lim(1,:)>0),g.lim(2,g.lim(1,:)>0),con_linesty,'linewidth',2)
 end

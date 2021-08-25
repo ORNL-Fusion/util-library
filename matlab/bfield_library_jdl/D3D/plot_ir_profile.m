@@ -5,7 +5,9 @@ elm_file = [];
 % fname = 'C:\Work\DIII-D\APS 2016\irtv_data\irtv_156861_2000_4900.mat'; shot = 156861; SHIFT_CM = 3.5;
 % fname = 'C:\Work\DIII-D\APS 2016\irtv_data\irtv_156867_2000_4900.mat'; shot = 156867; SHIFT_CM = 0;
 % fname = 'C:\Work\DIII-D\APS 2016\irtv_data\irtv_156871_2000_4900.mat'; shot = 156871; SHIFT_CM = 0;
+% 
 fname = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1743XX\irtv_174306_3000_4000.mat'; shot = 174306; SHIFT_CM = 1.5;
+% fname = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\1743XX\irtv_174310_3000_4000.mat'; shot = 174310; SHIFT_CM = 1.5;
 
 
 
@@ -27,7 +29,7 @@ dtThreshMS = 1;  % Discard "ELM" spikes repeated in this threshold (ms)
 dROutFindELMCM = -10;
 
 WRITE_FILE = 1;
-MAKE2DPLOTS = 0;
+MAKE2DPLOTS = 1;
 
 dROuterWantRangeCM = [-10,22];
 dRInnerWantRangeCM = [-5,15];

@@ -1,4 +1,7 @@
-function spikes = find_spikes(t,d,thresh,dt_thresh,MEDFILT)
+function spikes = find_spikes(t,d,thresh,dt_thresh,MEDFILT,plotit)
+if nargin < 6
+    plotit = 1;
+end
 
 if MEDFILT
 d=d-medflt1d_jl(d,floor(length(t)*0.1),'zero');
@@ -41,6 +44,7 @@ while any(dt_ind < dt_thresh)
     end    
 end
 
+if plotit
 figure; hold on; box on;
 subplot(2,1,1); hold on; box on;
 plot(t,d)
@@ -53,8 +57,8 @@ plot(t(p_ind),sig_norm(p_ind),'ro')
 yline(thresh,'k')
 ylabel('Normalized signal')
 xlabel('Time [ms]')
-title('ELM timing (IR)')
-
+% title('ELM timing (IR)')
+end
 spikes.time_inds = p_ind;
 spikes.times = t(p_ind);
 spikes.val = d(p_ind);
