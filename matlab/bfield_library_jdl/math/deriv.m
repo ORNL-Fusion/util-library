@@ -3,6 +3,11 @@ function yp = deriv(x,y)
 % Should be the same as idl deriv
 % Uses 3 pt Lagrange interpolating polynomial
 
+if all(size(x) ~= size(y))
+%     error('Inputs must be same size')
+    y = y.';
+end
+
 % clearvars;
 % tic;
 % x = 0:0.1:10;
