@@ -1,5 +1,6 @@
 function [rho,R,Rsep] = calc_rho_midplane_map(g,R1,Z1)
 % Give R,Z or just R = psiN
+% rho = R - Rsep
 
 if nargin == 2
     psiN1 = R1;
