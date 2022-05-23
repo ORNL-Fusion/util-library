@@ -6,12 +6,13 @@ RADIAL_METHOD = 'tanh';  % Options: 'psiN', 'tanh'
 POLOIDAL_METHOD = 'theta'; % Options: 'uniform', 'theta'
 maskPFR = 1;           % If 1 then treat PFR psiN as 2 - psiN
 maskPoloidalBySep = 1; % If 1 then only apply poloidal function for psiN >= 1
+maskLim = 1;           % If 1 then set fun = 0 outside of g.lim
 
 %% Settings
 gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\PSIscidac\WEST\g055866.47179_V2';  % efit file
 
-nR = 200;  % Grid resolution to build surface
-nZ = 300;
+nR = 300;  % Grid resolution to build surface
+nZ = 400;
 
 cTanh = [1 0.04 0.3 0.1 3e-3 3e-5 0 -0.01];  % tanh coefficents, only used if RADIAL_METHOD == 'psiN'
 
@@ -73,12 +74,20 @@ end
 %% Define total function
 myFun = radialFun.*poloidalFun;
 
+if maskLim
+    mask = ~inpolygon(R2D,Z2D,g.lim(1,:),g.lim(2,:));
+    myFun(mask) = 0;
+end
+
 %% Plot contours
 figure; hold on; box on; set(gcf,'color','w');set(gca,'fontsize',14); grid on; 
 axis equal;
 h = pcolor(R2D,Z2D,myFun);
 set(h,'edgecolor','none');
 colorbar;
+c = parula;
+c(1,:) = [1 1 1];
+colormap(c);
 plot(g.lim(1,:),g.lim(2,:),'k')
 plot(g.bdry(1,:),g.bdry(2,:),'k')
 plot(Rtest,Ztest,'r','linew',3)
