@@ -4,7 +4,7 @@ function val = eval_AMJUEL_H3_fit(H4data,E0_eV,Ti_eV)
 lnT = log(Ti_eV);
 lnE0 = log(E0_eV);  %n tilde in fits
 
-N = size(H4data,2);
+N = size(H4data,1);
 M = size(H4data,2);
 
 lnsv = zeros(size(Ti_eV));

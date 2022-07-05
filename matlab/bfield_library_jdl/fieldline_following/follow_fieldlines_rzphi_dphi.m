@@ -6,7 +6,8 @@ function [s,ierr,i_last_good]=follow_fieldlines_rzphi_dphi(bfield,Rstart,Zstart,
 % nowarn == 1 supresses warnings from fl_derivs, and rk45
 % bfield should be a struct with fields 'type' and others corresponding to the type
 %   type = 'gfile'
-%       g = gfile info
+%      g = gfile info
+%   nsym = 1
 ierr = check_bfield_struct(bfield);
 if ierr ~= 0
     error('Cannot follow fieldline, bfield structure not properly set up')

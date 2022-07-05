@@ -1,9 +1,9 @@
 clearvars;
 
-% suffix = '96'; element='h';
+suffix = '96'; element='h';
 % suffix = '96'; element='c';
 % suffix = '50'; element='w';
-suffix = '96'; element='ne';
+% suffix = '96'; element='ne';
 
 fprintf('Reading scd\n');
 fname = ['C:\Work\ADAS\adf11_all\scd',suffix,'\','scd',suffix,'_',element,'.dat'];  % Effective ionization coefficients (cm^-3/s)
