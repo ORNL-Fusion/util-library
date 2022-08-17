@@ -1,4 +1,5 @@
-function alpha_deg = calc_Bangle_g(g,R1,Z1,R2,Z2)
+function [alpha_deg,beta_deg] = calc_Bangle_g(g,R1,Z1,R2,Z2)
+error('verify that midpoint is desired method')
 %  alpha_deg = calc_Bangle_g(g,R1,Z1,R2,Z2)
 
 v2 = [0,0,1];
@@ -10,6 +11,11 @@ for i = 1:length(R1)
     b = [b.br,b.bz,b.bphi];
     b = b./norm(b);
     alpha_deg(i) = 90 - acos(dot(vn,b))*180/pi;
+
+    brz = b;
+    brz(3) = 0;
+    brz = brz./norm(brz);
+    beta_deg(i) = acos(dot(vn,brz))*180/pi;
 end
 
 
