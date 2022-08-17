@@ -1,8 +1,11 @@
-function g = readg_g3d(filename,force_rewrite)
+function g = readg_g3d(filename,force_rewrite,quiet)
 % Simple reading of gfile with postprocessing for psi and bfield interpolation
 
 if nargin < 2
     force_rewrite = 0;
+end
+if nargin < 3
+    quiet = 0;
 end
 
 % Version identifies changes to routine that may require re-creating .mat file
@@ -17,9 +20,13 @@ end
 
 fname_mat = [filename,'.mat'];
 if exist(fname_mat,'file') ~= 2 || force_rewrite
-    disp([' >>>> Reading gfile ',filename])
+    if ~quiet
+        disp([' >>>> Reading gfile ',filename])
+    end
 else
-    disp(['>>>> Reading .mat version of gfile ',fname_mat])
+    if ~quiet
+        disp(['>>>> Reading .mat version of gfile ',fname_mat])
+    end
     S = load(fname_mat);
     g = S.g;
     
@@ -74,6 +81,8 @@ if ~isempty(g.qpsi)  % Do not postprocess truncated file
 end
 g.version = version_;
 
-disp('>>> Saving .mat version of gfile')
+if ~quiet
+    disp('>>> Saving .mat version of gfile')
+end
 save(fname_mat,'g');
 
