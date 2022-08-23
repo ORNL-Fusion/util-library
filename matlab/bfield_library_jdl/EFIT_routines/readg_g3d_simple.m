@@ -1,27 +1,42 @@
 function g = readg_g3d_simple(filename)
 % Simple reading of gfile
 
+%% Parse inputs
 if ~isfile(filename)
     error('File not found: %s',filename)
 end
 
 fid = fopen(filename,'r');
 if fid == -1
-    error(['Could not open file: ',filename])
+    error('Could not open file: %s\n',filename)
 end
 
-% Line 1, part 1
-line1 = fgetl(fid);
-g.ecase = sscanf(line1(1:8),'%8s');
-sscanf(line1(8*6+1:8*6+3),'%4i');   % time
-g.mw = sscanf(line1(53:56),'%4i');  % Number of horizontal R grid points
-g.mh = sscanf(line1(57:60),'%4i');  % Number of vertical Z grid points
+%% Line 1
+% This should follow the formatting, but there are many files that do not.
+% All we really need here are mw and mh, so there are a few attempts to get
+% this from files that do not follow the original format.
+
+line = fgetl(fid);
+if length(line) < 60
+    % strict formatting not followed
+    % Try getting two integers from the end
+    twoIntsRev = sscanf(fliplr(strtrim(line)),'%d %d',2);
+    g.mh = str2double(fliplr(num2str(twoIntsRev(1))));
+    g.mw = str2double(fliplr(num2str(twoIntsRev(1))));
+else
+    % Try formatted read
+    g.ecase = sscanf(line(1:8),'%8s');
+    sscanf(line(8*6+1:8*6+3),'%4i');   % time
+    g.mw = sscanf(line(53:56),'%4i');  % Number of horizontal R grid points
+    g.mh = sscanf(line(57:60),'%4i');  % Number of vertical Z grid points
+end
+% one last try if above failed
 if (length(g.mw) ~= 1) || (length(g.mh) ~= 1) % some gfiles seem to have this shifted by a space or two
-    temp = sscanf(line1(50:end),'%d %d %d');
+    temp = sscanf(line(50:end),'%d %d %d');
     g.mw = temp(2);
     g.mh = temp(3);
 end
-g.line1 = line1;
+g.line1 = line;
 
 % Line 2
 line = fgetl(fid);
