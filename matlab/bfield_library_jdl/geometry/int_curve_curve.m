@@ -47,6 +47,8 @@ if int_count == 0
     ierr = 1;
 end
 if int_count > 1
-    disp('Warning: More than one intersection found. Returning last point')
+    if verbose
+        disp('Warning: More than one intersection found. Returning last point')
+    end
 end
 

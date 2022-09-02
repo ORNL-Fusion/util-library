@@ -1,39 +1,33 @@
 clearvars;
 
-gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\power13mw\g174308.03500_159';
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\NegD\Proposed\gFile_LSNnegD_fixv2';
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\NegD\180520-HMode\180520_2800_efit08.gfile';
-% gfile_name = 'C:\Work\g185857.04000';
-% gfile_name = 'C:\Work\g185857.04000';
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\EMC3\Florian\g147170.02300';
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\TDCP\g183299.03000';
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\TDCP\g184549.02300';
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\TDCP\g184533.02000';
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\MAST\mastu_45456_445ms.geqdsk';
+%% Select gfile and which strike point to use
 
+% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\Qprl experiment\power13mw\g174308.03500_159';
+% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\NegD\180520-HMode\180520_2800_efit08.gfile';
+% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\EMC3\Florian\g147170.02300';
+% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\TDCP\g184549.02300';
+gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\TDCP\g184533.02000';
+
+% Select sp, index from 1 to 2 for SN, 1 to 4 for DN
 iSP_USE = 1
 
-addSpPerp = 0; % Add unit vector perpendicular to Bpol to plots
-
-g = readg_g3d(gfile_name);
-psiN_x2 = refine_psi(g.r,g.z,4,g);    % only used for plots
+%% Read gfile and calculate geometric info
+g = readg_g3d(gfile_name);            % Read geqdsk
+psiN_x = refine_psi(g.r,g.z,4,g);    % only used for plots
 xpt_info = find_xpt_jl(g,1,0,1e-6,1); % only used for plots
-
-%% Make lim (and refined version)
-lim = make_lim(g);
-
-%% Find strike points
-sp = get_sp(g,lim);
-
-%% Calc some geometric info at the SPs
-sp = calc_sp_geo(sp,g,addSpPerp);
+lim = make_lim(g);                    % Make lim (and refined version)
+sp = get_sp(g,lim);                   % Find strike points
+sp = calc_sp_geo(sp,g);     % Calc some geometric info at the SPs
 
 %% Plot geometric info
+newPlotForRays = 0;
+addSpPerp = 0; % Add unit vector perpendicular to Bpol to plots
+Lplot = .1; % length for drawn unit vectors
+Ltmp = 0.2; % length to pad axis
 figure; hold on; box on; grid on; set(gcf,'color','w');set(gca,'fontsize',14);
 axis equal;
 plot(g.lim(1,:),g.lim(2,:),'k','linew',2)
-contour(psiN_x2.r,psiN_x2.z,psiN_x2.pn',[1,1],'b-','linewidth',2);
-Lplot = .1; % length for drawn unit vectors
+contour(psiN_x.r,psiN_x.z,psiN_x.pn',[1,1],'b-','linewidth',2);
 for iSP = 1:sp.n
     plot(sp.R(iSP),sp.Z(iSP),'rx','linew',2)
     plot(sp.RSOLSide(iSP),sp.ZSOLSide(iSP),'gx','linew',2)
@@ -45,38 +39,78 @@ for iSP = 1:sp.n
     end
     plot([sp.R(iSP),Lplot*cos(sp.thetaSOL(iSP))+sp.R(iSP)],[sp.Z(iSP),Lplot*sin(sp.thetaSOL(iSP))+sp.Z(iSP)],'y','linew',2)
 end
-Ltmp = 0.2; % length to pad axis
 axis([min([sp.R;xpt_info.rx])-Ltmp,max([sp.R;xpt_info.rx])+Ltmp,min([sp.Z;xpt_info.zx])-Ltmp,max([sp.Z;xpt_info.zx])+Ltmp])
 
 
-%%
-% figure; hold on; box on; grid on; set(gcf,'color','w');set(gca,'fontsize',14);
-% contour(psiN_x2.r,psiN_x2.z,psiN_x2.pn',[1,1],'b-','linewidth',2);
-% axis equal
-% plot(g.lim(1,:),g.lim(2,:),'k-','linewidth',2)
-% plot(sp.R,sp.Z,'rx','linew',2)
+%% Optionally start a new plot for rays
+if newPlotForRays
+    figure; hold on; box on; grid on; set(gcf,'color','w');set(gca,'fontsize',14);
+    contour(psiN_x2.r,psiN_x2.z,psiN_x2.pn',[1,1],'b-','linewidth',2);
+    axis equal
+    plot(g.lim(1,:),g.lim(2,:),'k-','linewidth',2)
+    plot(sp.R,sp.Z,'rx','linew',2)
+end
 
-
-
-
-%%
-LminT = 0.5;
+%% Initiate rays
 nRays = 100;
 theta_testOSP = linspace(1e-3,sp.alpha_deg_polplane(iSP_USE)*pi/180,nRays);
 [LtoIntOSP,PintOSP] = check_Rays(theta_testOSP, sp, iSP_USE, g, lim, 1);
 
-T = ones(size(LtoIntOSP));
-T(LtoIntOSP > LminT) = 0;
-% FFun = @(theta) sin(theta).^2;
+%% Calculate T
+% So far just 
+% T = { 0, L >  LminT
+%     { 1, L <= LminT
+Tmethod = 1; % 1 = binary distance test, 2 = distance from mfp
+switch Tmethod
+    case 1
+        LminT = 0.5
+        T = ones(size(LtoIntOSP));
+        T(LtoIntOSP > LminT) = 0;
+        plot(PintOSP(T == 1,1),PintOSP(T == 1,2),'go')
+    case 2
+        THRESH = 0.01;
+        svRef = 10^-14; %m-3s-1
+        neRef = 1e19;
+        v0Ref = sqrt(8*3*1.602e-19/(pi*2*1.67e-27));
+        mfp = v0Ref/(neRef*svRef);
+        G0 = 1;
+        Ltest = linspace(0,max(LtoIntOSP),1000);
+        GofL = G0*exp(-Ltest./mfp);
+        T = interp1(Ltest,GofL,LtoIntOSP);
+end
+
+
+
+
+
+
+%% Calculate F
+% Set distribution of rays
 FFun = @(theta) sin(theta);
 % FFun = @(theta) ones(size(theta));
 F = FFun(theta_testOSP);
+
 tInt = linspace(0,pi,1000);
 FInt = FFun(tInt);
 FNorm = trapz(tInt,FInt);
-plot(PintOSP(T == 1,1),PintOSP(T == 1,2),'go')
 
 
+%%
+Tint = trapz(theta_testOSP,T)/max(theta_testOSP); % geometric fraction of particles going towards div < Lmin
+Fint = trapz(theta_testOSP,F)/FNorm; % Fraction of F distribution particles on SOL side
+Totint = trapz(theta_testOSP,F.*T)/trapz(theta_testOSP,F);
+
+switch Tmethod
+    case 1
+        fprintf('T integrated (Lmin = %.1f) : %.5f\n',LminT,Tint)
+    case 2
+        fprintf('T integrated (mfp = %.1e m) : %.5f\n',mfp,Tint)
+end
+fprintf('F integrated              : %.5f\n',Fint)
+fprintf('F*T integrated            : %.5f\n',Totint)
+
+
+%% Full sp theta
 % figure; hold on; box on; grid on; set(gcf,'color','w');set(gca,'fontsize',14);
 % axis equal;
 % plot(g.lim(1,:),g.lim(2,:),'k','linew',2)
@@ -92,19 +126,9 @@ plot(PintOSP(T == 1,1),PintOSP(T == 1,2),'go')
 % % FFull = sin(theta_testFull*2);
 % plot(PintFull(TFull == 1,1),PintFull(TFull == 1,2),'go')
 
-%%
-Tint = trapz(theta_testOSP,T)/max(theta_testOSP); % geometric fraction of particles going towards div < Lmin
-Fint = trapz(theta_testOSP,F)/FNorm; % Fraction of cosine distribution particles on SOL side
-Totint = trapz(theta_testOSP,F.*T)/trapz(theta_testOSP,F);
-
 % TintFull = trapz(theta_testFull,TFull)/max(theta_testFull); % geometric fraction of particles going towards div < Lmin
 % FintFull = trapz(theta_testFull,FFull)/FNorm; % Fraction of cosine distribution particles on SOL side
 % TotintFull = trapz(theta_testFull,FFull.*TFull)/trapz(theta_testFull,FFull);
-
-
-fprintf('T integrated (Lmin = %.1f) : %.5f\n',LminT,Tint)
-fprintf('F integrated              : %.5f\n',Fint)
-fprintf('F*T integrated            : %.5f\n',Totint)
 
 % fprintf('full:\n')
 % fprintf('T integrated (Lmin = %.1f) : %.5f\n',LminT,TintFull)
@@ -121,7 +145,7 @@ fprintf('F*T integrated            : %.5f\n',Totint)
 % -------------------------------------------------------------------------
 
 
-function sp = calc_sp_geo(sp,g,addSpPerp)
+function sp = calc_sp_geo(sp,g)
 for iSP = 1:sp.n
     % Provide a point on the SOL side: check both lim pts and find the one
     % with the same sign
@@ -153,11 +177,10 @@ for iSP = 1:sp.n
     b = [b.br,b.bz,b.bphi];
     b = b./norm(b);
 
-    if addSpPerp
-        % normal to b at SP
-        bPerpSP = cross(b,[0,0,1]);
-        sp.bPerpSP(iSP,:) = bPerpSP./norm(bPerpSP);
-    end
+    % normal to b at SP
+    bPerpSP = cross(b,[0,0,1]);
+    sp.bPerpSP(iSP,:) = bPerpSP./norm(bPerpSP);
+
     sp.alpha_deg(iSP) = 90 - acos(dot(vn,b))*180/pi; % Actual qperp = q||*sin(alpha)
     sp.vSurfNorm(iSP,:) = vn;
     sp.bTot(iSP,:) = b;
@@ -165,9 +188,7 @@ for iSP = 1:sp.n
     %% local angles of unit vectors
     sp.thetaSurfNorm(iSP) = atan2(vn(2),vn(1));
     sp.thetab(iSP) = atan2(b(2),b(1));
-    if addSpPerp
-        sp.thetabPerpSP(iSP) = atan2(sp.bPerpSP(iSP,2),sp.bPerpSP(iSP,1));
-    end
+    sp.thetabPerpSP(iSP) = atan2(sp.bPerpSP(iSP,2),sp.bPerpSP(iSP,1));
     %% check sign of surface norm
     % Take a small step along norm and check if inside vessel polygon
     Lstep = 1e-3;
@@ -192,12 +213,12 @@ for iSP = 1:sp.n
         sp.thetab(iSP) = atan2(sp.bPol(iSP,2),sp.bPol(iSP,1));
     end
 
-    if addSpPerp
-        sp.beta_deg(iSP) = acosd(dot(sp.vSOL(iSP,:),sp.bPerpSP(iSP,:)));
-        if sp.beta_deg(iSP) > 90
-            sp.beta_deg(iSP) = 180 - sp.beta_deg(iSP);
-        end
+
+    sp.beta_deg(iSP) = acosd(dot(sp.vSOL(iSP,:),sp.bPerpSP(iSP,:)));
+    if sp.beta_deg(iSP) > 90
+        sp.beta_deg(iSP) = 180 - sp.beta_deg(iSP);
     end
+
     sp.alpha_deg_polplane(iSP) = acosd(dot(sp.vSOL(iSP,:),sp.bPol(iSP,:)));
     % sp.pit.*sind(sp.beta_deg)  should be sind(sp.alpha_deg)
 
@@ -295,7 +316,7 @@ function [LtoInt,pInts] = check_Rays(theta_test, sp, iSP_USE, g, lim,plotRays)
 
 
 % plotRays = 1;
-Ltest = 3;
+Ltest = 5;
 
 rSP = sp.R(iSP_USE);
 zSP = sp.Z(iSP_USE);
