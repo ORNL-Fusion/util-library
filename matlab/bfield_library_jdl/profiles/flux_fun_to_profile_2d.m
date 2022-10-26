@@ -3,7 +3,7 @@ clearvars;
 %% Options
 PLOT_GFILE = 0;
 RADIAL_METHOD = 'tanh';  % Options: 'psiN', 'tanh'
-POLOIDAL_METHOD = 'theta'; % Options: 'uniform', 'theta'
+POLOIDAL_METHOD = 'parallel'; % Options: 'uniform', 'theta', 'parallel' (must use maskLim == 1)
 maskPFR = 1;           % If 1 then treat PFR psiN as 2 - psiN
 maskPoloidalBySep = 1; % If 1 then only apply poloidal function for psiN >= 1
 maskLim = 1;           % If 1 then set fun = 0 outside of g.lim
@@ -11,8 +11,8 @@ maskLim = 1;           % If 1 then set fun = 0 outside of g.lim
 %% Settings
 gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\PSIscidac\WEST\g055866.47179_V2';  % efit file
 
-nR = 300;  % Grid resolution to build surface
-nZ = 400;
+nR = 30;  % Grid resolution to build surface
+nZ = 40;
 
 cTanh = [1 0.04 0.3 0.1 3e-3 3e-5 0 -0.01];  % tanh coefficents, only used if RADIAL_METHOD == 'psiN'
 
@@ -51,7 +51,7 @@ switch RADIAL_METHOD
     case 'tanh'
         radialFun = evaluate_tanh_fit(cTanh,psiN);
     otherwise 
-        error('Unknown RADIAL_METHOD:',RADIAL_METHOD)
+        error('Unknown RADIAL_METHOD: %s\n',RADIAL_METHOD)
 end
 
 %% Choose poloidal fun 
@@ -61,8 +61,20 @@ switch POLOIDAL_METHOD
     case 'theta'
         poloidalFun = (1 + Apol*sin(theta));
         poloidalFun = poloidalFun./(max(poloidalFun(:)));
+    case 'parallel'
+        bfield.type = 'gfile';
+        bfield.nsym = 1;
+        bfield.g = g;
+        Lmax = 100;
+        dL = 0.01;
+        for i = 1:nR
+            for j = 1:nZ
+                s = follow_fieldlines_rzphi_dl(bfield,R2D(j,i),Z2D(j,i),0,dL,Lmax/dL);
+        aaa=1
+            end
+        end
     otherwise 
-        error('Unknown POLOIDAL_METHOD:',POLOIDAL_METHOD)
+        error('Unknown POLOIDAL_METHOD: %s\n',POLOIDAL_METHOD)
 end
 
 %% Apply only outside separatrix
