@@ -22,7 +22,7 @@ if length(line) < 60
     % Try getting two integers from the end
     twoIntsRev = sscanf(fliplr(strtrim(line)),'%d %d',2);
     g.mh = str2double(fliplr(num2str(twoIntsRev(1))));
-    g.mw = str2double(fliplr(num2str(twoIntsRev(1))));
+    g.mw = str2double(fliplr(num2str(twoIntsRev(2))));
 else
     % Try formatted read
     g.ecase = sscanf(line(1:8),'%8s');
