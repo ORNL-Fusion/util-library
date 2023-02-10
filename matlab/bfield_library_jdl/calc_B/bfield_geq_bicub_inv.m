@@ -9,6 +9,8 @@ if iscolumn(R1)
     Z1 = Z1.';
 end
 
+% This is a switch to return B = Bt = 1 when the evaluation point(s)
+% are off the grid. 
 toroidal_off_grid = 0;
 if isfield(g,'toroidal_off_grid')
     toroidal_off_grid = g.toroidal_off_grid;

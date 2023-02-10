@@ -1,4 +1,4 @@
-function sep = plot_sep_g(g,plotit,newfig,linewid)
+function sep = plot_sep_g(g,plotit,newfig,linewid,clip_at_glim,flush_file)
 % function sep = plot_sep_g(g,plotit,newfig)
 if nargin < 2
     plotit = 1;
@@ -9,12 +9,16 @@ end
 if nargin < 4
     linewid = 1;
 end
-
-clip_at_glim = 1;
-
+if nargin < 5
+    clip_at_glim = 1;
+end
+if nargin < 6
+    flush_file = 0;
+end
 if newfig == 1
     figure; hold on;   
 end
+
 
 DEBUG = 0;
 
@@ -23,6 +27,9 @@ box_z = [g.z(1),g.z(1),g.z(g.mh),g.z(g.mh),g.z(1)];
 
 [pathstr,fn,ext] = fileparts(g.filename);
 fname = fullfile(pathstr,strcat(fn,ext,'_sep'));
+if flush_file && isfile(fname)
+    delete(fname);
+end
 
 if DEBUG 
     figure; hold on;
