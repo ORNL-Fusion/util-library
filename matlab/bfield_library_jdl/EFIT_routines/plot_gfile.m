@@ -1,9 +1,12 @@
-function plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty,quiet)
-% plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty,quiet)
+function plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty,quiet,plot_psi)
+% plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty,quiet,plot_psi)
+%
+% plot_psi is 'psi' or 'psiN' (default)
 %
 % g can be g struction from readg_g3d, or gfile_name
 
-plot_psi = 'psiN'; % psiN or psi
+
+
 nRefine = 2;
 
 if ischar(g)
@@ -19,12 +22,23 @@ end
 if nargin < 6
     con_linesty = '-';
 end
+if nargin < 7
+    quiet = 1;
+end
+if nargin < 8
+    plot_psi = 'psiN';
+end
 
+%% Refine for better contours 
 rPlot = g.r;
 zPlot = g.z;
+for i = 1:nRefine
+    [rPlot,zPlot,psiPlot] = refine_psi(rPlot,zPlot,2,g,plot_psi);
+end
+
+
 switch lower(plot_psi)
     case lower('psiN')
-        psiPlot = (g.psirz-g.ssimag)/(g.ssibry-g.ssimag);
         sepVal = 1;
         if nargin < 2
             psi_min = 0.6;
@@ -32,7 +46,6 @@ switch lower(plot_psi)
         end
         cLabel = '\psi_N';
     case lower('psi')
-        psiPlot = g.psirz;        
         sepVal = g.ssibry;
         if nargin < 2
             psi_min = 0.6*(g.ssibry-g.ssimag) + g.ssimag;
@@ -43,10 +56,7 @@ switch lower(plot_psi)
         error('Bad value for plot_psi')
 end
 
-%% Refine for better countours
-for i = 1:nRefine
-    [rPlot,zPlot,psiPlot] = refine_psi(rPlot,zPlot,2,g);
-end
+
 
 
 
@@ -104,11 +114,18 @@ ylabel('Z [m]','fontsize',14)
 set(gca,'fontsize',14)
 end
 
-function [r2,z2,pn2] = refine_psi(r,z,fac,g)
+function [r2,z2,p2] = refine_psi(r,z,fac,g,plot_psi)
 r2 = linspace(r(2),r(end-1),length(r)*fac);
 z2 = linspace(z(2),z(end-1),length(z)*fac);
 for i = 1:length(z2)
-    pn2(:,i) = calc_psiN(g,r2,z2(i)*ones(size(r2)));
+    switch lower(plot_psi)
+        case lower('psiN')
+            p2(:,i) = calc_psiN(g,r2,z2(i)*ones(size(r2)));
+        case lower('psi')
+            p2(:,i) = calc_psi(g,r2,z2(i)*ones(size(r2)));
+        otherwise
+            error('Bad value for plot_psi')
+    end
 end
 end
 
