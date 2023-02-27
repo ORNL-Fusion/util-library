@@ -1,5 +1,5 @@
 function [yout,ierr] = rk4_core_dl(y,dydx,dx,bfield,nowarn)
-if nargin < 6
+if nargin < 5
     nowarn = 0;
 end
 d1 = dx*dydx;

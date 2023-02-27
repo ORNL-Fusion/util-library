@@ -70,8 +70,8 @@ if ~isempty(g.qpsi)  % Do not postprocess truncated file
     g.bicub_coeffs = get_psi_bicub_coeffs(g);
     g.bicub_coeffs_inv = get_psi_bicub_coeffs_inv(g);
     g.fpol_coeffs = polyfit(g.pn,g.fpol,7);
-    g.xk = dbsnak(g.mw,g.pn,3);
-    g.fpol_coeffs_spline = dbsint(g.mw,g.pn,g.fpol,3,g.xk);
+%     g.xk = dbsnak(g.mw,g.pn,3);
+%     g.fpol_coeffs_spline = dbsint(g.mw,g.pn,g.fpol,3,g.xk);
     g.filename = filename;
     
     %try to parse filename for shot and time
