@@ -1,6 +1,9 @@
 function [psi1,dpsidr,dpsidz] = get_psi_bicub(g,R1,Z1,quiet)
 %[psi1,dpsidr,dpsidz] = get_psi_bicub(g,R1,Z1)
 % inputs must be row vectors
+% 
+% Note, g.ip_sign is already applied once!
+% 
 npts = length(R1);
 R1=reshape(R1,1,npts);
 Z1=reshape(Z1,1,npts);

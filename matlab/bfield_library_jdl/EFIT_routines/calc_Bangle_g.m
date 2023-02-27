@@ -30,6 +30,7 @@ R2 = RZ2(1);
 Z2 = RZ2(2);
 
 DEBUG = 0;
+NOWARN = 0;
 if DEBUG
     dPlot = 0.01;
     figure; hold on; box on; set(gcf,'color','w');set(gca,'fontsize',14,'fontweight','bold'); grid on;
@@ -64,8 +65,14 @@ for j = 1:length(Reval)
         t = atan2(vn(2),vn(1));
         plot([Reval(j),Reval(j)+dPlot*cos(t)],[Zeval(j),Zeval(j)+dPlot*sin(t)],'b')        
     end
-    b = bfield_geq_bicub(g,Reval(j),Zeval(j),0);
+    b = bfield_geq_bicub(g,Reval(j),Zeval(j),NOWARN);
+    if isempty(b)
+        alpha_deg(j) = NaN;
+        beta_deg(j) = NaN;
+        continue;
+    end
     b = [b.br,b.bz,b.bphi];
+       
     b = b./norm(b);
     if DEBUG
         t = atan2(b(2),b(1));
