@@ -45,9 +45,14 @@ if isempty(rguess)
     % ----> Make guess from boundary. Note this won't work if the configuration is limited
     
     % Throw away zero points
-    ik = find(g.bdry(1,:) > 1.d-4);
-    rb = g.bdry(1,ik);
-    zb = g.bdry(2,ik);
+    if ~isempty(g.bdry)
+        ik = find(g.bdry(1,:) > 1.d-4);
+        rb = g.bdry(1,ik);
+        zb = g.bdry(2,ik);
+    else
+        rb = g.rzero; % This is not a good guess
+        zb = 0; 
+    end
     
     % Get minimum poloidal field on boundary (initial guess)
     b=bfield_geq_bicub(g,rb,zb);
@@ -56,7 +61,7 @@ if isempty(rguess)
     
     if bpx > first_guess_Bp_tol 
         if quiet == 0
-            fprintf('Guess from boundary exceed tolerance!\n')
+            fprintf('Guess from boundary exceeded tolerance!\n')
         end
         der = (g.r(end)-g.r(1))*.15;
         dez = (g.z(end)-g.z(1))*.1;
