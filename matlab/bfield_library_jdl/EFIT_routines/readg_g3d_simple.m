@@ -72,6 +72,8 @@ if ~isempty(test)
     line = sscanf(test,'%f',5);
     g.cpasma = line(1); % current Plasma current in Ampere
     % remaining data is redundant or meaningless (simag,xdum,rmaxis,xdum)
+else
+    g.cpasma = [];
 end
 
 %% Line 5
@@ -107,5 +109,10 @@ if ~isempty(g.qpsi)  % file ends here in some cases
         fprintf('Warning: lim seems to be in [cm], converting to [m]\n')
         g.lim = g.lim./100;
     end
+else
+    g.nbdry = 0;
+    g.limitr = 0;
+    g.bdry = [];
+    g.lim = [];
 end
 fclose(fid);
