@@ -9,9 +9,10 @@ if nargin < 3
 end
 
 % Version identifies changes to routine that may require re-creating .mat file
-version_ = 4;
+version_ = 5;
 % v3: Changed outputs to row vectors and added bicub inverse
 % v4: Added aminor and nGW
+% v5: More robust processing of incomplete eqdsk files, remove spline fits
 
 if isempty(filename)
     g = [];
@@ -60,25 +61,37 @@ for i = 0:g.mh-1
     g.z(1,i+1) = g.zmid - 0.5*g.zdim + g.dZ*i;
 end
 
-if ~isempty(g.qpsi)  % Do not postprocess truncated file
-    
-    g.aminor = (max(g.bdry(1,:))-min(g.bdry(1,:)))/2;
+g.aminor = [];
+if ~isempty(g.bdry)
+    g.aminor = (max(g.bdry(1,:))-min(g.bdry(1,:)))/2;    
+end
+
+g.nGW = [];
+if ~isempty(g.cpasma) && ~isempty(g.aminor) 
     g.nGW = g.cpasma/1e6/pi/g.aminor^2*1e20;
-    
+end
+
+if isempty(g.cpasma)
+    g.ip_sign = 1;
+else
     g.ip_sign = -sign(g.cpasma);
-    
-    g.bicub_coeffs = get_psi_bicub_coeffs(g);
-    g.bicub_coeffs_inv = get_psi_bicub_coeffs_inv(g);
-    g.fpol_coeffs = polyfit(g.pn,g.fpol,7);
-%     g.xk = dbsnak(g.mw,g.pn,3);
-%     g.fpol_coeffs_spline = dbsint(g.mw,g.pn,g.fpol,3,g.xk);
-    g.filename = filename;
-    
-    %try to parse filename for shot and time
+end
+
+%% Flux interpolation coefficients
+g.bicub_coeffs = get_psi_bicub_coeffs(g);
+g.bicub_coeffs_inv = get_psi_bicub_coeffs_inv(g);
+
+%% Fit F
+g.fpol_coeffs = polyfit(g.pn,g.fpol,7);
+
+%% Try parsing filename for shot and time
+g.filename = filename;
+try
     [~,f2,f3] = fileparts(filename);
     g.shot = sscanf(f2(2:end),'%d');
     g.gfilename = [f2,f3];
 end
+
 g.version = version_;
 
 if ~quiet
