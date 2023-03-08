@@ -1,5 +1,5 @@
 function [rho,Phi,Reff,Reff_bry] = calc_rho(g,R1,Z1)
-% [rho] = calc_rho(g,R1,Z1)
+%  [rho,Phi,Reff,Reff_bry] = calc_rho(g,R1,Z1)
 % Rho is sqrt toroidal flux
 % Phi is toroidal flux
 % Reff is R from Bo*pi*R^2 = 2*pi*Phi
