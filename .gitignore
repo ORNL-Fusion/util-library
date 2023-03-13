@@ -16,3 +16,6 @@ fortran/bfield_library_jdl/tests/*.out
 # matlab
 *.asv
 
+# python
+python/.ipynb_checkpoints
+python/__pycache__

@@ -5,7 +5,7 @@ function plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty,quiet,plot_psi)
 %
 % g can be g struction from readg_g3d, or gfile_name
 
-nRefine = 3;
+nRefine = 1;
 
 %% Handle inputs
 if ischar(g)
@@ -61,12 +61,8 @@ switch lower(plot_psi)
 end
 
 %% Refine for better contours
-if nRefine > 1
-    rPlot = g.r;
-    zPlot = g.z;
-    [rPlot,zPlot,psiPlot] = refine_psi(rPlot,zPlot,2^nRefine,g,plot_psi);
-end
-
+rPlot = g.r; zPlot = g.z;
+[rPlot,zPlot,psiPlot] = refine_psi(rPlot,zPlot,2^nRefine,g,plot_psi);
 
 %%
 if newfig == 1
@@ -74,7 +70,9 @@ if newfig == 1
 end
 set(gcf,'color','w');
 if isfield(g,'lim')
-    plot(g.lim(1,g.lim(1,:)>0),g.lim(2,g.lim(1,:)>0),con_linesty,'linewidth',2)
+    if ~isempty(g.lim)
+        plot(g.lim(1,g.lim(1,:)>0),g.lim(2,g.lim(1,:)>0),con_linesty,'linewidth',2)
+    end
 end
 contour(rPlot,zPlot,psiPlot.',linspace(psi_min,psi_max,npsi),'-','linewidth',1);
 contour(rPlot,zPlot,psiPlot.',sepVal*[1,1],'k-','linewidth',2);
