@@ -50,7 +50,9 @@ dpsidz = zeros(nsurf,ntheta);
 % Calculate pest coords for each surface, then Br_mn
 pest = get_pest_coords(g,pnwant,ntheta);
 for i = 1:nsurf
-    [~,dpsidr(i,:),dpsidz(i,:)] = get_psi_bicub(g,pest.r(i,:),pest.z(i,:));
+    [~,dpsidr(i,:),dpsidz(i,:)] = calc_psi(g,pest.r(i,:),pest.z(i,:));
+    warning('confirm sign here')
+
 %     psiN(i,:) = pnwant(i)*ones(1,pest.ntheta);
 end
 if NARDON == 1

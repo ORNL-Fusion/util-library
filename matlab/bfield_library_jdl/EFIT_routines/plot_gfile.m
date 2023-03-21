@@ -30,13 +30,13 @@ if nargin < 7
     quiet = 1;
 end
 if nargin < 8
-    plot_psi = 'psiN';
+    plot_psi = 'psi';
 end
 
 %% Handle plot_psi switch
 switch lower(plot_psi)
     case lower('psiN')
-        psiPlot = (g.psirz-g.ssimag)/(g.ssibry-g.ssimag); % Don't need ip_sign here
+        psiPlot = (g.psirz-g.ssimag)/(g.ssibry-g.ssimag); 
         sepVal = 1;
         if isempty(psi_min)
             psi_min = 0.6;
@@ -47,13 +47,14 @@ switch lower(plot_psi)
         
         cLabel = '\psi_N';
     case lower('psi')
-        psiPlot = g.psirz; % Don't need ip_sign here
-        sepVal = g.ssibry;
+        psiPlot = g.ip_sign*g.psirz; 
+        sepVal = g.ip_sign*g.ssibry;
+        axisVal = g.ip_sign*g.ssimag;
         if isempty(psi_min)
-            psi_min = 0.6*(g.ssibry-g.ssimag) + g.ssimag;
+            psi_min = 0.6*(sepVal-axisVal) + axisVal;
         end
         if isempty(psi_max)
-            psi_max = 1.1*(g.ssibry-g.ssimag) + g.ssimag;        
+            psi_max = 1.1*(sepVal-axisVal) + axisVal;
         end
         cLabel = '\psi';
     otherwise
@@ -61,8 +62,12 @@ switch lower(plot_psi)
 end
 
 %% Refine for better contours
-rPlot = g.r; zPlot = g.z;
-[rPlot,zPlot,psiPlot] = refine_psi(rPlot,zPlot,2^nRefine,g,plot_psi);
+if nRefine > 0
+    rPlot = g.r(2:end-1); zPlot = g.z(2:end-1);
+    [rPlot,zPlot,psiPlot] = refine_psi(rPlot,zPlot,2^nRefine,g,plot_psi);
+else
+    rPlot = g.r; zPlot = g.z;
+end
 
 %%
 if newfig == 1
@@ -108,8 +113,8 @@ end
 
 %%
 function [r2,z2,p2] = refine_psi(r,z,fac,g,plot_psi)
-r2 = linspace(r(2),r(end-1),length(r)*fac);
-z2 = linspace(z(2),z(end-1),length(z)*fac);
+r2 = linspace(r(1),r(end),length(r)*fac);
+z2 = linspace(z(1),z(end),length(z)*fac);
 for i = 1:length(z2)
     switch lower(plot_psi)
         case lower('psiN')

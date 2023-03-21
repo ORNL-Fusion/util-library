@@ -1,5 +1,5 @@
-function bicub_mat = get_bicub_mat_inv()
-bicub_mat = [ ...
+function bicub_mat_inv = get_bicub_mat_inv()
+bicub_mat_inv = [ ...
      1     0     0     0     0     0     0     0     0     0     0     0     0     0     0     0
      0     0     0     0     1     0     0     0     0     0     0     0     0     0     0     0
     -3     3     0     0    -2    -1     0     0     0     0     0     0     0     0     0     0

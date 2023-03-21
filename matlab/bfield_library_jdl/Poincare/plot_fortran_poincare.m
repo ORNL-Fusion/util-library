@@ -156,7 +156,7 @@ if 1
         R2 = [2.2399,2.2175,2.1951,2.1724,2.1496,2.1269,2.1045,2.0824,2.0608,2.0398,2.0193,1.9994,1.9801,1.9613,1.9430,1.9252,1.9252,1.9077,1.8905,1.8737,...
             1.8570,1.8406,1.8244,1.8084,1.7925,1.7768,1.7612,1.7458,1.7306,1.7154,1.7005,1.6856,1.6563,1.6276,1.5994,1.5717,1.5445,1.5178,1.4916,1.4658];
         T2 = atan2(Z2-g.zmaxis,R2-g.rmaxis);
-        PN2 = (g.ip_sign*get_psi_bicub(g,R2,Z2)-g.ssimag)/(g.ssibry-g.ssimag);
+        PN2 = calc_psiN(g,R2,Z2);
         plot(R2,Z2,'bo','linewidth',3)
     end
     if plot_glim
@@ -206,7 +206,7 @@ if 0
         Z=[0.0430,0.1720,0.2810,0.3320,0.3590,0.3910,0.4210,0.4770,0.5310,0.5630,0.5790,0.5950,0.6080,0.6230,0.6350,0.6410,0.6480,0.6540,0.6610,0.6680,...
             0.6740,0.6810,0.6870,0.6930,0.7010,0.7060,0.7130,0.7180,0.7250,0.7310,0.7370,0.7430,0.7490,0.7550,0.7630,0.7760,0.7880,0.8000,0.8130,0.8270];
         T = atan2(Z-g.zmaxis,R-g.rmaxis);
-        PN = (g.ip_sign*get_psi_bicub(g,R,Z)-g.ssimag)/(g.ssibry-g.ssimag);
+        PN2 = calc_psiN(g,R,Z);
         plot(PN,T/pi,'ro','linewidth',3)
     end
     
@@ -215,7 +215,7 @@ if 0
         R2 = [2.2399,2.2175,2.1951,2.1724,2.1496,2.1269,2.1045,2.0824,2.0608,2.0398,2.0193,1.9994,1.9801,1.9613,1.9430,1.9252,1.9252,1.9077,1.8905,1.8737,...
             1.8570,1.8406,1.8244,1.8084,1.7925,1.7768,1.7612,1.7458,1.7306,1.7154,1.7005,1.6856,1.6563,1.6276,1.5994,1.5717,1.5445,1.5178,1.4916,1.4658];
         T2 = atan2(Z2-g.zmaxis,R2-g.rmaxis);
-        PN2 = (g.ip_sign*get_psi_bicub(g,R2,Z2)-g.ssimag)/(g.ssibry-g.ssimag);
+        PN2 = calc_psiN(g,R2,Z2);
         plot(PN2,T2/pi,'bo','linewidth',3)
     end
     
@@ -223,20 +223,20 @@ if 0
         rlim = g.lim(1,:);
         zlim = g.lim(2,:);
         tlim = atan2(zlim-g.zmaxis,rlim-g.rmaxis);
-        psilim = (g.ip_sign*get_psi_bicub(g,rlim,zlim)-g.ssimag)/(g.ssibry-g.ssimag);
+        psilim = calc_psiN(g,rinterp,zinterp);
         %     plot(psilim,tlim/pi,'c-','linewidth',3)
         
         ninterp_lim = 100;
         for i = 1:size(g.lim,2)-1
             rinterp_lim = linspace(g.lim(1,i),g.lim(1,i+1),ninterp_lim);
             zinterp_lim = linspace(g.lim(2,i),g.lim(2,i+1),ninterp_lim);
-            psilim_interp = (g.ip_sign*get_psi_bicub(g,rinterp_lim,zinterp_lim)-g.ssimag)/(g.ssibry-g.ssimag);
+            psilim_interp = calc_psiN(g,rinterp_lim,zinterp_lim);
             tlim_interp = atan2(zinterp_lim-g.zmaxis,rinterp_lim-g.rmaxis);
             plot(psilim_interp,tlim_interp/pi,'bx','linewidth',3)
         end
         rinterp_lim = linspace(g.lim(1,end),g.lim(1,end),ninterp_lim);
         zinterp_lim = linspace(g.lim(2,1),g.lim(2,1),ninterp_lim);
-        psilim_interp = (g.ip_sign*get_psi_bicub(g,rinterp_lim,zinterp_lim)-g.ssimag)/(g.ssibry-g.ssimag);
+        psilim_interp = calc_psiN(g,rinterp_lim,zinterp_lim);
         tlim_interp = atan2(zinterp_lim-g.zmaxis,rinterp_lim-g.rmaxis);
         plot(psilim_interp,tlim_interp/pi,'bx','linewidth',3)
         
@@ -455,7 +455,7 @@ if 0
         Z=[0.0430,0.1720,0.2810,0.3320,0.3590,0.3910,0.4210,0.4770,0.5310,0.5630,0.5790,0.5950,0.6080,0.6230,0.6350,0.6410,0.6480,0.6540,0.6610,0.6680,...
             0.6740,0.6810,0.6870,0.6930,0.7010,0.7060,0.7130,0.7180,0.7250,0.7310,0.7370,0.7430,0.7490,0.7550,0.7630,0.7760,0.7880,0.8000,0.8130,0.8270];
         T = atan2(Z-g.zmaxis,R-g.rmaxis);
-        PN = (g.ip_sign*get_psi_bicub(g,R,Z)-g.ssimag)/(g.ssibry-g.ssimag);
+        PN = calc_psiN(g,R,Z);
         plot(PN,T/pi,'bo-','linewidth',3)
         
         % Highlight along diagnostic line where islands are
@@ -476,7 +476,7 @@ if 0
         R2 = [2.2399,2.2175,2.1951,2.1724,2.1496,2.1269,2.1045,2.0824,2.0608,2.0398,2.0193,1.9994,1.9801,1.9613,1.9430,1.9252,1.9252,1.9077,1.8905,1.8737,...
             1.8570,1.8406,1.8244,1.8084,1.7925,1.7768,1.7612,1.7458,1.7306,1.7154,1.7005,1.6856,1.6563,1.6276,1.5994,1.5717,1.5445,1.5178,1.4916,1.4658];
         T2 = atan2(Z2-g.zmaxis,R2-g.rmaxis);
-        PN2 = (g.ip_sign*get_psi_bicub(g,R2,Z2)-g.ssimag)/(g.ssibry-g.ssimag);
+        PN2 = calc_psiN(g,R2,Z2);
         %     [PN2,II2] = sort(PN2);
         %     R2 = R2(II2);
         %     Z2 = Z2(II2);
@@ -501,20 +501,20 @@ if 0
         rlim = g.lim(1,:);
         zlim = g.lim(2,:);
         tlim = atan2(zlim-g.zmaxis,rlim-g.rmaxis);
-        psilim = (g.ip_sign*get_psi_bicub(g,rlim,zlim)-g.ssimag)/(g.ssibry-g.ssimag);
+        psilim = calc_psiN(g,rlim,zlim);
         %     plot(psilim,tlim/pi,'c-','linewidth',3)
         
         ninterp_lim = 100;
         for i = 1:size(g.lim,2)-1
             rinterp_lim = linspace(g.lim(1,i),g.lim(1,i+1),ninterp_lim);
             zinterp_lim = linspace(g.lim(2,i),g.lim(2,i+1),ninterp_lim);
-            psilim_interp = (g.ip_sign*get_psi_bicub(g,rinterp_lim,zinterp_lim)-g.ssimag)/(g.ssibry-g.ssimag);
+            psilim_interp = calc_psiN(g,rinterp_lim,zinterp_lim);
             tlim_interp = atan2(zinterp_lim-g.zmaxis,rinterp_lim-g.rmaxis);
             plot(psilim_interp,tlim_interp/pi,'bx','linewidth',3)
         end
         rinterp_lim = linspace(g.lim(1,end),g.lim(1,end),ninterp_lim);
         zinterp_lim = linspace(g.lim(2,1),g.lim(2,1),ninterp_lim);
-        psilim_interp = (g.ip_sign*get_psi_bicub(g,rinterp_lim,zinterp_lim)-g.ssimag)/(g.ssibry-g.ssimag);
+        psilim_interp = calc_psiN(g,rinterp_lim,zinterp_lim);
         tlim_interp = atan2(zinterp_lim-g.zmaxis,rinterp_lim-g.rmaxis);
         plot(psilim_interp,tlim_interp/pi,'bx','linewidth',3)
     end
@@ -555,7 +555,7 @@ if 0
         R2 = [2.2399,2.2175,2.1951,2.1724,2.1496,2.1269,2.1045,2.0824,2.0608,2.0398,2.0193,1.9994,1.9801,1.9613,1.9430,1.9252,1.9252,1.9077,1.8905,1.8737,...
             1.8570,1.8406,1.8244,1.8084,1.7925,1.7768,1.7612,1.7458,1.7306,1.7154,1.7005,1.6856,1.6563,1.6276,1.5994,1.5717,1.5445,1.5178,1.4916,1.4658];
         T2 = atan2(Z2-g.zmaxis,R2-g.rmaxis);
-        PN2 = (g.ip_sign*get_psi_bicub(g,R2,Z2)-g.ssimag)/(g.ssibry-g.ssimag);
+        PN2 = calc_psiN(g,R2,Z2);
         plot(R2,Z2,'bo','linewidth',3)
     end
     if plot_glim

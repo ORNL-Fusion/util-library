@@ -9,10 +9,11 @@ if nargin < 3
 end
 
 % Version identifies changes to routine that may require re-creating .mat file
-version_ = 5;
+version_ = 6;
 % v3: Changed outputs to row vectors and added bicub inverse
 % v4: Added aminor and nGW
 % v5: More robust processing of incomplete eqdsk files, remove spline fits
+% v6: removing old bicub matrix
 
 if isempty(filename)
     g = [];
@@ -78,7 +79,6 @@ else
 end
 
 %% Flux interpolation coefficients
-g.bicub_coeffs = get_psi_bicub_coeffs(g);
 g.bicub_coeffs_inv = get_psi_bicub_coeffs_inv(g);
 
 %% Fit F

@@ -93,14 +93,14 @@ if refine == 1
   zg = zeros(n1,n1);
   niter = 1;
   while err > tol && niter < niter_max
-    rt = linspace(max([Rmin_eval,rx-der]),min([Rmax_eval,rx+der,n1]));
-    zt = linspace(max([Zmin_eval,zx-dez]),min([Zmax_eval,zx+dez,n1]));
+    rt = linspace(max([Rmin_eval,rx-der]),min([Rmax_eval,rx+der]),n1);
+    zt = linspace(max([Zmin_eval,zx-dez]),min([Zmax_eval,zx+dez]),n1);
     for i = 1:n1 
       ztmp = repmat(zt(i),1,n1);
       b = bfield_geq_bicub(g,rt,ztmp);
       rg(i,:) = rt;
       zg(i,:) = ztmp;
-      bp(i,:) = sqrt(b.br.^2 + b.bz.^2);
+      bp(i,:) = sqrt(b.br.^2 + b.bz.^2);      
     end
     [~,ix] = min(bp);
     [bpx,jx] = min(min(bp));
@@ -115,6 +115,7 @@ if refine == 1
     zx = zg(ix,jx);
 
     niter = niter + 1;    
+    
     if niter >= niter_max
         warning('niter_max exceeded for 1st x-point')
     end
