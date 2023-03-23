@@ -5,7 +5,7 @@ end
 N = length(RPZ);
 
 % Axisym part
-[Bout,ierr_Bas] = bfield_geq_bicub(bfield.g,RPZ(1:2:N-2),RPZ(3:2:N),nowarn);
+[Bout,ierr_Bas] = bfield_geq_bicub(bfield.g,RPZ(1:3:N-2),RPZ(3:3:N),nowarn);
 if ierr_Bas == 1
     if ~nowarn
         warning('AS bfield error in fl_derivs_dl_gfile')
