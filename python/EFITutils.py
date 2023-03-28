@@ -1,5 +1,133 @@
 import numpy as np
 
+# -------------------------------------------------------------------------------------------------------------------------
+def int_curve_curve(line1R,line1Z,line2R,line2Z,first=True):
+# Curve is defined by array of points,
+# First curve is stepped and both curves linearly interpolated to find intersection with second curve.
+# If first == true then first int is returned, else last int is.
+# JL 2/2011
+
+    if line1R.size != line1Z.size:
+        print('Error: line1 R and Z do not match')
+        return {'ierr':True}
+    if line2R.size != line2Z.size:
+        print('Error: line2 R and Z do not match')
+        return {'ierr':True}
+
+    intCount = 0
+    foundInd1 = []
+    foundInd2 = []
+    pInt = []
+    
+    for i in range(line1R.size - 1):
+        p1 = np.array((line1R[i]  ,line1Z[i]  ))
+        p2 = np.array((line1R[i+1],line1Z[i+1]))
+        this = int_line_curve(p1,p2,line2R,line2Z,first=first)     
+        if not this['ierr']:            
+            ierr = False
+            print(i,this['pInt'])
+            pInt.append(this['pInt'])
+            foundInd1.append(i)
+            foundInd2.append(this['foundInd'])
+            intCount += this['intCount']
+            
+            if first:
+                done = True
+                break
+    
+    if intCount == 0:
+        ierr = True
+        
+    pInt = np.squeeze(np.asarray(pInt))
+    
+    return {'pInt':pInt,'ierr':ierr,'foundInd1':foundInd1,'foundInd2':foundInd2,'intCount':intCount}
+
+    return None
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Curve is defined by array of points,
+# linearly interpolated to find intersection with line.
+# JDL 2/2011
+def int_line_curve(p1,p2,lineR,lineZ,first=True):
+    
+    if p1.size != 2:
+        print('Error: p1 must be a point')   
+        return {'ierr':True}
+    if p2.size != 2:
+        print('Error: p2 must be a point')
+        return {'ierr':True}
+    
+    intCount = 0
+    foundInd = []
+    pInt = []
+    for i in range(lineR.size - 1):
+        p3 = np.array((lineR[i],lineZ[i]))
+        p4 = np.array((lineR[i+1],lineZ[i+1]))            
+        this = int_two_lines(p1,p2,p3,p4)
+        
+        # Check for parallel line segments
+        if this['ierr']: 
+            continue
+     
+        if i == (lineR.size - 1):
+            test = this['u1'] >= 0 and this['u1'] <= 1 and this['u2'] >= 0 and this['u2'] <= 1
+        else:
+            test = this['u1'] >= 0 and this['u1'] <= 1 and this['u2'] >= 0 and this['u2'] < 1
+        
+        if test:
+            intCount += 1                    
+            pInt.append(p1 + this['u1']*(p2 - p1) )
+            ierr = False
+            foundInd.append(i)
+            if first == True:
+                break    
+
+    if intCount == 0:
+        ierr = True
+    
+    pInt = np.asarray(pInt)
+    
+    return {'pInt':pInt,'ierr':ierr,'foundInd':foundInd,'intCount':intCount}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Calculates the intersection of lines p1 to p2, and p3 to p4.  Each
+# point is an x-y pair.  Returns two values, which are the normalized distances
+# to the intersection point along the line p1 to p2 (u1) and the line
+# p3 to p4 (u2).
+#
+# Equations for line 1 (x1 = [x,y]), and line 2 (x2 = [x,y])
+#   _   _        _  _
+#   x1 = p1 + u1(p2-p1)
+#   _   _        _  _
+#   x2 = p3 + u2(p4-p3)
+#
+# Then solve equations for u1, u2
+# 
+# Note the distances can be greater than 1.0, i.e., these are not line segments!
+# 
+# JDL
+def int_two_lines(p1,p2,p3,p4):
+    
+    tol = 1e-15;
+    
+    denom = (p4[1]-p3[1])*(p2[0]-p1[0]) - (p4[0]-p3[0])*(p2[1]-p1[1])
+    if np.abs(denom) < tol: # parallel lines
+        u1 = np.nan
+        u2 = np.nan
+        pInt = np.nan
+        ierr = True
+    else:
+        u1 = ((p4[0]-p3[0])*(p1[1]-p3[1]) - (p4[1]-p3[1])*(p1[0]-p3[0]))/denom
+        u2 = ((p2[0]-p1[0])*(p1[1]-p3[1]) - (p2[1]-p1[1])*(p1[0]-p3[0]))/denom
+        pInt = p1 + u1*(p2-p1)
+        ierr = False
+        
+    return {'u1':u1,'u2':u2,'pInt':pInt,'ierr':ierr}
+    
+    
+
+
+# -------------------------------------------------------------------------------------------------------------------------
 #
 # R/Z1, R/Z2 ... start and end points used to calculate surface normal.
 # Surface normal is (RZ2-RZ1,0)x(0,0,1) for (R,Z,phi), with phi coming out
@@ -14,15 +142,16 @@ import numpy as np
 #
 # P.beta is the angle in the poloidal plane between B and the surface
 # normal
-#
+# JDL
+# -------------------------------------------------------------------------------------------------------------------------
 def calc_Bangle_g(g,R1,Z1,R2,Z2,npts=3):
     if npts < 1:
         print('Error: npts must be at least 1')
         return None
     
     if npts == 1:
-        Reval = 0.5*(R2 + R1)
-        Zeval = 0.5*(Z2 + Z1)
+        Reval = np.array([0.5*(R2 + R1)])
+        Zeval = np.array([0.5*(Z2 + Z1)])
     else:
         Reval = np.linspace(R1,R2,npts)
         Zeval = np.linspace(Z1,Z2,npts)
@@ -47,33 +176,65 @@ def calc_Bangle_g(g,R1,Z1,R2,Z2,npts=3):
     
     return {'alphaDeg':alphaDeg,'betaDeg':betaDeg}    
 
-
-def make_target_shape(g,targetAngle,rStart,zStart,forwardLength,backwardLength):
+# -------------------------------------------------------------------------------------------------------------------------
+def make_target_shape_oneway(g,targetAngle,rStart,zStart,length,direction):
+    # Angle is returned at midpoints of segments, so size is one smaller than r,z
+    # direction = 1 : "forward".  
+    # direction = -1: "backward". 
     
-    nCircle = 180
-    angle = np.zeros((nCircle,))
-    r = np.zeros((nCircle,))
-    z = np.zeros((nCircle,))
     
-    length = forwardLength
-    npts = 20
+    if not any((direction == 1,direction == -1)):
+        print("Error: direction must be 1 or -1")
+        return None
+    
+    # Todo: allow targetAngle to be array
+    
+    # Output quantities and resolution
+    nPts = 20
+    angle = np.zeros((nPts-1,))
+    r = np.full((nPts,),np.nan)
+    z = np.full((nPts,),np.nan)
+    s = np.full((nPts,),np.nan)
     r[0] = rStart
     z[0] = zStart
-    for i in range(npts-1):
-        rTest = np.full((npts,),np.nan)
-        zTest = np.full((npts,),np.nan)
-        for j in range(nCircle):
-            b = calc_bfield(g,r[i],z[i])
-            if b['ierr']:
-                break
-            angleOffset = np.arctan2(b['Bz'],b['Br']) + np.pi/2
-            rTest[j] = length/npts*np.cos((j-1)*np.pi/nCircle + angleOffset) + r[i]
-            zTest[j] = length/npts*np.sin((j-1)*np.pi/nCircle + angleOffset) + z[i]
-            angInfo = calc_Bangle_g(g,r[i],z[i],rTest[j],zTest[j])
-            angle[j+1] = angInfo['alphaDeg'][1]
-        
+            
     
-        indMin = np.argmin(
+    # Make a semicircle around fieldline in RZ plane and search for target angle
+    nCircle = 180 # Test resolution
+    tol = 0.1  # Sanity check angle tolerance
+    iLastGood = None
+    for i in range(nPts-1):
+        rTest = np.full((nCircle,),np.nan)
+        zTest = np.full((nCircle,),np.nan)
+        aTest = np.full((nCircle,),np.nan)
+        b = calc_bfield(g,r[i],z[i])
+        if b['ierr']:
+            print('Break on b error: nans will be present')
+            break        
+        for j in range(nCircle):
+            angleOffset = np.arctan2(direction*b['Bz'],direction*b['Br']) + np.pi/2
+            rTest[j] = length/nPts*np.cos((j-1)*np.pi/nCircle + angleOffset) + r[i]
+            zTest[j] = length/nPts*np.sin((j-1)*np.pi/nCircle + angleOffset) + z[i]
+            angInfo = calc_Bangle_g(g,r[i],z[i],rTest[j],zTest[j],npts=1)
+            aTest[j] = direction*angInfo['alphaDeg'][0]
+                
+        minTest = np.abs(aTest - targetAngle)
+        indMin = np.argmin(minTest)
+        thisMin = minTest[indMin]
+        if thisMin > tol:
+            print("Error: Failed sanity check. Maybe points went off gfile?")
+            return None
+        
+        r[i+1] = rTest[indMin]
+        z[i+1] = zTest[indMin]
+        angle[i] = aTest[indMin]
+        iLastGood = i + 1
+        
+    s[1:] = np.cumsum(np.sqrt(np.diff(r)**2 + np.diff(z)**2))
+    
+    return {'r':r,'z':z,'s':s,'angleDeg':angle,'iLastGood':iLastGood}
+
+        
     
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -132,7 +293,7 @@ def follow_fieldlines_rzphi_dl(g,Rstart,Zstart,phistart,dl,nsteps):
     return {'r':this['yout'][:,0::Neq],'phi':this['yout'][:,1::Neq],'z':this['yout'][:,2::Neq],
             'L':this['xout'],'ierr':this['ierr'],
             'iLastGood':this['iLastGood']}
-    
+# -------------------------------------------------------------------------------------------------------------------------
 def _rk4_fixed_step_integrate_dl(y0,x0,dx,nsteps,g):
     yout = np.full((nsteps+1,y0.size),np.nan)
     xout = np.full((nsteps+1,),np.nan)
@@ -164,7 +325,7 @@ def _rk4_fixed_step_integrate_dl(y0,x0,dx,nsteps,g):
     iLastGood = nsteps + 1
     return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
                 
-
+# -------------------------------------------------------------------------------------------------------------------------
 def _rk4_core_dl(y,dydx0,dx,g):    
     d1 = dx*dydx0
     dydx = _fl_derivs_dl_gfile(y + d1/2,g)
@@ -386,6 +547,14 @@ def calc_psi_derivs(g,R,Z,inds=None):
                  c['c01'][ir,iz]       +   c['c11'][ir,iz]*dr       +   c['c21'][ir,iz]*dr*dr       +   c['c31'][ir,iz]*dr*dr*dr    
              + 2*c['c02'][ir,iz]*dz    + 2*c['c12'][ir,iz]*dr*dz    + 2*c['c22'][ir,iz]*dr*dr*dz    + 2*c['c32'][ir,iz]*dr*dr*dr*dz    
              + 3*c['c03'][ir,iz]*dz*dz + 3*c['c13'][ir,iz]*dr*dz*dz + 3*c['c23'][ir,iz]*dr*dr*dz*dz + 3*c['c33'][ir,iz]*dr*dr*dr*dz*dz)/g['dZ']    
+    
+#    if R.size == 1:
+#        dpsidr = np.array([dpsidr])
+#        dpsidz = np.array([dpsidz])
+#        
+#    dpsidr[inds['ierr']] = np.nan
+#    dpsidz[inds['ierr']] = np.nan
+    
 
     dpsidr = np.where(inds['ierr'] == True, np.nan, dpsidr)
     dpsidz = np.where(inds['ierr'] == True, np.nan, dpsidz)
