@@ -10,7 +10,8 @@ function [u1,u2,ierr,pint] = int_two_lines(p1,p2,p3,p4)
 %   _   _        _  _
 %   x2 = p3 + u2(p4-p3)
 %
-% Then solve equastions for u1, u2
+% Then solve equations for u1, u2
+% JDL
 
 denom = (p4(2)-p3(2))*(p2(1)-p1(1)) - (p4(1)-p3(1))*(p2(2)-p1(2));
 if abs(denom) < eps  % Parallel lines

@@ -2,7 +2,7 @@ function [pint1,ierr,found_ind1,found_ind2,int_count]=int_curve_curve(line1_r,li
 % [pint1,ierr,found_ind1,found_ind2,int_count]=int_curve_curve(line1_r,line1_z,line2_r,line2_z,first,verbose)
 % Curve is defined by array of points,
 % First curve is stepped and both curves linearly interpolated to find intersection with second curve.
-% If first == true then first int is returned, else last int is.
+% If first == true then first int is returned
 % JL 2/2011
 
 if nargin < 5
@@ -15,7 +15,6 @@ end
 int_count = 0;
 found_ind1 = 0;
 found_ind2 = 0;
-exiting = 0;
 
 for ii1 = 1:length(line1_r) - 1
     p1 = [line1_r(ii1),line1_z(ii1)];
@@ -33,12 +32,8 @@ for ii1 = 1:length(line1_r) - 1
             if verbose
                 disp('int_curve_curve exiting on first intersection')
             end
-            exiting = 1;
             break
         end
-    end
-    if exiting == 1
-        break;
     end
 end
 
@@ -48,7 +43,7 @@ if int_count == 0
 end
 if int_count > 1
     if verbose
-        disp('Warning: More than one intersection found. Returning last point')
+        disp('Warning: More than one intersection found')
     end
 end
 
