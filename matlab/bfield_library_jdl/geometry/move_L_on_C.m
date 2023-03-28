@@ -9,7 +9,7 @@ nC = length(rline);
 dL = zeros(1,nC);
 dL(2:nC) = sqrt( (rline(1:nC-1)-rline(2:nC)).^2 + (zline(1:nC-1)-zline(2:nC)).^2 );
 
-Ltot = sum(dL);
+Ltot = sum(dL,'omitnan');
 if Ltot < L
     fprintf('Requested length %f, total length %f\n',[L,Ltot])
     error('Error: Ltot < L')

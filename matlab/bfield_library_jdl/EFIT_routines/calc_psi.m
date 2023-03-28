@@ -1,5 +1,5 @@
 function [psi,ierr,dpsidr,dpsidz] = calc_psi(g,R,Z,nowarn)
-
+% psi = -sign(Ip)*psirz
 if nargin < 4
     nowarn = 0;
 end

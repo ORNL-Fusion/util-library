@@ -16,7 +16,7 @@ end
 
 Btot = sqrt(Bout.br.^2 + Bout.bz.^2 + Bout.bphi.^2);
 df(1:3:N-2) = Bout.br./Btot; % dR/dl
-df(2:3:N-1) = Bout.bphi./(RPZ(1:3:N-2).'.*Btot); % dphi/dl
+df(2:3:N-1) = Bout.bphi./(RPZ(1:3:N-2).*Btot); % dphi/dl
 df(3:3:N)   = Bout.bz./Btot; % dZ/dl
 ierr = 0;
 

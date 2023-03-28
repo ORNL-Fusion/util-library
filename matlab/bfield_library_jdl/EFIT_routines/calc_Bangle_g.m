@@ -17,7 +17,7 @@ function P = calc_Bangle_g(g,RZ1,RZ2,npts)
 if length(RZ1) ~= 2 || length(RZ2) ~= 2
     error('Only single point pairs are allowed')
 end
-if nargin < 3
+if nargin < 4
     npts = 3;
 end
 if npts < 1

@@ -32,7 +32,8 @@ s.phi = yout(:,2:Neq:Nsys*Neq-1);
 s.z   = yout(:,3:Neq:Nsys*Neq);
 s.l  = xout;
 
-ierr = ierr_rk45;
+s.ierr = ierr_rk45;
+s.i_last_good = i_last_good;
 
 
 
