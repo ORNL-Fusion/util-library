@@ -1,133 +1,80 @@
+# -------------------------------------------------------------------------------------------------------------------------
+# Collection of bfield routines using EFIT/geqdsk as the bfield method. Adapted from general bfield routines
+# so a lot of inefficiency currently. 
+#
+# JDL
+# -------------------------------------------------------------------------------------------------------------------------
+
 import numpy as np
 
-# -------------------------------------------------------------------------------------------------------------------------
-def int_curve_curve(line1R,line1Z,line2R,line2Z,first=True):
-# Curve is defined by array of points,
-# First curve is stepped and both curves linearly interpolated to find intersection with second curve.
-# If first == true then first int is returned, else last int is.
-# JL 2/2011
-
-    if line1R.size != line1Z.size:
-        print('Error: line1 R and Z do not match')
-        return {'ierr':True}
-    if line2R.size != line2Z.size:
-        print('Error: line2 R and Z do not match')
-        return {'ierr':True}
-
-    intCount = 0
-    foundInd1 = []
-    foundInd2 = []
-    pInt = []
+class geq():
+    def __init__(self, gfile_name="gfile"):
+        self.gfile_name = gfile_name
+        pass
     
-    for i in range(line1R.size - 1):
-        p1 = np.array((line1R[i]  ,line1Z[i]  ))
-        p2 = np.array((line1R[i+1],line1Z[i+1]))
-        this = int_line_curve(p1,p2,line2R,line2Z,first=first)     
-        if not this['ierr']:            
-            ierr = False
-            print(i,this['pInt'])
-            pInt.append(this['pInt'])
-            foundInd1.append(i)
-            foundInd2.append(this['foundInd'])
-            intCount += this['intCount']
-            
-            if first:
-                done = True
-                break
-    
-    if intCount == 0:
-        ierr = True
+    def setup_bfield(self):        
+        self.read_gfile(self.gfile_name)
+        self.find_xpt()
         
-    pInt = np.squeeze(np.asarray(pInt))
-    
-    return {'pInt':pInt,'ierr':ierr,'foundInd1':foundInd1,'foundInd2':foundInd2,'intCount':intCount}
-
-    return None
-
-# -------------------------------------------------------------------------------------------------------------------------
-# Curve is defined by array of points,
-# linearly interpolated to find intersection with line.
-# JDL 2/2011
-def int_line_curve(p1,p2,lineR,lineZ,first=True):
-    
-    if p1.size != 2:
-        print('Error: p1 must be a point')   
-        return {'ierr':True}
-    if p2.size != 2:
-        print('Error: p2 must be a point')
-        return {'ierr':True}
-    
-    intCount = 0
-    foundInd = []
-    pInt = []
-    for i in range(lineR.size - 1):
-        p3 = np.array((lineR[i],lineZ[i]))
-        p4 = np.array((lineR[i+1],lineZ[i+1]))            
-        this = int_two_lines(p1,p2,p3,p4)
+    def plot(self,ax):
+        psiFine = _refine_psi(self.g,self.g['R'][1:-1],self.g['Z'][1:-1],2)
+        ax.plot(self.xpt_info['xpt1']['rx'],self.xpt_info['xpt1']['zx'],'rx')
+        ax.contour(psiFine['r'],psiFine['z'],np.transpose(psiFine['psiN']),[1.0])        
         
-        # Check for parallel line segments
-        if this['ierr']: 
-            continue
-     
-        if i == (lineR.size - 1):
-            test = this['u1'] >= 0 and this['u1'] <= 1 and this['u2'] >= 0 and this['u2'] <= 1
-        else:
-            test = this['u1'] >= 0 and this['u1'] <= 1 and this['u2'] >= 0 and this['u2'] < 1
+    def read_gfile(self, gfile_name="gfile"):    
+        self.g = readg_g3d(gfile_name)        
         
-        if test:
-            intCount += 1                    
-            pInt.append(p1 + this['u1']*(p2 - p1) )
-            ierr = False
-            foundInd.append(i)
-            if first == True:
-                break    
+    # -------------------------------------------------------------------------------------------------------------------------
+    # Find xpt(s) by searching for min(Bpol)
+    # JDL
+    # -------------------------------------------------------------------------------------------------------------------------
+    def find_xpt(self):
 
-    if intCount == 0:
-        ierr = True
-    
-    pInt = np.asarray(pInt)
-    
-    return {'pInt':pInt,'ierr':ierr,'foundInd':foundInd,'intCount':intCount}
+        verbose = False
+        
+        # Tolerance used on refinement
+        BpolTol = 1e-6
+
+        # Make a first guess based on the boundary info. 
+        # This won't work if the configuration is limited, so set 
+        # a tolerance to see if the guess is sane.
+        # If tolerance exceeded then set a larger search range
+        firstGuessBpolTol = 1e-3      
+        b = calc_bfield(self.g,self.g['rbdry'],self.g['zbdry'])
+        ix = np.argmin(b['Bpol'])
+        xpt1 = {'rx':self.g['rbdry'][ix],'zx':self.g['zbdry'][ix],'bpx':b['Bpol'][ix]}
+        if verbose:
+            print('Rough 1st x-point:',xpt1['rx'],xpt1['zx'],xpt1['bpx'])
+
+        # Setup box for refined search
+        dr = (self.g['R'][-1] - self.g['R'][0])
+        dz = (self.g['Z'][-1] - self.g['Z'][0])
+        if xpt1['bpx'] <= firstGuessBpolTol:
+            dr = dr*.05
+            dz = dz*.05
+        else:    
+            dr = dr*.15
+            dz = dz*.10    
+
+        xpt1 = _refine_xpt(self.g,xpt1,dr,dz,BpolTol)
+        if verbose:
+            print('Refined 1st x-point:',xpt1['rx'],xpt1['zx'],xpt1['bpx'])
+
+        # Todo: make sure not off grid, b= None?
+        # Guess up/down symmetric for 2nd x-point
+        xpt2 = xpt1.copy()
+        xpt2['zx'] = -xpt2['zx']
+        b = calc_bfield(self.g,xpt2['rx'],xpt2['zx'])
+        xpt2['bpx'] = b['Bpol']
+        xpt2 = _refine_xpt(self.g,xpt2,dr,dz,BpolTol)
+        if verbose:
+            print('Refined 2nd x-point:',xpt2['rx'],xpt2['zx'],xpt2['bpx'])
+
+        self.xpt_info = {'xpt1':xpt1,'xpt2':xpt2}
+        return self
 
 # -------------------------------------------------------------------------------------------------------------------------
-# Calculates the intersection of lines p1 to p2, and p3 to p4.  Each
-# point is an x-y pair.  Returns two values, which are the normalized distances
-# to the intersection point along the line p1 to p2 (u1) and the line
-# p3 to p4 (u2).
-#
-# Equations for line 1 (x1 = [x,y]), and line 2 (x2 = [x,y])
-#   _   _        _  _
-#   x1 = p1 + u1(p2-p1)
-#   _   _        _  _
-#   x2 = p3 + u2(p4-p3)
-#
-# Then solve equations for u1, u2
-# 
-# Note the distances can be greater than 1.0, i.e., these are not line segments!
-# 
-# JDL
-def int_two_lines(p1,p2,p3,p4):
-    
-    tol = 1e-15;
-    
-    denom = (p4[1]-p3[1])*(p2[0]-p1[0]) - (p4[0]-p3[0])*(p2[1]-p1[1])
-    if np.abs(denom) < tol: # parallel lines
-        u1 = np.nan
-        u2 = np.nan
-        pInt = np.nan
-        ierr = True
-    else:
-        u1 = ((p4[0]-p3[0])*(p1[1]-p3[1]) - (p4[1]-p3[1])*(p1[0]-p3[0]))/denom
-        u2 = ((p2[0]-p1[0])*(p1[1]-p3[1]) - (p2[1]-p1[1])*(p1[0]-p3[0]))/denom
-        pInt = p1 + u1*(p2-p1)
-        ierr = False
-        
-    return {'u1':u1,'u2':u2,'pInt':pInt,'ierr':ierr}
-    
-    
-
-
-# -------------------------------------------------------------------------------------------------------------------------
+# Calculate angle between magnetic field vector and a line segment in the RZ plane.
 #
 # R/Z1, R/Z2 ... start and end points used to calculate surface normal.
 # Surface normal is (RZ2-RZ1,0)x(0,0,1) for (R,Z,phi), with phi coming out
@@ -140,8 +87,8 @@ def int_two_lines(p1,p2,p3,p4):
 # P.alpha is the angle of incidence relative to the surface, i.e., the 
 # incident flux is qdep = qprl*sin(P.alpha)
 #
-# P.beta is the angle in the poloidal plane between B and the surface
-# normal
+# P.beta is the angle in the poloidal plane between B and the surface normal
+#
 # JDL
 # -------------------------------------------------------------------------------------------------------------------------
 def calc_Bangle_g(g,R1,Z1,R2,Z2,npts=3):
@@ -176,96 +123,11 @@ def calc_Bangle_g(g,R1,Z1,R2,Z2,npts=3):
     
     return {'alphaDeg':alphaDeg,'betaDeg':betaDeg}    
 
-# -------------------------------------------------------------------------------------------------------------------------
-def make_target_shape_oneway(g,targetAngle,rStart,zStart,length,direction):
-    # Angle is returned at midpoints of segments, so size is one smaller than r,z
-    # direction = 1 : "forward".  
-    # direction = -1: "backward". 
-    
-    
-    if not any((direction == 1,direction == -1)):
-        print("Error: direction must be 1 or -1")
-        return None
-    
-    # Todo: allow targetAngle to be array
-    
-    # Output quantities and resolution
-    nPts = 20
-    angle = np.zeros((nPts-1,))
-    r = np.full((nPts,),np.nan)
-    z = np.full((nPts,),np.nan)
-    s = np.full((nPts,),np.nan)
-    r[0] = rStart
-    z[0] = zStart
-            
-    
-    # Make a semicircle around fieldline in RZ plane and search for target angle
-    nCircle = 180 # Test resolution
-    tol = 0.1  # Sanity check angle tolerance
-    iLastGood = None
-    for i in range(nPts-1):
-        rTest = np.full((nCircle,),np.nan)
-        zTest = np.full((nCircle,),np.nan)
-        aTest = np.full((nCircle,),np.nan)
-        b = calc_bfield(g,r[i],z[i])
-        if b['ierr']:
-            print('Break on b error: nans will be present')
-            break        
-        for j in range(nCircle):
-            angleOffset = np.arctan2(direction*b['Bz'],direction*b['Br']) + np.pi/2
-            rTest[j] = length/nPts*np.cos((j-1)*np.pi/nCircle + angleOffset) + r[i]
-            zTest[j] = length/nPts*np.sin((j-1)*np.pi/nCircle + angleOffset) + z[i]
-            angInfo = calc_Bangle_g(g,r[i],z[i],rTest[j],zTest[j],npts=1)
-            aTest[j] = direction*angInfo['alphaDeg'][0]
-                
-        minTest = np.abs(aTest - targetAngle)
-        indMin = np.argmin(minTest)
-        thisMin = minTest[indMin]
-        if thisMin > tol:
-            print("Error: Failed sanity check. Maybe points went off gfile?")
-            return None
-        
-        r[i+1] = rTest[indMin]
-        z[i+1] = zTest[indMin]
-        angle[i] = aTest[indMin]
-        iLastGood = i + 1
-        
-    s[1:] = np.cumsum(np.sqrt(np.diff(r)**2 + np.diff(z)**2))
-    
-    return {'r':r,'z':z,'s':s,'angleDeg':angle,'iLastGood':iLastGood}
-
-        
-    
 
 # -------------------------------------------------------------------------------------------------------------------------
-
-def move_L_on_C(L,rline,zline):
-
-    dL = np.zeros((rline.size,1))
-    dL[1:] = np.sqrt( (rline[0:-1] - rline[1:])**2 + (zline[0:-1] - zline[1:])**2)
-    Ltot = np.nansum(dL)
-    
-    if Ltot < L:
-        print('Error: Requested length is less than total line length')
-        return None
-    
-    sumL = np.cumsum(dL)
-    if L < 1e-10:
-        ind = 0
-    else:        
-        ind = np.argmax(sumL >= L) - 1
-    
-    f = (L - sumL[ind])/dL[ind+1]
-    R_L = f*(rline[ind+1] - rline[ind]) + rline[ind]
-    Z_L = f*(zline[ind+1] - zline[ind]) + zline[ind]
-    if f > 0.5:
-        icurve_near_L = ind + 1
-        err_near_L = (1-f)*dL[ind+1]
-    else:
-        icurve_near_L = ind
-        err_near_L = f*dL[ind+1]
-                
-    return {'icurve_near_L':icurve_near_L,'err_near_L':err_near_L,'R_L':R_L,'Z_L':Z_L}
+# Driver for fieldline following with parallel distance as integration variable
+#
+# JDL
 # -------------------------------------------------------------------------------------------------------------------------
 def follow_fieldlines_rzphi_dl(g,Rstart,Zstart,phistart,dl,nsteps):
     # Number of equations for each ode system
@@ -293,172 +155,8 @@ def follow_fieldlines_rzphi_dl(g,Rstart,Zstart,phistart,dl,nsteps):
     return {'r':this['yout'][:,0::Neq],'phi':this['yout'][:,1::Neq],'z':this['yout'][:,2::Neq],
             'L':this['xout'],'ierr':this['ierr'],
             'iLastGood':this['iLastGood']}
-# -------------------------------------------------------------------------------------------------------------------------
-def _rk4_fixed_step_integrate_dl(y0,x0,dx,nsteps,g):
-    yout = np.full((nsteps+1,y0.size),np.nan)
-    xout = np.full((nsteps+1,),np.nan)
-    yout[0,] = y0
-    xout[0] = x0
-    
-    y = y0
-    x = x0
-    for i in range(nsteps):
-        dydx = _fl_derivs_dl_gfile(y,g)
-        if any(np.isnan(dydx)):
-            ierr = 0
-            iLastGood = i
-            return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
-        
-        ytmp = _rk4_core_dl(y,dydx,dx,g)
-        if any(np.isnan(ytmp)):
-            ierr = 0
-            iLastGood = i
-            return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
-        
-        x = x + dx
-        
-        yout[i+1,] = ytmp
-        xout[i+1] = x
-        y = ytmp
-        
-    ierr = 0
-    iLastGood = nsteps + 1
-    return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
-                
-# -------------------------------------------------------------------------------------------------------------------------
-def _rk4_core_dl(y,dydx0,dx,g):    
-    d1 = dx*dydx0
-    dydx = _fl_derivs_dl_gfile(y + d1/2,g)
-    if any(np.isnan(dydx)):
-        return np.full(y.size,np.nan)
-    d2 = dx*dydx
-    dydx = _fl_derivs_dl_gfile(y + d2/2,g)
-    if any(np.isnan(dydx)):
-        return np.full(y.size,np.nan)
-    d3 = dx*dydx
-    dydx = _fl_derivs_dl_gfile(y + d3,g)
-    if any(np.isnan(dydx)):
-        return np.full(y.size,np.nan)
-    d4 = dx*dydx
-    
-    return y + (d1 + 2*d2 + 2*d3 + d4)/6
-    
-    
-def _fl_derivs_dl_gfile(RPZ,g):
-    b = calc_bfield(g,RPZ[0::3],RPZ[2::3])
-    df = np.empty((RPZ.size,))
-    df[0::3] = b['Br']/b['Btot'] # dR/dl
-    df[1::3] = b['Bt']/(RPZ[0::3]*b['Btot']) # dphi/dl
-    df[2::3] = b['Bz']/b['Btot'] # dZ/dl
-    return df
-    
-# -------------------------------------------------------------------------------------------------------------------------
-# Helper routine to refine psiN for plotting
-# -------------------------------------------------------------------------------------------------------------------------
-def _refine_psi(g,r,z,fac):
-    r2 = np.linspace(g['R'][0],g['R'][-1],fac*g['mw'])
-    z2 = np.linspace(g['Z'][0],g['Z'][-1],fac*g['mh'])
-    p2 = np.empty((r2.size,z2.size))
-    for i in range(r2.size):
-        p2[:,i] = calc_psiN(g,r2,z2[i]*np.ones_like(r2))
-    return {'r':r2,'z':z2,'psiN':p2}
 
-# -------------------------------------------------------------------------------------------------------------------------
-# Find xpt(s) by searching for min(Bpol)
-# JDL
-# -------------------------------------------------------------------------------------------------------------------------
-def find_xpt(g):
 
-    # Tolerance used on refinement
-    BpolTol = 1e-6
-    
-    # Make a first guess based on the boundary info. 
-    # This won't work if the configuration is limited, so set 
-    # a tolerance to see if the guess is sane.
-    # If tolerance exceeded then set a larger search range
-    firstGuessBpolTol = 1e-3      
-    b = calc_bfield(g,g['rbdry'],g['zbdry'])
-    ix = np.argmin(b['Bpol'])
-    xpt1 = {'rx':g['rbdry'][ix],'zx':g['zbdry'][ix],'bpx':b['Bpol'][ix]}
-    print('Rough 1st x-point:',xpt1['rx'],xpt1['zx'],xpt1['bpx'])
-    
-    # Setup box for refined search
-    dr = (g['R'][-1] - g['R'][0])
-    dz = (g['Z'][-1] - g['Z'][0])
-    if xpt1['bpx'] <= firstGuessBpolTol:
-        dr = dr*.05
-        dz = dz*.05
-    else:    
-        dr = dr*.15
-        dz = dz*.10    
-
-    xpt1 = _refine_xpt(g,xpt1,dr,dz,BpolTol)
-    print('Refined 1st x-point:',xpt1['rx'],xpt1['zx'],xpt1['bpx'])
-    
-    # Todo: make sure not off grid, b= None?
-    # Guess up/down symmetric for 2nd x-point
-    xpt2 = xpt1.copy()
-    xpt2['zx'] = -xpt2['zx']
-    b = calc_bfield(g,xpt2['rx'],xpt2['zx'])
-    xpt2['bpx'] = b['Bpol']
-    xpt2 = _refine_xpt(g,xpt2,dr,dz,BpolTol)
-    print('Refined 2nd x-point:',xpt2['rx'],xpt2['zx'],xpt2['bpx'])
-
-    return {'xpt1':xpt1,'xpt2':xpt2}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# helper routine to refine xpt guess
-# -------------------------------------------------------------------------------------------------------------------------
-def _refine_xpt(g,xptStart,drStart,dzStart,tol):
-                                
-    nIterMax = 15    
-    nGrid = 100  # grid dimension (square)
-    
-    Rmin_eval = g['R'][2] + 1e-3
-    Zmin_eval = g['Z'][2] + 1e-3
-    Rmax_eval = g['R'][-2] - 1e-3
-    Zmax_eval = g['Z'][-2] - 1e-3    
-    rGrid = np.empty((nGrid,nGrid))
-    zGrid = np.empty((nGrid,nGrid))
-    bpolGrid = np.empty((nGrid,nGrid))
-
-    # initialize
-    xpt = xptStart.copy()
-    dr = drStart
-    dz = dzStart
-                    
-    nIter = 0
-    while (xpt['bpx'] > tol) and (nIter < nIterMax):      
-        rTest = np.linspace(max((Rmin_eval,xpt['rx']-dr)),min((Rmax_eval,xpt['rx']+dr)),nGrid)
-        zTest = np.linspace(max((Zmin_eval,xpt['zx']-dz)),min((Zmax_eval,xpt['zx']+dz)),nGrid)
-        for i in range(nGrid):            
-            ztmp = zTest[i]*np.ones_like(rTest)
-            b = calc_bfield(g,rTest,ztmp)
-            rGrid[i,:] = rTest
-            zGrid[i,:] = ztmp
-            bpolGrid[i,:] = b['Bpol']
-        
-        # find new minimum and set as error
-        ix,jx = np.unravel_index(bpolGrid.argmin(), bpolGrid.shape)
-        
-        xpt['bpx'] = bpolGrid[ix,jx]
-        
-        rxLast = xpt['rx']
-        zxLast = xpt['zx']          
-        dr = np.abs(rGrid[ix,jx] - rxLast)
-        dz = np.abs(zGrid[ix,jx] - zxLast)
-        
-        xpt['rx'] = rGrid[ix,jx]
-        xpt['zx'] = zGrid[ix,jx]                
-        
-        #print(nIter,ix,jx,rx,zx,bpx,dr,dz,err > BpolTol)
-        
-        nIter += 1        
-        
-        if nIter >= nIterMax:
-            print('Warning: max iteration exceeded for 1st x-point')            
-        
-    return xpt
     
 # -------------------------------------------------------------------------------------------------------------------------
 # Get magnetic field components from gfile, units of Tesla    
@@ -561,23 +259,6 @@ def calc_psi_derivs(g,R,Z,inds=None):
     return {'dpsidr':dpsidr,'dpsidz':dpsidz}
 
 # -------------------------------------------------------------------------------------------------------------------------
-# Helper routine to find position in table.
-# Points off valid grid region will have ierr = True, ir = iz = 0
-# -------------------------------------------------------------------------------------------------------------------------
-def _calc_interpolation_inds(g,R,Z):
-    # Add a small offset to avoid error with first grid point
-    ir = np.asarray(np.floor( (R - g['R'][0] + 1e-10)/g['dR'] ).astype(int))
-    iz = np.asarray(np.floor( (Z - g['Z'][0] + 1e-10)/g['dZ'] ).astype(int))
-
-    # check for points off grid, no derivatives on boundary cells
-    ierr = np.where((ir < 1) | (ir > g['mw'] - 1) |
-                    (iz < 1) | (iz > g['mh'] - 1), True, False)
-    ir[ierr == True] = 0
-    iz[ierr == True] = 0
-    
-    return {'ierr':ierr,'ir':ir,'iz':iz}
-
-# -------------------------------------------------------------------------------------------------------------------------
 #
 # Reads a gfile and adds additional quantities for psi and
 # bfield interpolation
@@ -606,6 +287,91 @@ def readg_g3d(filename):
     g['psi_bicub_coeffs_inv'] = _get_psi_bicub_coeffs_inv(g)
     
     return g
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Helper routine to refine psiN for plotting
+# JDL
+# -------------------------------------------------------------------------------------------------------------------------
+def _refine_psi(g,r,z,fac):
+    r2 = np.linspace(g['R'][0],g['R'][-1],fac*g['mw'])
+    z2 = np.linspace(g['Z'][0],g['Z'][-1],fac*g['mh'])
+    p2 = np.empty((r2.size,z2.size))
+    for i in range(r2.size):
+        p2[:,i] = calc_psiN(g,r2,z2[i]*np.ones_like(r2))
+    return {'r':r2,'z':z2,'psiN':p2}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# helper routine to refine xpt guess
+# JDL
+# -------------------------------------------------------------------------------------------------------------------------
+def _refine_xpt(g,xptStart,drStart,dzStart,tol):
+                                
+    nIterMax = 15    
+    nGrid = 100  # grid dimension (square)
+    
+    Rmin_eval = g['R'][2] + 1e-3
+    Zmin_eval = g['Z'][2] + 1e-3
+    Rmax_eval = g['R'][-2] - 1e-3
+    Zmax_eval = g['Z'][-2] - 1e-3    
+    rGrid = np.empty((nGrid,nGrid))
+    zGrid = np.empty((nGrid,nGrid))
+    bpolGrid = np.empty((nGrid,nGrid))
+
+    # initialize
+    xpt = xptStart.copy()
+    dr = drStart
+    dz = dzStart
+                    
+    nIter = 0
+    while (xpt['bpx'] > tol) and (nIter < nIterMax):      
+        rTest = np.linspace(max((Rmin_eval,xpt['rx']-dr)),min((Rmax_eval,xpt['rx']+dr)),nGrid)
+        zTest = np.linspace(max((Zmin_eval,xpt['zx']-dz)),min((Zmax_eval,xpt['zx']+dz)),nGrid)
+        for i in range(nGrid):            
+            ztmp = zTest[i]*np.ones_like(rTest)
+            b = calc_bfield(g,rTest,ztmp)
+            rGrid[i,:] = rTest
+            zGrid[i,:] = ztmp
+            bpolGrid[i,:] = b['Bpol']
+        
+        # find new minimum and set as error
+        ix,jx = np.unravel_index(bpolGrid.argmin(), bpolGrid.shape)
+        
+        xpt['bpx'] = bpolGrid[ix,jx]
+        
+        rxLast = xpt['rx']
+        zxLast = xpt['zx']          
+        dr = np.abs(rGrid[ix,jx] - rxLast)
+        dz = np.abs(zGrid[ix,jx] - zxLast)
+        
+        xpt['rx'] = rGrid[ix,jx]
+        xpt['zx'] = zGrid[ix,jx]                
+        
+        #print(nIter,ix,jx,rx,zx,bpx,dr,dz,err > BpolTol)
+        
+        nIter += 1        
+        
+        if nIter >= nIterMax:
+            print('Warning: max iteration exceeded for 1st x-point')            
+        
+    return xpt
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Helper routine to find position in table.
+# Points off valid grid region will have ierr = True, ir = iz = 0
+# JDL
+# -------------------------------------------------------------------------------------------------------------------------
+def _calc_interpolation_inds(g,R,Z):
+    # Add a small offset to avoid error with first grid point
+    ir = np.asarray(np.floor( (R - g['R'][0] + 1e-10)/g['dR'] ).astype(int))
+    iz = np.asarray(np.floor( (Z - g['Z'][0] + 1e-10)/g['dZ'] ).astype(int))
+
+    # check for points off grid, no derivatives on boundary cells
+    ierr = np.where((ir < 1) | (ir > g['mw'] - 1) |
+                    (iz < 1) | (iz > g['mh'] - 1), True, False)
+    ir[ierr == True] = 0
+    iz[ierr == True] = 0
+    
+    return {'ierr':ierr,'ir':ir,'iz':iz}
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Simple reading of gfile
@@ -818,6 +584,77 @@ def readg_g3d_simple(filename):
         g['zbdry'] = []
         
     return g
+
+# -------------------------------------------------------------------------------------------------------------------------
+# RK4 integration step with parallel distance as integration variable
+#
+# JDL
+# -------------------------------------------------------------------------------------------------------------------------
+def _rk4_fixed_step_integrate_dl(y0,x0,dx,nsteps,g):
+    yout = np.full((nsteps+1,y0.size),np.nan)
+    xout = np.full((nsteps+1,),np.nan)
+    yout[0,] = y0
+    xout[0] = x0
+    
+    y = y0
+    x = x0
+    for i in range(nsteps):
+        dydx = _fl_derivs_dl_gfile(y,g)
+        if any(np.isnan(dydx)):
+            ierr = 0
+            iLastGood = i
+            return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
+        
+        ytmp = _rk4_core_dl(y,dydx,dx,g)
+        if any(np.isnan(ytmp)):
+            ierr = 0
+            iLastGood = i
+            return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
+        
+        x = x + dx
+        
+        yout[i+1,] = ytmp
+        xout[i+1] = x
+        y = ytmp
+        
+    ierr = 0
+    iLastGood = nsteps + 1
+    return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
+                
+# -------------------------------------------------------------------------------------------------------------------------
+# RK4 core fieldline following with parallel distance as integration variable
+#
+# JDL
+# -------------------------------------------------------------------------------------------------------------------------
+def _rk4_core_dl(y,dydx0,dx,g):    
+    d1 = dx*dydx0
+    dydx = _fl_derivs_dl_gfile(y + d1/2,g)
+    if any(np.isnan(dydx)):
+        return np.full(y.size,np.nan)
+    d2 = dx*dydx
+    dydx = _fl_derivs_dl_gfile(y + d2/2,g)
+    if any(np.isnan(dydx)):
+        return np.full(y.size,np.nan)
+    d3 = dx*dydx
+    dydx = _fl_derivs_dl_gfile(y + d3,g)
+    if any(np.isnan(dydx)):
+        return np.full(y.size,np.nan)
+    d4 = dx*dydx
+    
+    return y + (d1 + 2*d2 + 2*d3 + d4)/6
+    
+# -------------------------------------------------------------------------------------------------------------------------
+# Derivative function for fieldline following with parallel distance as integration variable
+#
+# JDL
+# -------------------------------------------------------------------------------------------------------------------------
+def _fl_derivs_dl_gfile(RPZ,g):
+    b = calc_bfield(g,RPZ[0::3],RPZ[2::3])
+    df = np.empty((RPZ.size,))
+    df[0::3] = b['Br']/b['Btot'] # dR/dl
+    df[1::3] = b['Bt']/(RPZ[0::3]*b['Btot']) # dphi/dl
+    df[2::3] = b['Bz']/b['Btot'] # dZ/dl
+    return df
 
 
 # -------------------------------------------------------------------------------------------------------------------------
