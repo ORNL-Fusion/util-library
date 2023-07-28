@@ -1,5 +1,8 @@
 function sep = plot_sep_g(g,plotit,newfig,linewid,clip_at_glim,flush_file)
 % function sep = plot_sep_g(g,plotit,newfig)
+if nargin < 1
+    error('At least argument "g" is required')
+end
 if nargin < 2
     plotit = 1;
 end
@@ -52,7 +55,7 @@ if fid == -1
     xz1 = xpt_info.zx;
     
     
-    dxr = 1e-3;
+    dxr = 1e-4;
     dphi_fl = g.ip_sign*0.1*pi/180;
     ns_fl = floor(0.3*pi/abs(dphi_fl));  % Factor of 0.x to stop from leaving grid
     maxtries = 1000;
@@ -92,6 +95,9 @@ if fid == -1
         if idir == 1
             rsep1 = rsep0;
             zsep1 = zsep0;
+        else
+            rsep2 = rsep0;  %save this to identify segments
+            zsep2 = zsep0;
         end
     end
     rsep2=[flipud(rsep0(2:end));rsep1];
@@ -103,7 +109,24 @@ if fid == -1
     
     if clip_at_glim
         inp = inpolygon(rsep,zsep,g.lim(1,:),g.lim(2,:));
-        rsep = rsep(inp); zsep = zsep(inp); nsep = length(rsep);
+
+        % refine to get better intersection
+        i1 = find(inp,1,'first');
+        rtest = linspace(rsep(i1-1),rsep(i1),1000);
+        ztest = linspace(zsep(i1-1),zsep(i1),1000);
+        intest = inpolygon(rtest,ztest,g.lim(1,:),g.lim(2,:));
+        rsp1 = rtest(find(intest,1,'first'));
+        zsp1 = ztest(find(intest,1,'first'));
+
+        i1 = find(inp,1,'last');
+        rtest = linspace(rsep(i1),rsep(i1+1),1000);
+        ztest = linspace(zsep(i1),zsep(i1+1),1000);
+        intest = inpolygon(rtest,ztest,g.lim(1,:),g.lim(2,:));
+        rsp2 = rtest(find(intest,1,'last'));
+        zsp2 = ztest(find(intest,1,'last'));
+
+        rsep = [rsp1;rsep(inp);rsp2]; 
+        zsep = [zsp1;zsep(inp);zsp2]; 
     end
 
     if plotit == 1
@@ -128,6 +151,7 @@ else
     nsep = fscanf(fid,'%i\n',1);
     rsep = fscanf(fid,'%f\n',nsep);
     zsep = fscanf(fid,'%f\n',nsep);
+
     fclose(fid);
     if plotit ==1
         plot(rsep,zsep,'k-','linewidth',linewid)

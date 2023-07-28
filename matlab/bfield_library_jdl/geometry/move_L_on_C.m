@@ -5,6 +5,10 @@ function [icurve_near_L,err_near_L,R_L,Z_L] = move_L_on_C(L,rline,zline)
 % linear distance between curve points.
 % JL 2/2011
 
+if length(L) ~= 1
+    error('length(L) must be 1')
+end
+
 nC = length(rline);
 dL = zeros(1,nC);
 dL(2:nC) = sqrt( (rline(1:nC-1)-rline(2:nC)).^2 + (zline(1:nC-1)-zline(2:nC)).^2 );
