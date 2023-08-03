@@ -29,7 +29,9 @@ switch bfield.type
     case 'Bgrid'        
         [dydx,ierr] = fl_derivs_dphi_Bgrid(x,y,bfield,nowarn);               
     case 'Aspline'        
-        [dydx,ierr] = fl_derivs_dphi_Aspline(x,y,bfield,nowarn);         
+        [dydx,ierr] = fl_derivs_dphi_Aspline(x,y,bfield,nowarn);  
+    case 'equ'
+        [dydx,ierr] = fl_derivs_dphi_equ(y,bfield,nowarn);
     otherwise
         fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
@@ -46,6 +48,7 @@ switch bfield.type
         fprintf('     xpand_pert\n')
         fprintf('     Bgrid\n')
         fprintf('     Aspline\n')
+        fprintf('     equ\n')
         ierr = 1;
         error('barfing')
         return;

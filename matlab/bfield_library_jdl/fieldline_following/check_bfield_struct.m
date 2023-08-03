@@ -167,6 +167,13 @@ switch bfield.type
             ierr = 1;
             return;
         end        
+    case {'equ'}
+        errstr2 = 'for equ';
+        if ~isfield(bfield,'Equ')
+            fprintf([errstr,errstr2,'type structure must contain field "Equ"\n'])
+            ierr = 1;
+            return;
+        end              
     otherwise
         fprintf([errstr,'Did not recognize bfield type\n'])
         fprintf('Supported types are:\n')
@@ -184,6 +191,7 @@ switch bfield.type
         fprintf('     xpand_vac\n') 
         fprintf('     Bgrid\n')
         fprintf('     xdr\n')
+        fprintf('     equ\n')
         ierr = 1;
         error('Throwing error')        
         return;

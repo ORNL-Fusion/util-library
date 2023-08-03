@@ -9,7 +9,7 @@ types = {'acd','plt','scd','ccd','prb','prc'};
 species = {'h'};
 years = {'89','93','96','12','22'};
 
-outname_base = 'C:\Work\ADAS\adf11_all';
+outname_base = 'C:\Users\jjl\Dropbox (ORNL)\ADAS\adf11_all';
 
 for k = 1:length(species)
     for j = 1:length(years)
@@ -25,7 +25,9 @@ for k = 1:length(species)
             end
             test2 = dir(outdir);
             if length(test2) == 2  % empty
+                try
                 rmdir(outdir)
+                end
             end
 %             urlwrite(url_name,outfile);
         end
