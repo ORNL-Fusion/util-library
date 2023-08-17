@@ -8,8 +8,12 @@ function [rho,Phi,Reff,Reff_bry] = calc_rho(g,R1,Z1)
 
 %% Map to psiN first
 psiN = calc_psiN(g,R1,Z1);
-if psiN >= 1
-    error('rho undefined outside of separatrix. PsiN here = %f\n',psiN)
+if any(psiN >= 1)
+    if length(psiN) == 1
+        error('rho undefined outside of separatrix. PsiN here = %f\n',psiN)
+    else
+        disp('Some values of rho requested outside of separatrix!')
+    end
 end
 
 % Integrate q = Phi'/Psi' and interpolate at psiN
