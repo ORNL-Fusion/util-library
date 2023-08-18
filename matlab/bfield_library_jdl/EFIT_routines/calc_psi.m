@@ -10,6 +10,13 @@ Z=reshape(Z,1,npts);
 
 [ir,iz,index,ierr] = calc_bicub_interpolation_inds(g,R,Z,nowarn);
 
+% Handle NaN points 
+% Assign index of 1 for now -- they will get marked as nan below
+indNaN = isnan(ir);
+ir(indNaN) = 1;
+iz(indNaN) = 1;
+index(indNaN) = 1;
+
 dr = (R - g.r(ir))/g.dR;
 dz = (Z - g.z(iz))/g.dZ;
 

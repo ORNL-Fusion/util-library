@@ -6,9 +6,9 @@ if iscolumn(R)
     Z = Z';
 end
 
-if any(isnan(R)) || any(isnan(Z))
-    error('R or Z is nan')
-end
+% if any(isnan(R)) || any(isnan(Z))
+%     error('R or Z is nan')
+% end
 
 % Add a small offset to avoid error with first grid point
 ir = floor( (R - g.r(1) + 1e-10)/g.dR ) + 1;  
@@ -29,3 +29,5 @@ if ~nowarn
         warning('Point off grid: [R,Z] = [%.2f,%.2f], [Rmin,Zmin] = [%.2f,%.2f], [Rmax,Zmax] = [%.2f,%.2f]\n',R(ierr(i)),Z(ierr(i)),g.r(2),g.r(g.mw-1),g.z(2),g.z(g.mh-1))
     end
 end
+
+ierr(isnan(R) | isnan(Z)) = true;

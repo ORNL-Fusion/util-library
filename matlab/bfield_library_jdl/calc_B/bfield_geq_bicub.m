@@ -21,9 +21,13 @@ if isfield(g,'toroidal_off_grid')
     toroidal_off_grid = g.toroidal_off_grid;
 end        
 
-if any(isnan(R)) || any(isnan(Z))
-    error('R or Z is NaN')
-end
+% if any(isnan(R)) || any(isnan(Z))
+%     % error('R or Z is NaN')
+%     if ~nowarn
+%         fprintf('Warning: R or Z is NaN in bfield_geq_bicub\n');        
+%     end
+% 
+% end
 
 [psi,ierr,dpsidr,dpsidz] = calc_psi(g,R,Z,nowarn);
     
