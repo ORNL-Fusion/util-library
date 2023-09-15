@@ -73,3 +73,4 @@ end
 
 % Bx = Br.*cp - Bphi.*sp;
 % By = Br.*sp + Bphi.*cp;
+% Bpol = = sqrt(B.bz.^2 + B.br.^2)

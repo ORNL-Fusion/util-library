@@ -92,9 +92,9 @@ g.pprime = fscanf(fid,'%f',g.mw).'; % P'(psi) in (Nt/m^2)/(Wb/rad) on uniform fl
 g.psirz = fscanf(fid,'%f',[g.mw,g.mh]);  % Poloidal flux in Weber/rad on the rectangular grid points
 g.qpsi = fscanf(fid,'%f',g.mw).'; % q values on uniform flux grid from axis to boundary
 
-if any(g.qpsi == 0)
-    g.qpsi = [];
-end
+% if any(g.qpsi == 0)
+%     g.qpsi = [];
+% end
 if ~isempty(g.qpsi)  % file ends here in some cases
     %
     line = fscanf(fid,'%i',2);

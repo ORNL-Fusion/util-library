@@ -116,7 +116,7 @@ end
 
 end
 
-function [rx,zx,bpx] = refine_xpt(g,rx,zx,der,dez,bpx0,tol)
+function [rx,zx,bpx] = refine_xpt(g,rx,zx,der,dez,bpx,tol)
 
 Rmin_eval = g.r(3) + 1e-3;
 Zmin_eval = g.z(3) + 1e-3;
@@ -125,7 +125,7 @@ Zmax_eval = g.z(end-2) - 1e-3;
 
 
 niter_max = 15;
-err = bpx0;
+err = bpx;
 n1 = 100;  % grid dimension (square)
 bp = zeros(n1,n1);
 rg = zeros(n1,n1);
@@ -159,4 +159,5 @@ while err > tol && niter < niter_max
         warning('niter_max exceeded for x-point search')
     end
 end
+
 end

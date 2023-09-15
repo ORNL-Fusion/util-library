@@ -1,7 +1,7 @@
 function plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty,quiet,plot_psi)
 % plot_gfile(g,psi_min,psi_max,npsi,newfig,con_linesty,quiet,plot_psi)
 %
-% plot_psi is 'psi' or 'psiN' (default)
+% plot_psi is 'psi' (default) or 'psiN' 
 %
 % g can be g struction from readg_g3d, or gfile_name
 
@@ -11,14 +11,14 @@ nRefine = 1;
 if ischar(g)
     g = readg_g3d(g);
 end
-if nargin < 2
-    npsi = 50;
-end
-if nargin < 3 
+if nargin < 2 
     psi_min = [];
 end
-if nargin < 4
+if nargin < 3
     psi_max = [];
+end
+if nargin < 4
+    npsi = 50;
 end
 if nargin < 5
     newfig = 1;
