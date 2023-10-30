@@ -31,7 +31,9 @@ else
     end
     S = load(fname_mat);
     g = S.g;
-    
+
+    g.filename = filename;
+
     if isfield(g,'version')
         if g.version == version_
             return;

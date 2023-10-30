@@ -134,12 +134,14 @@ if fid == -1
     end
     disp('>>>> Writing sep file')
     fid = fopen(fname,'w');
+    if fid ~= -1
     fprintf(fid,'%i\n',length(rsep));
     fprintf(fid,'%f ',rsep);
     fprintf(fid,'\n');
     fprintf(fid,'%f ',zsep);
     fprintf(fid,'\n');
     fclose(fid);
+    end
     nsep = length(rsep);
     
     sep.rsep = rsep;
