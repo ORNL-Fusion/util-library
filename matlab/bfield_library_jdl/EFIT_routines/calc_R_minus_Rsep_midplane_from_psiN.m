@@ -1,7 +1,7 @@
 function [RminusRsep,R,Rsep] = calc_R_minus_Rsep_midplane_from_psiN(g,psiN)
 
 nInterp = 100;
-rInterp = linspace(g.rmaxis,g.r(end-1),nInterp);
+rInterp = linspace(g.rmaxis,g.r(end-2),nInterp);
 zInterp = g.zmaxis*ones(size(rInterp));
 
 psiNInterp = calc_psiN(g,rInterp,zInterp);
