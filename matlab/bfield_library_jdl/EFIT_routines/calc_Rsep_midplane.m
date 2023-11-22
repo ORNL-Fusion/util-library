@@ -2,7 +2,7 @@ function [Rsep] = calc_Rsep_midplane(g)
 
 
 Ninterp = 100;
-Rinterp = linspace(g.rmaxis,g.r(end-1),Ninterp);
+Rinterp = linspace(g.rmaxis,g.r(end-2),Ninterp);
 Zinterp = g.zmaxis*ones(1,Ninterp);
 [psiN_mid,~] = calc_psiN(g,Rinterp,Zinterp);
 
