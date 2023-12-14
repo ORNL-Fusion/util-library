@@ -1,13 +1,13 @@
-% function write_gfile(g,fname)
+function write_gfile(g,fname)
 
 
-gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\cd-46864-400ms.geqdsk';
+% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\cd-46864-400ms.geqdsk';
 % gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\ed-47079-400ms.geqdsk';
 % gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\sxd-46860-500ms.geqdsk';
-g = readg_g3d_simple(gfile_name);
+% g = readg_g3d_simple(gfile_name);
 
 
-fname = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\cd-46864-400ms_formatted.geqdsk';
+% fname = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\cd-46864-400ms_formatted.geqdsk';
 % fname = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\ed-47079-400ms_formatted.geqdsk';
 % fname = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\sxd-46860-500ms_formatted.geqdsk';
 
