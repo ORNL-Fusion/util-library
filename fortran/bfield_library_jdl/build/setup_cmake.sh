@@ -31,30 +31,7 @@ fi
 rm -rf CMakeFiles CMakeCache.txt
 
 echo 
-if [ "$MACHINE_ID" == "megabucky" ]
-then
-   # megabucky 
-   # module gcc should be loaded
-   # cmake by default will take old gcc from /usr/bin so define manually
-    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
-	  -DCMAKE_Fortran_COMPILER=gfortran     \
-	  -DCMAKE_C_COMPILER=gcc                \
-	  -DCMAKE_CXX_COMPILER=g++              \
-	  ..
-elif [ "$MACHINE_ID" == "fusion2.ornl.gov" ]
-then
-    # fusion2
-    #
-    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
-	  ..
-elif [ "$MACHINE_ID" == "fusion3" ]
-then
-    # fusion3
-    #
-    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
-	  ..
-elif [ "$MACHINE_ID" == "ultrabucky" ]
-then
+if [ "$MACHINE_ID" == "ultrabucky" ] || [ "$MACHINE_ID" == "fusion3" ]; then
     # fusion3
     #
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \

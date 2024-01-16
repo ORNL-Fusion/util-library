@@ -139,11 +139,15 @@ Contains
 #else
       Stop "Compiled without m3dc1 support"
 #endif
-    Case (4)  ! m3dc1 only
+   Case (4)  ! m3dc1 only
+#ifdef HAVE_M3DC1      
       Call bfield_m3dc1(r,phi,z,n,btmp,ierr)
       br   = btmp(:,1)
       bz   = btmp(:,2)
       bphi = btmp(:,3)
+#else
+      Stop "Compiled without m3dc1 support"
+#endif      
     Case (5)  ! m3dc1 2d
 #ifdef HAVE_M3DC1  
       Call bfield_m3dc1_2d(r,z,n,btmp,ierr)

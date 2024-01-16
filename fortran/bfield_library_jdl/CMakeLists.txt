@@ -26,7 +26,7 @@ enable_language (Fortran)
 
 
 # M3D-C1 Options
-set (USE_M3DC1 1)
+set (USE_M3DC1 0)
 set ( M3DC1_INCLUDE_PATH $ENV{FIO_INSTALL_DIR}/include)
 
 # Compiler flags
