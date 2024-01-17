@@ -308,6 +308,7 @@ Contains
     Call open_xpand_fields(xpand_fname)    
   End Subroutine setup_bfield_xpand
 
+#ifdef HAVE_FXDR    
   ! *********************************************
   ! ***************  XDR  ***********************
   ! *********************************************    
@@ -320,7 +321,8 @@ Contains
     bfield%method_2d   = -1
     bfield%method_pert = -1
   End Subroutine setup_bfield_xdr
-
+#endif
+  
   ! *********************************************
   ! *************** BGRID ***********************
   ! *********************************************    

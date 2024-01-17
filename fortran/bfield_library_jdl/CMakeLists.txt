@@ -6,6 +6,7 @@ enable_language (Fortran)
 # To compile without M3D-C1 set variable USE_M3DC1 to 0 below
 #   -- M3D-C1 library variable FIO_INSTALL_DIR assumed to be set up properly
 #
+# Similar logic for XDR routines
 #
 # This is now automated by 
 # 1) cd build
@@ -28,6 +29,9 @@ enable_language (Fortran)
 # M3D-C1 Options
 set (USE_M3DC1 0)
 set ( M3DC1_INCLUDE_PATH $ENV{FIO_INSTALL_DIR}/include)
+
+# XDR options
+set (USE_FXDR 0)
 
 # Compiler flags
 if (CMAKE_COMPILER_IS_GNUCC)
@@ -58,6 +62,27 @@ if (USE_M3DC1 MATCHES 1)
   include_directories (${M3DC1_INCLUDE_PATH})  
 endif ()
 
+# Handle FXDR settings
+if (USE_FXDR MATCHES 1)
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrinit.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrint.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrclose.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrreal.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrdouble.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrrmat.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrdmat.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrimat.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrstring.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrreal64.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrrewind.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrrmat64.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/cxdrshort.c")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/fxdr/fxdr_module.f90")
+  set (EXTRA_FILES "${EXTRA_FILES};${SRC_DIR}/xdr_routines_mod.f90")
+  message ("Using FXDR")
+  add_definitions (-DHAVE_FXDR)
+endif ()
+
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIR})
 
@@ -81,27 +106,12 @@ add_library( bjdl STATIC
   ${SRC_DIR}/bnorm_routines.f90
   ${SRC_DIR}/setup_bfield.f90
   ${SRC_DIR}/VMEC_routines_mod.f90
-  ${SRC_DIR}/xdr_routines_mod.f90
   ${SRC_DIR}/bgrid_routines_mod.f90
   ${SRC_DIR}/LIBSTELL_LIGHT/tolower.f90
   ${SRC_DIR}/LIBSTELL_LIGHT/stel_kinds.f
   ${SRC_DIR}/LIBSTELL_LIGHT/safe_open_mod.f90
   ${SRC_DIR}/LIBSTELL_LIGHT/biotsavart.f
   ${SRC_DIR}/LIBSTELL_LIGHT/bsc_T.f
-  ${SRC_DIR}/fxdr/cxdrinit.c
-  ${SRC_DIR}/fxdr/cxdrint.c
-  ${SRC_DIR}/fxdr/cxdrclose.c
-  ${SRC_DIR}/fxdr/cxdrreal.c
-  ${SRC_DIR}/fxdr/cxdrdouble.c 
-  ${SRC_DIR}/fxdr/cxdrrmat.c
-  ${SRC_DIR}/fxdr/cxdrdmat.c
-  ${SRC_DIR}/fxdr/cxdrimat.c
-  ${SRC_DIR}/fxdr/cxdrstring.c
-  ${SRC_DIR}/fxdr/cxdrreal64.c
-  ${SRC_DIR}/fxdr/cxdrrewind.c
-  ${SRC_DIR}/fxdr/cxdrrmat64.c
-  ${SRC_DIR}/fxdr/cxdrshort.c
-  ${SRC_DIR}/fxdr/fxdr_module.f90
   ${EXTRA_FILES}
   )
 

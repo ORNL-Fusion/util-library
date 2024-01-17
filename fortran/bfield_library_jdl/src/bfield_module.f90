@@ -92,7 +92,9 @@ Contains
     Use xpand_module, Only: bfield_xpand
     Use biotsavart_module, Only : bfield_bs_cyl
     Use VMEC_routines_mod, Only : bfield_vmec_coils
+#ifdef HAVE_FXDR    
     Use xdr_routines_mod, Only : bint_xdr_n
+#endif    
     Use bgrid_module, Only : bfield_bgrid
     Implicit None
     Type(bfield_type), Intent(In) :: bfield
@@ -200,10 +202,14 @@ Contains
       bz   = btmp(:,2)
       bphi = btmp(:,3)
     Case (15) ! Xdr
+#ifdef HAVE_FXDR         
       Call bint_xdr_n(r,phi,z,n,btmp,ierr)
       br   = btmp(:,1)
       bz   = btmp(:,3)  ! Note order!
-      bphi = btmp(:,2)      
+      bphi = btmp(:,2)
+#else
+      Stop "Compiled without fxdr support"
+#endif      
     Case (16) ! bgrid
       Call bfield_bgrid(r,phi,z,n,btmp,ierr)
       br   = btmp(:,1)
