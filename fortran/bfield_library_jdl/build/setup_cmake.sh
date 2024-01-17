@@ -36,6 +36,9 @@ if [ "$MACHINE_ID" == "ultrabucky" ] || [ "$MACHINE_ID" == "fusion3" ]; then
     #
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
 	  ..
+elif [ "$MACHINE_ID" == "THEALTANG23" ]; then
+    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
+          ..
 else
     echo $MACHINE_ID is not supported by this script.
     echo Please add your machine.
