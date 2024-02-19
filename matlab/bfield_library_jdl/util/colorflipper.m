@@ -72,10 +72,12 @@ switch lower(cmap)
         cf = cmap_plasma;
     case {'matlab_lines'}
         cf = matlab_lines(num_colors);
+        return;
     case {'tab20'}
         cf = cmap_tab20;                
     case {'viridis'}
         cf = viridis(num_colors);
+        return;
     otherwise
         cf = matlab_lines;
         return;

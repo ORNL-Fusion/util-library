@@ -25,10 +25,10 @@ switch lower(type)
         %
         %       y = 0.5 * ( v  + numpy.sqrt( v**2 + 4.0 * c[0]**2 ) ) + c[3]
         %
-        %       c[0] = curvature parameter - corner of hyperbola joining two linear segments
-        %       c[1] = y-intercept of line in region 2
-        %       c[2] = slope of line in region 2
-        %       c[3] = offset in region 1
+        %       c[0] = c(1) = curvature parameter - corner of hyperbola joining two linear segments
+        %       c[1] = c(2) = y-intercept of line in region 2
+        %       c[2] = c(3) = slope of line in region 2
+        %       c[3] = c(4) = offset in region 1
         %     ---------------------------------------------------------------------
 
         c = coeffs;
@@ -47,11 +47,11 @@ switch lower(type)
         %
         %       y = 0.5 * ( ( u + v ) + numpy.sqrt( ( u - v )**2 + 4.0 * c[0]**2 ) )
         %
-        %       c[0] = curvature parameter - corner of hyperbola joining two linear segments
-        %       c[1] = y-intercept of line in region 1
-        %       c[2] = slope of line in region 1
-        %       c[3] = y-intercept of line in region 2
-        %       c[4] = slope of line in region 2
+        %       c[0] = c(1) = curvature parameter - corner of hyperbola joining two linear segments
+        %       c[1] = c(2) = y-intercept of line in region 1
+        %       c[2] = c(3) = slope of line in region 1
+        %       c[3] = c(4) = y-intercept of line in region 2
+        %       c[4] = c(5) = slope of line in region 2
         %     ---------------------------------------------------------------------
 
         c = coeffs;
@@ -122,7 +122,7 @@ switch lower(type)
 
         c = coeffs;
         z = 2 * (c(1) - x) / c(2);
-        y = 0.5 * (c(3) - c(4)) * ( (1 + c(5) * z) .* exp(z) - exp(-z) ) ./ ( exp(z) + exp(-z) ) + 0.5 * (c(3) + c(4));
+        y = 0.5*(c(3) - c(4))*( (1 + c(5)*z).*exp(z) - exp(-z) ) ./ (exp(z) + exp(-z)) + 0.5*(c(3) + c(4));
         
 
     otherwise
