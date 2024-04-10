@@ -1,4 +1,7 @@
 function data=read_namelist(filename,namelist)
+%
+% Use this instead: get_data_from_namelist
+% 
 %data=READ_NAMELIST(filename,namelist) Returns values from FORTRAN namelist
 %   This function reads a FORTRAN input namelist and returns the values as
 %   the fields of a structure.  Multidimensional arrays have their indicies

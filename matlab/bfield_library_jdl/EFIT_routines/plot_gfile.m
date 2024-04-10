@@ -33,6 +33,16 @@ if nargin < 8
     plot_psi = 'psi';
 end
 
+if isempty(npsi)
+    npsi = 50;
+end
+if isempty(con_linesty)
+    con_linesty = '-';
+end
+if isempty(newfig)
+    newfig = 1;
+end
+
 %% Handle plot_psi switch
 switch lower(plot_psi)
     case lower('psiN')
