@@ -149,6 +149,11 @@ for i = 1:length(eqdex)
 end
 
 
+%% Return if nothing is found
+if exist('found') == 0
+    mydata = [];
+    return;
+end
 % Handle found data
 % if found.icount == 1
 

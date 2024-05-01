@@ -10,7 +10,7 @@ PLOT_TYPE = 3; % 1 is power, 2 is power density (W/m), 3 power density (W/m^2)
 % Note: PFC must be non-overlapping and simply sorted
 %--------------------------------------------------------------------------
 
-CASE = 3; % 1 = tokamak structure from gfile, 2 = simple defined geometry
+CASE = 3; % 1 = tokamak structure from gfile, 2 = simple defined geometry, 3 = SOLPS
 
 switch CASE
     case 1
@@ -20,9 +20,9 @@ switch CASE
         g.lim(:,7) = [];
         pfc.R = g.lim(1,:);
         pfc.Z = g.lim(2,:);
-% Simple routine to cleanup PFC (checks for duplicate points and closes
-% contour)
-pfc = cleanupPFC(pfc);
+        % Simple routine to cleanup PFC (checks for duplicate points and closes
+        % contour)
+        pfc = cleanupPFC(pfc);
         Source.R = [1.5,1.45,2.3,2.3,2.3,1.5];
         Source.Z = [0,1.15,0,0.1,-0.1,-1.2];
         Source.P = 100*ones(size(Source.R));  % Watts
@@ -30,9 +30,9 @@ pfc = cleanupPFC(pfc);
     case 2
         pfc.R = [-1, 0,   0,  -1, - 1,0.5,0.5, 1,1,0.1,0.1, -0.1,-0.1,-1];
         pfc.Z = [-1,-1,-1.1,-1.1,-1.2,-1.2,-1,-1,1,1,1.5,1.5,1, 1];
-% Simple routine to cleanup PFC (checks for duplicate points and closes
-% contour)
-pfc = cleanupPFC(pfc);
+        % Simple routine to cleanup PFC (checks for duplicate points and closes
+        % contour)
+        pfc = cleanupPFC(pfc);
         Source.R = [-0.5,0,0.5];
         Source.Z = [0,1.2,0];
         Source.P = [100,100,100];  % Watts
@@ -46,7 +46,8 @@ pfc = cleanupPFC(pfc);
 
 
         %%
-        run_path = 'C:\Users\jjl\Dropbox (ORNL)\SPARC\xportScan\v2y_D+Ne_INFUSE\P10MW_nBC_12e19_ss_chix4';
+        run_path = 'C:\Users\jjl\Dropbox (ORNL)\SPARC\xportScan\v2y_D+Ne_INFUSE\P10MW_nBC_50e19_ss';
+        % run_path = 'C:\Users\jjl\Dropbox (ORNL)\SPARC\xportScan\v2y_D+Ne_INFUSE\P10MW_nBC_12e19_ss_chix4';
         Case = load_solps_case(run_path,1,[],'prad');
 
 
@@ -74,12 +75,12 @@ pfc = cleanupPFC(pfc);
         Source.Z = Case.Geo.z2d_cen(1:nUse);
         Source.P = Case.Prad.pRad2D(1:nUse);
 
-        
+
 
 end
 
 %% build initial PFC from mesh.extra
- mesh = plot_mesh_extra(run_path);
+mesh = plot_mesh_extra(run_path);
 [pfc.R,pfc.Z] = cleanup_mesh_extra(mesh);
 
 % Simple routine to cleanup PFC (checks for duplicate points and closes
@@ -143,7 +144,7 @@ for k = [1,2]
         rPtsAdd = fliplr(rPtsAdd);
         zPtsAdd = fliplr(zPtsAdd);
     end
-    
+
     indRef(k) = length(Rnew) + 1;
     Rnew = [Rnew,rPtsAdd];
     Znew = [Znew,zPtsAdd];
@@ -227,7 +228,7 @@ power = zeros(1,pfc.nSeg);
 for iPt = 1:length(Source.R)
 
     if mod(iPt,100) == 0
-    fprintf('Working on point %d of %d\n',iPt,length(Source.R))
+        fprintf('Working on point %d of %d\n',iPt,length(Source.R))
     end
     rStart = Source.R(iPt);
     zStart = Source.Z(iPt);
@@ -323,9 +324,12 @@ clim([cMin,cMax])
 
 plot(pfc.R,pfc.Z,'k.','markersize',8)
 
+%%
+figure; hold on; box on; grid on; set(gcf,'color','w'); set(gca,'fontsize',14,'fontweight','bold');
+plot(Case.DsData.dsr(2:end-1),w(indRef(2):indRef(2)+Case.Geo.ny-1))
 
 figure; hold on; box on; grid on; set(gcf,'color','w'); set(gca,'fontsize',14,'fontweight','bold');
-plot(Case.DsData.dsr(2:end-1),w(indRef(2):indRef(2)+35))
+plot(Case.DsData.dsl(2:end-1),w(indRef(1):indRef(1)+Case.Geo.ny-1))
 
 %% Cleanup routine
 function pfc = cleanupPFC(pfc,closeIt)
