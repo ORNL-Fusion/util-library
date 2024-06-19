@@ -6,13 +6,19 @@ clearvars;
 % gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\NegD\180520-HMode\180520_2800_efit08.gfile';
 % gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\EMC3\Florian\g147170.02300';
 % gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\TDCP\g184549.02300';
-gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\TDCP\g184533.02000';
+gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\NegD\dedicated_campaign\g106348.01141';
 
+ogr_name = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\NegD\dedicated_campaign\nt_lsn_lim_stage2_April52024.ogr';
+ogr = dlmread(ogr_name)./1e3;
 % Select sp, index from 1 to 2 for SN, 1 to 4 for DN
-iSP_USE = 1
+iSP_USE = 2
 
 %% Read gfile and calculate geometric info
 g = readg_g3d(gfile_name);            % Read geqdsk
+
+g.limitr = size(ogr,1);
+g.lim = ogr';
+
 psiN_x = refine_psi(g.r,g.z,4,g);    % only used for plots
 xpt_info = find_xpt_jl(g,1,0,1e-6,1); % only used for plots
 lim = make_lim(g);                    % Make lim (and refined version)
@@ -53,14 +59,15 @@ end
 
 %% Initiate rays
 nRays = 100;
-theta_testOSP = linspace(1e-3,sp.alpha_deg_polplane(iSP_USE)*pi/180,nRays);
+% theta_testOSP = linspace(1e-3,sp.alpha_deg_polplane(iSP_USE)*pi/180,nRays);
+theta_testOSP = linspace(sp.alpha_deg_polplane(iSP_USE)*pi/180,pi-1e-3,nRays);
 [LtoIntOSP,PintOSP] = check_Rays(theta_testOSP, sp, iSP_USE, g, lim, 1);
 
 %% Calculate T
 % So far just 
 % T = { 0, L >  LminT
 %     { 1, L <= LminT
-Tmethod = 1; % 1 = binary distance test, 2 = distance from mfp
+Tmethod = 3; % 1 = binary distance test, 2 = distance from mfp, use SOLPS solution
 switch Tmethod
     case 1
         LminT = 0.5
@@ -71,12 +78,36 @@ switch Tmethod
         THRESH = 0.01;
         svRef = 10^-14; %m-3s-1
         neRef = 1e19;
-        v0Ref = sqrt(8*3*1.602e-19/(pi*2*1.67e-27));
+        T0ref = 3;
+        v0Ref = sqrt(8*T0ref*1.602e-19/(pi*2*1.67e-27));
         mfp = v0Ref/(neRef*svRef);
         G0 = 1;
         Ltest = linspace(0,max(LtoIntOSP),1000);
         GofL = G0*exp(-Ltest./mfp);
         T = interp1(Ltest,GofL,LtoIntOSP);
+    case 3
+        run_path = 'C:\Users\jjl\Dropbox (ORNL)\DIII-D\NegD\SOLPS\NegD_update\NT-closed\P3.12MW_fluxBC_1e20_Y2pc';
+        Case = load_solps_case(run_path,1,[],'state');
+
+        T0ref = 3;
+        T0ref = 0.026;
+        v0Ref = sqrt(8*T0ref*1.602e-19/(pi*2*1.67e-27));        
+        thisRes = 100;
+        fname = ['C:\Users\jjl\ORNL Dropbox\Jeremy Lore\ADAS\adf11_all\scd12\','scd12_h.dat'];  % Effective ionization coefficients (cm^-3/s)        
+        RateCoeff = read_adas_adf11_file(fname);
+        indReac = 1;
+        
+        for i = 1:length(LtoIntOSP)
+            Rtest = linspace(sp.R(iSP_USE),PintOSP(i,1),thisRes);
+            Ztest = linspace(sp.Z(iSP_USE),PintOSP(i,2),thisRes);
+            Ltest = linspace(0,LtoIntOSP(i),thisRes);
+            [Itest,ierr] = point2cell_solps_1d(Case.Geo,Rtest,Ztest);
+            Te_test = Case.State.te(Itest(~ierr))./1.602e-19;
+            ne_test = Case.State.ne(Itest(~ierr));
+            sv_test = 1e-6*10.^(interp2(RateCoeff.te_log10,RateCoeff.ne_log10+6,squeeze(RateCoeff.coeff_log10(:,:,indReac)),log10(Te_test),log10(ne_test),'linear',NaN));
+            T(i) = exp(-trapz(Ltest(~ierr),ne_test.*sv_test)./v0Ref);
+
+        end
 end
 
 
@@ -105,10 +136,24 @@ switch Tmethod
         fprintf('T integrated (Lmin = %.1f) : %.5f\n',LminT,Tint)
     case 2
         fprintf('T integrated (mfp = %.1e m) : %.5f\n',mfp,Tint)
+    case 3
+        fprintf('T integrated              : %.5f\n',Tint)        
 end
 fprintf('F integrated              : %.5f\n',Fint)
 fprintf('F*T integrated            : %.5f\n',Totint)
 
+
+%% plot rays colored by T
+c = turbo;
+colormap(c);
+this = F.*T;
+% this = F;
+for i = 1:length(T)
+    ind = round( (this(i) - 0)./(1 - 0)*255 + 1);
+    plot([sp.R(iSP_USE),PintOSP(i,1)],[sp.Z(iSP_USE),PintOSP(i,2)],'-','color',c(ind,:))
+end
+colorbar;
+set(gca,'clim',[0,1])
 
 %% Full sp theta
 % figure; hold on; box on; grid on; set(gcf,'color','w');set(gca,'fontsize',14);
