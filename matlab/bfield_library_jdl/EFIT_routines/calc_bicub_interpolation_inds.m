@@ -11,16 +11,28 @@ end
 % end
 
 % Add a small offset to avoid error with first grid point
-ir = floor( (R - g.r(1) + 1e-10)/g.dR ) + 1;  
-iz = floor( (Z - g.z(1) + 1e-10)/g.dZ ) + 1;
+epsilon = 1e-10;
+
+ir = floor( (R - g.r(1) + epsilon)/g.dR ) + 1;  
+iz = floor( (Z - g.z(1) + epsilon)/g.dZ ) + 1;
+
+% Correct for first interior index if it lands on the last grid point
+% ir(ir == g.mw - 1) = floor((R(ir == g.mw - 1) - g.r(1) - epsilon) / g.dR) + 1;
+% iz(iz == g.mh - 1) = floor((Z(iz == g.mh - 1) - g.z(1) - epsilon) / g.dZ) + 1;
+
+ir(ir == g.mw) = floor((R(ir == g.mw) - g.r(1) - epsilon) / g.dR) + 1;
+iz(iz == g.mh) = floor((Z(iz == g.mh) - g.z(1) - epsilon) / g.dZ) + 1;
 
 % check for points off grid, no derivatives on boundary cells
 ierr = false(size(R));
-ierr(ir < 2 | ir > g.mw - 1) = true;
-ierr(iz < 2 | iz > g.mh - 1) = true;
+% ierr(ir < 2 | ir > g.mw - 1) = true;
+% ierr(iz < 2 | iz > g.mh - 1) = true;
 
-ir(ierr) = 1;
-iz(ierr) = 1;
+ierr(ir < 1 | ir > g.mw) = true;
+ierr(iz < 1 | iz > g.mh) = true;
+
+ir(ierr) = nan;
+iz(ierr) = nan;
 
 index = ir + g.mw*(iz-1);
 

@@ -1,4 +1,5 @@
 function write_gfile(g,fname)
+% write_gfile(g,fname)
 
 
 % gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\cd-46864-400ms.geqdsk';
@@ -24,27 +25,37 @@ this = sprintf('%48s%4d%4d%4d',pad(txt,48,'right',' '),0,g.mw,g.mh);
 fprintf(fid,'%s\n',this);
 
 %%
-fprintf(fid,f2020,g.xdim,g.zdim,g.rzero,g.rgrid1,g.zmid);
-fprintf(fid,f2020,g.rmaxis,g.zmaxis,g.ssimag,g.ssibry,g.bcentr);
-fprintf(fid,f2020,g.cpasma,g.ssimag,xdum,g.rmaxis,xdum);
-fprintf(fid,f2020,g.zmaxis,xdum,g.ssibry,xdum,xdum);
-fprintf(fid,f2020,g.fpol);
-fprintf(fid,f2020,g.pres);
-fprintf(fid,f2020,g.ffprim);
-fprintf(fid,f2020,g.pprime);
-fprintf(fid,f2020,g.psirz);
-if mod(numel(g.psirz),5) ~= 0 
-    fprintf(fid,'\n');
-end
-fprintf(fid,f2020,g.qpsi);
+write2020(fid,[g.xdim,g.zdim,g.rzero,g.rgrid1,g.zmid]);
+write2020(fid,[g.rmaxis,g.zmaxis,g.ssimag,g.ssibry,g.bcentr]);
+write2020(fid,[g.cpasma,g.ssimag,xdum,g.rmaxis,xdum]);
+write2020(fid,[g.zmaxis,xdum,g.ssibry,xdum,xdum]);
+write2020(fid,g.fpol)
+write2020(fid,g.pres);
+write2020(fid,g.ffprim);
+write2020(fid,g.pprime);
+write2020(fid,g.psirz);
+write2020(fid,g.qpsi);
 fprintf(fid,f2022,g.nbdry,g.limitr);
-fprintf(fid,f2020,g.bdry);
-if mod(numel(g.bdry),5) ~= 0 
-    fprintf(fid,'\n');
-end
-fprintf(fid,f2020,g.lim);
-fprintf(fid,'\n');
+write2020(fid,g.bdry);
+write2020(fid,g.lim);
+
 
 fclose(fid);
 
+end
 
+function write2020(fid,this)
+for i = 1:5:numel(this)
+    endIdx = min(i+4, numel(this)); % Determine the end index for the current line
+    fprintf(fid, '% 14.9e', this(i:endIdx));
+    fprintf(fid, '\n'); % Add a newline character after each line
+end
+end
+
+function write2022(fid,this)
+for i = 1:5:numel(this)
+    endIdx = min(i+4, numel(this)); % Determine the end index for the current line
+    fprintf(fid, '%5d', this(i:endIdx));
+    fprintf(fid, '\n'); % Add a newline character after each line
+end
+end

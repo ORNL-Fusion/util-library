@@ -1,5 +1,15 @@
 function [psi,ierr,dpsidr,dpsidz] = calc_psi(g,R,Z,nowarn)
-% psi = -sign(Ip)*psirz
+% -----------------------------------------------------------------------
+% Get psi at a point from a gfile
+% psi = -sign(Ip)*psirz(R,Z), where psirz is the value in the gfile
+%
+% Uses bicubic interpoation based on psirz grid. Since this requires the
+% values of psi and its derivatives on the surrounding nodes, this method
+% can only return valid values for:
+% g.r(2) < R < g.r(end-1) & g.z(2) < Z < g.z(end-1)
+%  
+%
+% -----------------------------------------------------------------------
 if nargin < 4
     nowarn = 0;
 end

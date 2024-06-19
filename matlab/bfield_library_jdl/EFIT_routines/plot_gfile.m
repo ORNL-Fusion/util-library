@@ -73,8 +73,9 @@ end
 
 %% Refine for better contours
 if nRefine > 0
-    rPlot = g.r(2:end-1); zPlot = g.z(2:end-1);
-    [rPlot,zPlot,psiPlot] = refine_psi(rPlot,zPlot,2^nRefine,g,plot_psi);
+    % rPlot = g.r(1:end); zPlot = g.z(1:end);
+    % rPlot = g.r(2:end-1); zPlot = g.z(2:end-1);
+    [rPlot,zPlot,psiPlot] = refine_psi(2^nRefine,g,plot_psi);
 else
     rPlot = g.r; zPlot = g.z;
 end
@@ -122,9 +123,9 @@ end
 end
 
 %%
-function [r2,z2,p2] = refine_psi(r,z,fac,g,plot_psi)
-r2 = linspace(r(1),r(end),length(r)*fac);
-z2 = linspace(z(1),z(end),length(z)*fac);
+function [r2,z2,p2] = refine_psi(fac,g,plot_psi)
+r2 = linspace(g.r(1),g.r(end),length(g.r)*fac);
+z2 = linspace(g.z(1),g.z(end),length(g.z)*fac);
 for i = 1:length(z2)
     switch lower(plot_psi)
         case lower('psiN')

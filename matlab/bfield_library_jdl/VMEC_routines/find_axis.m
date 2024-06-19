@@ -1,4 +1,5 @@
 function [Rax,Zax,dist] = find_axis(bfield,phistart,R0,Z0)
+%[Rax,Zax,dist] = find_axis(bfield,phistart,R0,Z0)
 % bfield should contain nsym
 tic;
 if nargin < 3
