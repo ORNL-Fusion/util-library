@@ -7,7 +7,8 @@ if nargin < 3
     NORM = false;
 end
 
-L = [0; cumsum(sqrt(diff(r).^2  + diff(z).^2))];
+L = zeros(size(r));
+L(2:end) = cumsum(sqrt(diff(r).^2  + diff(z).^2));
 
 if NORM
     L = L./L(end);

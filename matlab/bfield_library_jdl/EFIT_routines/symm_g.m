@@ -1,7 +1,7 @@
 function g = symm_g(g,method)
 
 if nargin < 2
-    method = 'avg_z0';
+    method = 'avg_zax';
 end
 
 if mod(g.mh,2) == 0

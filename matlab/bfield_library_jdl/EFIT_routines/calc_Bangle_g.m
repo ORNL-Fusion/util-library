@@ -1,4 +1,5 @@
 function P = calc_Bangle_g(g,RZ1,RZ2,npts)
+% P = calc_Bangle_g(g,RZ1,RZ2,npts)
 %
 % RZ1, RZ2 ... start and end points used to calculate surface normal.
 % Surface normal is (RZ2-RZ1,0)x(0,0,1) for (R,Z,phi), with phi coming out
@@ -14,6 +15,8 @@ function P = calc_Bangle_g(g,RZ1,RZ2,npts)
 % P.beta is the angle in the poloidal plane between B and the surface
 % normal
 %
+% J.D. Lore
+
 if length(RZ1) ~= 2 || length(RZ2) ~= 2
     error('Only single point pairs are allowed')
 end

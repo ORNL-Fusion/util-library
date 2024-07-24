@@ -8,7 +8,8 @@ f.resScale = [xScale yScale 1 1];
 
 
 if nargin == 0
-    return
+    f = f.resScale;
+    return 
 end
 % 
 % if nxPlot ~= 1
@@ -50,3 +51,4 @@ for iy = 1:nyPlot
         f.p(ix,iy,:) = [(dx+gap)*(ix-1) + xMin,(dy+gap)*(nyPlot-iy) + yMin,dx,dy];
     end
 end
+
