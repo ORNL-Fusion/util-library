@@ -11,7 +11,8 @@ if ~isfile(filename)
     error('Could not find %s\n',filename);
 end
 fid=fopen(filename,'r');
-% Find the namelist section
+
+%% Find the namelist section
 line=fgetl(fid);
 while ~feof(fid) && ~contains(line,namelist)
     line=fgetl(fid);
@@ -19,11 +20,14 @@ end
 if feof(fid)
     disp(['ERROR: Namelist: ' namelist ' not found!']);
 end
-% Now read the namelist
-% Skim comment lines
+
+%% Now read the namelist
 while ~feof(fid)
     line=strtrim(fgetl(fid));
-    if ~strcmp(line(1),'!')
+    if isempty(line) % Skim empty lines
+        break;
+    end
+    if ~strcmp(line(1),'!') % Skim comment lines
         break;
     end
 end
@@ -38,7 +42,8 @@ while ~strcmp(strtrim(line),'/')
     line=fgetl(fid);
 end
 fclose(fid);
-% Cleanup
+
+%% Cleanup
 total_line=regexprep(total_line,'([\n|\r])','','ignorecase'); %Get Rid of CR
 total_line=regexprep(total_line,' T ',' 1 ','ignorecase'); %Get Rid of T
 total_line=regexprep(total_line,' F ',' 0 ','ignorecase'); %Get Rid of F
@@ -46,6 +51,7 @@ total_line = strrep(total_line,'=',' = ');
 total_line=regexprep(total_line,'\.true\.',' 1 ','ignorecase'); %Get Rid of .true.
 total_line=regexprep(total_line,'\.false\.',' 0 ','ignorecase'); %Get Rid of .false.
 
+%%
 var_want = strtrim(var_want);
 eqdex=strfind(total_line,'=');
 istart = 1;
@@ -165,8 +171,10 @@ for i = 1:found.icount
     if any(strfind(data_raw,''''))
         data_raw = regexprep(data_raw,'''',' ');
         data = split(strip(data_raw));
+        isChar = 1;
     else
         data = sscanf(data_raw,'%e'); % get numeric data
+        isChar = 0;
     end
     
     if prod(var_want_size) == length(data)
@@ -174,7 +182,18 @@ for i = 1:found.icount
     else
         % If we got here could be a partial definition
         if length(data) > prod(var_want_size)
-            error('Too much data??')
+            if isChar
+                if prod(var_want_size) == 1
+                    % Stitch a single character string back together --
+                    % allows there to be spaces in a string
+                    mydata = strip(data_raw);
+                    return;
+                else
+                    error('Too much data??')            
+                end
+            else
+                error('Too much data??')            
+            end
         else
             % partial def
             % check for colons
