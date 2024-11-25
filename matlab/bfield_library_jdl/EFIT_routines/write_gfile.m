@@ -24,6 +24,15 @@ this = sprintf('%48s%4d%4d%4d',pad(txt,48,'right',' '),0,g.mw,g.mh);
 % fprintf(fid,'%s\n',g.line1);
 fprintf(fid,'%s\n',this);
 
+%% Sanity checks
+if size(g.lim,2) ~= g.limitr
+    error('Size of lim structure and limitr do not match: %d, %d',size(g.lim,2), g.limitr)
+end
+if size(g.bdry,2) ~= g.nbdry
+    error('Size of bdry structure and nbdry do not match: %d, %d',size(g.bdry,2), g.nbdry)
+end
+
+
 %%
 write2020(fid,[g.xdim,g.zdim,g.rzero,g.rgrid1,g.zmid]);
 write2020(fid,[g.rmaxis,g.zmaxis,g.ssimag,g.ssibry,g.bcentr]);
