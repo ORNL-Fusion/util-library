@@ -6,7 +6,8 @@ if 1
     out_dir = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\';
     % out_file = 'Bgrid_90x82x66.mat';
     
-    coils_file = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\coils.w7x';
+    % coils_file = 'C:\Work\Stellarator\W7X EMC3 modeling\Mark coils and input\coils.w7x';
+    coils_file = 'C:\Users\jjl\ORNL Dropbox\Jeremy Lore\analysis-Lore\W7X\coils.w7x';
     coil = load_vmec_coils_file(coils_file);
     winding_array = [108,108,108,108,108,36,36,8,8];
     % taper_norm = [0.9600, 0.9500, 0.9700, 1.0700, 1.0800, 0.2200, -0.0800, -0.0150, 0.0150]; Inorm = 1.341e6; out_file = 'Bgrid_w7x_0kA_mimic_180x164x132.mat'; %  0kA mimic

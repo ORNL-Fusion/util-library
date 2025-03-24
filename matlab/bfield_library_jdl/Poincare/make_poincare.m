@@ -18,6 +18,9 @@ if nargin >= 12
 else
     saveit = 0;
 end
+if nargin < 11
+    plot_settings.plotit = 0;
+end
 
 if saveit
     if exist(save_name,'file') == 2
@@ -119,4 +122,6 @@ poinc.Rpoinc = Rpoinc;
 poinc.Zpoinc = Zpoinc;
 poinc.phi = phi_want;
 
-save(save_name,'poinc')
+if saveit
+    save(save_name,'poinc')
+end
