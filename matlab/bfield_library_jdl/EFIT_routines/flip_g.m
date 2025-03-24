@@ -1,12 +1,12 @@
 function g = flip_g(g)
-
+% Routine to flip the gfile flux 
+% Only flip about Z=0 implemented so far
+% JD Lore 2025
 
 method = 'flip_at_z0';
 
 switch lower(method)
     case 'flip_at_z0'       
-        z0 = g.z;
-        psirz0 = g.psirz;
     otherwise
         error('This method is not implemented:%s',method)
 end
