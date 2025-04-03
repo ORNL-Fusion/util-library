@@ -38,7 +38,7 @@ bz1 =  dpsidr.*R1_inv;
 % psiN = (psi - g.ssimag)./(g.ssibry-g.ssimag);
 psiN = (g.ip_sign*psi-g.ssimag)/(g.ssibry-g.ssimag); 
 
-if any(psiN < 0) || any(psiN > 1)
+if any(psiN < 0) 
     error('PsiN out of bounds for fpol interpolation')
 end
 
