@@ -19,3 +19,4 @@ fortran/bfield_library_jdl/tests/*.out
 # python
 python/.ipynb_checkpoints
 python/__pycache__
+.DS_Store
