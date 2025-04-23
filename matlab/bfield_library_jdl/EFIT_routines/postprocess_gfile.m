@@ -19,7 +19,17 @@ end
 
 g.aminor = [];
 if ~isempty(g.bdry)
-    g.aminor = (max(g.bdry(1,:))-min(g.bdry(1,:)))/2;    
+    shape = calc_tokamak_shaping_parameters(g.bdry(1,:),g.bdry(2,:));
+    g.Rmin = shape.Rmin;
+    g.Rmax = shape.Rmax;
+    g.Zmin = shape.Zmin;
+    g.Zmax = shape.Zmax;
+    g.aminor = shape.a;
+    g.kappa = shape.kappa;
+    g.epsilon = shape.epsilon;
+    g.triUpper = shape.triUpper;
+    g.triLower = shape.triLower;
+    g.Rgeo = shape.Rgeo;
 end
 
 g.nGW = [];

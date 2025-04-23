@@ -9,11 +9,13 @@ if nargin < 3
 end
 
 % Version identifies changes to routine that may require re-creating .mat file
-version_ = 6;
+version_ = 8;
 % v3: Changed outputs to row vectors and added bicub inverse
 % v4: Added aminor and nGW
 % v5: More robust processing of incomplete eqdsk files, remove spline fits
 % v6: removing old bicub matrix
+% v7: Add tri calculation
+% v8: Add better shape metrics
 
 if isempty(filename)
     g = [];
@@ -46,6 +48,7 @@ end
 
 g = readg_g3d_simple(filename);
 
+%% Add shaping parameters and other grid details
 g = postprocess_gfile(g);
 
 
@@ -64,3 +67,4 @@ if ~quiet
 end
 save(fname_mat,'g');
 
+end

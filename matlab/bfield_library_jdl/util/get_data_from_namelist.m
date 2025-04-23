@@ -211,8 +211,10 @@ for i = 1:found.icount
                     ind_start = sub2ind(var_want_size,ind_data(1)+ind_offsets(1),ind_data(2)+ind_offsets(2));
                 elseif ndims(mydata) == 3
                     ind_start = sub2ind(var_want_size,ind_data(1)+ind_offsets(1),ind_data(2)+ind_offsets(2),ind_data(3)+ind_offsets(3));
+                elseif ndims(mydata) == 4
+                    ind_start = sub2ind(var_want_size,ind_data(1)+ind_offsets(1),ind_data(2)+ind_offsets(2),ind_data(3)+ind_offsets(3),ind_data(4)+ind_offsets(4));                    
                 else
-                    error('more dims')
+                    error('Extend this to higher dimensions')
                 end
                 
                 mydata(ind_start:ind_start + numel(data)-1) = data;

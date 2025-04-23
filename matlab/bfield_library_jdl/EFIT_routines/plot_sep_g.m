@@ -1,5 +1,5 @@
 function sep = plot_sep_g(g,plotit,newfig,linewid,clip_at_glim,flush_file)
-% function sep = plot_sep_g(g,plotit,newfig)
+% function sep = plot_sep_g(g,plotit,newfig,linewid,clip_at_glim,flush_file)
 if nargin < 1
     error('At least argument "g" is required')
 end

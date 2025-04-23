@@ -81,7 +81,7 @@ end
 
 if refine == 1
 
-    [rx,zx,bpx] = refine_xpt(g,rx,zx,der,dez,bpx,tol);
+    [rx,zx,bpx] = refine_xpt(g,rx,zx,der,dez,bpx,tol,1);
 
     if quiet == 0
         fprintf('    1st Xpoint [Bp,R,Z] = % 8.4e % 8.4f % 8.4f\n',bpx,rx,zx);
@@ -98,7 +98,7 @@ if second == 1
     bpx2 = sqrt(b.br.^2+b.bz.^2);
 
     if refine == 1
-        [rx2,zx2,bpx2] = refine_xpt(g,rx2,zx2,der_save,dez_save,bpx2,tol);
+        [rx2,zx2,bpx2] = refine_xpt(g,rx2,zx2,der_save,dez_save,bpx2,tol,2);
         if quiet == 0
             fprintf('    2nd Xpoint [Bp,R,Z] = % 8.4e % 8.4f % 8.4f\n',bpx2,rx2,zx2);
         end
@@ -116,7 +116,7 @@ end
 
 end
 
-function [rx,zx,bpx] = refine_xpt(g,rx,zx,der,dez,bpx,tol)
+function [rx,zx,bpx] = refine_xpt(g,rx,zx,der,dez,bpx,tol,nx)
 
 Rmin_eval = g.r(3) + 1e-3;
 Zmin_eval = g.z(3) + 1e-3;
@@ -156,7 +156,7 @@ while err > tol && niter < niter_max
     niter = niter + 1;
 
     if niter >= niter_max
-        warning('niter_max exceeded for x-point search')
+        fprintf('Warning: niter_max exceeded for x-point search for xpt number %d\n',nx)
     end
 end
 
