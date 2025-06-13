@@ -7,18 +7,7 @@ end
 if nargin < 2
     newfig = 1;
 end
-% if nargin < 3 
-%     add_skimmer = 1;
-% end
-% if nargin < 4
-%     target_position = 3;
-% end
-% if nargin < 5
-%     add_sleeve = 1;
-% end
-% if nargin < 6
-%     add_reflector = 1;
-% end
+
 
 in2m = 0.0254;
 

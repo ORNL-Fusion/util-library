@@ -111,12 +111,15 @@ if isfield(g,'bdry')
     xz2 = xpt_info.zx2;
     switch plot_psi
         case lower('psiN')
-            contour(rPlot,zPlot,psiPlot.',[1,1]*calc_psiN(g,xr2,xz2),'k-','linewidth',2)
+            psi_this = calc_psiN(g,xr2,xz2);           
         case lower('psi')
-            contour(rPlot,zPlot,psiPlot.',[1,1]*calc_psi(g,xr2,xz2),'k-','linewidth',2)
+            psi_this = calc_psi(g,xr2,xz2);            
     end
-    plot(xr1,xz1,'bx'); text(xr1+0.01,xz1,'x1','fontsize',8)
-    plot(xr2,xz2,'b*'); text(xr2+0.02,xz2,'x2','fontsize',8)
+    if ~isnan(psi_this)
+        contour(rPlot,zPlot,psiPlot.',[1,1]*psi_this,'k-','linewidth',2)
+        plot(xr1,xz1,'bx'); text(xr1+0.01,xz1,'x1','fontsize',8)
+        plot(xr2,xz2,'b*'); text(xr2+0.02,xz2,'x2','fontsize',8)
+    end
 end
 
 

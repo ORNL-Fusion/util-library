@@ -40,7 +40,11 @@ end
 if isempty(g.cpasma)
     g.ip_sign = 1;
 else
-    g.ip_sign = -sign(g.cpasma);
+    if abs(g.cpasma) < 1e-6
+        g.ip_sign = 1;
+    else
+        g.ip_sign = -sign(g.cpasma);
+    end
 end
 
 %% Flux interpolation coefficients

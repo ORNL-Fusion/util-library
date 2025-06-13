@@ -2,21 +2,12 @@ function write_gfile(g,fname)
 % write_gfile(g,fname)
 
 
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\cd-46864-400ms.geqdsk';
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\ed-47079-400ms.geqdsk';
-% gfile_name = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\sxd-46860-500ms.geqdsk';
-% g = readg_g3d_simple(gfile_name);
-
-
-% fname = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\cd-46864-400ms_formatted.geqdsk';
-% fname = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\ed-47079-400ms_formatted.geqdsk';
-% fname = 'C:\Users\jjl\Dropbox (ORNL)\MAST\gfiles_from_jack\sxd-46860-500ms_formatted.geqdsk';
 
 fid = fopen(fname,'w');
 
 xdum = 0;
 f2022 = '%5d%5d\n';
-f2020 = '%16.8e%16.8e%16.8e%16.8e%16.8e\n';
+% f2020 = '%16.8e%16.8e%16.8e%16.8e%16.8e\n';
 
 %% 
 txt = g.line1(1:min(length(g.line1),29));

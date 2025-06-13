@@ -4,7 +4,7 @@ clearvars;
 % Set up magnetic field -- MPEX parameters
 %-----------------------------------------------------
 % Two methods. 
-if 1
+if 0
     % 1) Specify currents corresponding to power supplys and pre-defined configurations
     helicon_current = 200;
     current_A = 6400;
@@ -14,8 +14,12 @@ if 1
     current_in = [helicon_current,current_A,current_B,current_C];
 else
     % 2) Specify a 12 element array corresponding to each coil winding current
-    current_in = [6400 0 260 260]; current_in(5:12) = 1200; %current_in(6:7) = 800;
+    % current_in = [6400 0 260 260]; current_in(5:12) = 1200; %current_in(6:7) = 800;
     config = [];
+
+
+    %% Shahinul
+current_in = [3500 520 160 160 0 3500 2200 2200 3500 3500 3500 3500 3500];
 end
 
 % Build coils
