@@ -14,7 +14,7 @@ fid=fopen(filename,'r');
 
 %% Find the namelist section
 line=fgetl(fid);
-while ~feof(fid) && ~contains(line,namelist)
+while ~feof(fid) && ~contains(line,namelist,'IgnoreCase',true)
     line=fgetl(fid);
 end
 if feof(fid)

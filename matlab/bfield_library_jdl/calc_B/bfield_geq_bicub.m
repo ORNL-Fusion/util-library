@@ -38,15 +38,15 @@ bz1 =  dpsidr.*R1_inv;
 % psiN = (psi - g.ssimag)./(g.ssibry-g.ssimag);
 psiN = (g.ip_sign*psi-g.ssimag)/(g.ssibry-g.ssimag); 
 
-if any(psiN < 0) 
-    error('PsiN out of bounds for fpol interpolation')
-end
+% if any(psiN < 0) 
+%     error('PsiN out of bounds for fpol interpolation')
+% end
 
 fpol = polyval(g.fpol_coeffs,psiN);
 
 % toroidal field
 bt1 = g.bcentr*g.rzero.*R1_inv;
-ic = find(psiN <= 1.0);
+ic = find(psiN <= 1.0 | psiN < 0);
 if ~isempty(ic)
     bt1(ic) = fpol(ic).*R1_inv(ic);
 end
