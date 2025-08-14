@@ -1,6 +1,6 @@
 clearvars;
 
-suffix = '96'; element='h';
+suffix = '12'; element='h';
 % suffix = '96'; element='c';
 % suffix = '50'; element='w';
 % suffix = '96'; element='ne';

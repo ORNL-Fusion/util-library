@@ -205,7 +205,7 @@ for iSP = 1:sp.n
         sp.ZSOLSide(iSP) = sp.Z2Fine(iSP);
     end
 
-    % make unit vectore along PFC towards SOL side
+    % make unit vector along PFC towards SOL side
     v = [sp.RSOLSide(iSP)-sp.R(iSP),sp.ZSOLSide(iSP)-sp.Z(iSP),0];
     v = v./norm(v);
     sp.vSOL(iSP,:) = v;
@@ -234,6 +234,7 @@ for iSP = 1:sp.n
     sp.thetaSurfNorm(iSP) = atan2(vn(2),vn(1));
     sp.thetab(iSP) = atan2(b(2),b(1));
     sp.thetabPerpSP(iSP) = atan2(sp.bPerpSP(iSP,2),sp.bPerpSP(iSP,1));
+    
     %% check sign of surface norm
     % Take a small step along norm and check if inside vessel polygon
     Lstep = 1e-3;
