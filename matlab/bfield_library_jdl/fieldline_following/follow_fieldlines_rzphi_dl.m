@@ -20,6 +20,7 @@ end
 
 Neq = 3;                % Number of equations for each ode system 
 Nsys = length(Rstart);  % Number of simultaneous systems to be solved
+y = zeros(1, Nsys*Neq);
 y(1:Neq:Nsys*Neq-2) = Rstart;
 y(2:Neq:Nsys*Neq-1) = phistart;
 y(3:Neq:Nsys*Neq)   = Zstart;
