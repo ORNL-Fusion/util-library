@@ -13,20 +13,29 @@ if nargin < 6
 end
 
 int_count = 0;
-found_ind1 = 0;
-found_ind2 = 0;
+ierr = 1;
+pint1 =  zeros(0,2);
+found_ind1 = [];
+found_ind2 = [];
 
 for ii1 = 1:length(line1_r) - 1
-    p1 = [line1_r(ii1),line1_z(ii1)];
+    p1 = [line1_r(ii1)  ,line1_z(ii1)];
     p2 = [line1_r(ii1+1),line1_z(ii1+1)];
-    [pint1_tmp,ierr_tmp,found_ind2,int_count_tmp]=int_line_curve(p1,p2,line2_r,line2_z,first,verbose);
+
+    % Skip zero length
+    if p1(1)==p2(1) && p1(2)==p2(2)
+        continue
+    end
+
+    [pint1_tmp,ierr_tmp,found_ind2_tmp,int_count_tmp]=int_line_curve(p1,p2,line2_r,line2_z,first,verbose);
     
     if ierr_tmp == 0
-        ierr = 0;
-        pint1(int_count+1:int_count+int_count_tmp,1:2) = pint1_tmp(:,1:2);
-        found_ind1(int_count+1:int_count+int_count_tmp) = ii1;
-        found_ind2(int_count+1:int_count+int_count_tmp) = found_ind2;
+        idx = int_count + (1:int_count_tmp);
+        pint1(idx,1:2)   = pint1_tmp(:,1:2);
+        found_ind1(idx)  = ii1;
+        found_ind2(idx)  = found_ind2_tmp;        
         int_count = int_count + int_count_tmp;
+        ierr = 0;
 
         if first == 1
             if verbose
@@ -38,12 +47,12 @@ for ii1 = 1:length(line1_r) - 1
 end
 
 if int_count == 0
-    pint1 = NaN;
+    pint1 = [NaN NaN];
     ierr = 1;
+    found_ind1 = NaN;
+    found_ind2 = NaN;
 end
-if int_count > 1
-    if verbose
-        disp('Warning: More than one intersection found')
-    end
+if int_count > 1 && verbose
+    disp('Warning: More than one intersection found')
 end
 

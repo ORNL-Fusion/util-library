@@ -2,6 +2,7 @@ function [pint1,ierr,found_ind,int_count]=int_line_curve(p1,p2,line_r,line_z,fir
 %     [pint1,ierr,found_ind,int_count]=int_line_curve(p1,p2,line_r,line_z,first,verbose)
 % Curve is defined by array of points,
 % linearly interpolated to find intersection with line.
+% First means first by index along the curve
 % JL 2/2011
 
 if nargin < 5
@@ -20,6 +21,11 @@ for ii = 1:nn
     p3 = [line_r(ii),line_z(ii)];
     p4 = [line_r(ii+1),line_z(ii+1)];
     [u1,u2,ierr2] = int_two_lines(p1,p2,p3,p4);
+
+    % Skip degenerate segment
+    if p3(1)==p4(1) && p3(2)==p4(2)
+        continue;
+    end
 
     if ierr2 ~= 0  % Parallel line segments
         continue; 

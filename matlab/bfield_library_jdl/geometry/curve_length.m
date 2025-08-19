@@ -1,4 +1,5 @@
 function [L,Ltot] = curve_length(r,z,NORM)
+% [L,Ltot] = curve_length(r,z,NORM)
 % Returns length along curve using linear line segments
 % L goes from 0 to the total length
 % If NORM then L goes from 0 to 1
