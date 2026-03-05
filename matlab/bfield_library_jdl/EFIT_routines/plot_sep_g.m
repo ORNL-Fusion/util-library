@@ -1,5 +1,6 @@
-function sep = plot_sep_g(g,plotit,newfig,linewid,clip_at_glim,flush_file)
-% function sep = plot_sep_g(g,plotit,newfig,linewid,clip_at_glim,flush_file)
+function sep = plot_sep_g(g,plotit,newfig,linewid,clip_at_glim,flush_file,lim)
+% function sep = plot_sep_g(g,plotit,newfig,linewid,clip_at_glim,flush_file,lim)
+% Argument lim(1:2,:) can be passed to override g.lim
 if nargin < 1
     error('At least argument "g" is required')
 end
@@ -17,6 +18,9 @@ if nargin < 5
 end
 if nargin < 6
     flush_file = 0;
+end
+if nargin < 7
+    lim = [];
 end
 if newfig == 1
     figure; hold on;   
@@ -42,9 +46,14 @@ fid = fopen(fname,'r');
 if fid == -1
     disp(['Did not find sep. data file: ',fname])
     disp('Generating separatrix file')
-    
-    lim_r = g.lim(1,g.lim(1,:) > 0);
-    lim_z = g.lim(2,g.lim(1,:) > 0);
+        
+    if isempty(lim)
+        lim_r = g.lim(1,g.lim(1,:) > 0);
+        lim_z = g.lim(2,g.lim(1,:) > 0);
+    else
+        lim_r = lim(1,:);
+        lim_z = lim(2,:);
+    end
     
     if DEBUG 
         plot(box_r,box_z,'c-')
@@ -108,7 +117,7 @@ if fid == -1
     zsep = zsep2(1:floor(length(zsep2)/nsep_want):end);
     
     if clip_at_glim
-        inp = inpolygon(rsep,zsep,g.lim(1,:),g.lim(2,:));
+        inp = inpolygon(rsep,zsep,lim_r,lim_z);
 
         % refine to get better intersection
         i1 = find(inp,1,'first');

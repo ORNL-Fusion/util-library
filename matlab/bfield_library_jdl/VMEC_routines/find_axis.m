@@ -1,6 +1,8 @@
 function [Rax,Zax,dist] = find_axis(bfield,phistart,R0,Z0)
 %[Rax,Zax,dist] = find_axis(bfield,phistart,R0,Z0)
 % bfield should contain nsym
+
+tol = 0.25;
 tic;
 if nargin < 3
     rcoil = sqrt(bfield.coil(:,1).^2 + bfield.coil(:,2).^2);
@@ -10,9 +12,9 @@ if nargin < 3
 end
 
 X0=[R0,Z0];
-OPTIONS=optimset('tolfun',1e-9,'tolx',1e-10,'Display','off');
-XLB=[R0-.25,Z0-.25];
-XUB=[R0+.25,Z0+.25];
+OPTIONS=optimset('tolfun',1e-9,'tolx',1e-10,'Display','on');
+XLB=[R0-tol,Z0-tol];
+XUB=[R0+tol,Z0+tol];
 
 
 % global params for getdistsq
@@ -38,7 +40,7 @@ fprintf('Axis search took %f seconds.\n',toc); tic;
         
         f = follow_fieldlines_rzphi_dphi(bfield,X(1),X(2),phistart,dphi,nsteps,nowarn);
         
-        dist_sq=[f.r(1)-f.r(end),f.z(1)-f.z(end)];
+        dist_sq=[f.r(1)-f.r(end),f.z(1)-f.z(end)];        
         if nargout > 1
             r = f.r(end);
             z = f.z(end);
