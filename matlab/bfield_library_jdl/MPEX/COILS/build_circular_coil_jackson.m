@@ -1,14 +1,14 @@
 function coil = build_circular_coil_jackson(r1,r2,z1,dz,nturns,nlayers)
 % layers in radius, turns in axial
 % coils centered around r=0
-% windings ordered from min Z, min R; R increases fastest
+% winding numbering shown schematically below
 %  r2 -------------------
 %     |     |     |     |
-%     |  4  |  5  |  6  |        % two layers
+%     |  2  |  4  |  6  |        % two layers
 %     |     |     |     |
 %     -------------------
 %     |     |     |     |
-%     |  1  |  2  |  3  |        % three turns
+%     |  1  |  3  |  5  |        % three turns
 %     |     |     |     |
 %  r1 -------------------
 %    z1                  z1+dz

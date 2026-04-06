@@ -3,34 +3,19 @@ clearvars;
 %-----------------------------------------------------
 % Set up magnetic field -- MPEX parameters
 %-----------------------------------------------------
-% 2) Specify a 21 element array corresponding to each coil winding current
-fil = define_MPEX_coil_filaments; % Get areas
-% J_helicon = [4.917e7,4.917e7,2.92e6,2.92e6,3.917e7,3.917e7];
-% J_ECH = [1.75e8,1.75e8,4.14e7,3.89e7];
-% J_ICH = [5.6e7,5.41e7,5.378e7,5.543e7,4.275e7];
-% J_transport = [6.372e7,2.37e7,5.62e7];
-% J_target = [4.64e7,3.2e7,6.48e7];
-
-% JE options 70 GHz and 105 GHz
-J_helicon = [4.92e7,4.92e7,2.92e6,2.92e6,3.92e7,3.92e7];
-J_ECH = [8.5e7,8.5e7,5.6e7,4.3e7]; 
-J_ICH = [5.83e7,5.41e7,5.35e7,5.98e7,4.28e7]; 
-J_transport = [6.37e7,2.37e7,5.62e7];
-J_target = [4.64e7,3.07e7,6.48e7];
-
-J_array = [J_helicon,J_ECH,J_ICH,J_transport,J_target];
-current_in = J_array.*fil.area./fil.nwind;
+config_name = 'D1-1';
+verbose = 1;
+[fil,current_in] = setup_MPEX_coils(config_name,verbose);
 
 
 % Build coils
-verbose = 1;
 [coil,current] = build_MPEX_coils_jackson(current_in,verbose);
 
 [rcoil,zcoil] = get_MPEX_coil_cross_sections;
 figure; hold on; box on;
 for i = 1:size(rcoil,1)
     plot(zcoil(i,:),rcoil(i,:),'r')
-    patch(zcoil(i,:),rcoil(i,:),J_array(i)./1e7)
+    patch(zcoil(i,:),rcoil(i,:),current_in(i))
 end
 colorbar; cc=get(gca,'clim'); set(gca,'clim',[0,cc(2)]);
 % aasdf
@@ -158,7 +143,7 @@ Bnorm = sqrt(Bout.bphi.^2 + Bout.br.^2 + Bout.bz.^2);
 figure; hold on; box on; grid on;
 plot(Z,Bnorm)
 for i = 1:size(rcoil,1)
-    patch(zcoil(i,:),rcoil(i,:),J_array(i)./1e7)
+    patch(zcoil(i,:),rcoil(i,:),current_in(i))
 end
 colorbar; cc=get(gca,'clim'); set(gca,'clim',[0,cc(2)]);
 xlabel('Z relative to ECH center (m)')
@@ -167,7 +152,7 @@ ylabel('|B|_{ax} (T)')
 figure; hold on; box on; grid on;
 plot(Z,Bout.bz)
 for i = 1:size(rcoil,1)
-    patch(zcoil(i,:),rcoil(i,:),J_array(i)./1e7)
+    patch(zcoil(i,:),rcoil(i,:),current_in(i))
 end
 colorbar; cc=get(gca,'clim'); set(gca,'clim',[0,cc(2)]);
 xlabel('Z relative to ECH center (m)')
