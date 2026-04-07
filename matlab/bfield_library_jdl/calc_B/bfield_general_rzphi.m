@@ -36,7 +36,7 @@ switch bfield.type
         Bout.bphi = Bphi;
         Bout.bz = Bz;        
     case 'MPEX'
-        [Br,Bz] = bfield_circular_coils(bfield.coil,bfield.current,R,Z);
+        [Br,Bz] = bfield_circular_coils_vectorized(bfield.coil,bfield.current,R,Z);
         Bout.br = Br;
         Bout.bz = Bz;
         Bout.bphi = zeros(size(Br));

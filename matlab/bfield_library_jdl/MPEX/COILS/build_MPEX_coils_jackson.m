@@ -1,4 +1,4 @@
-function [coil,current] = build_MPEX_coils_jackson(current_in,verbose)
+function [coil,current,fil,cur] = build_MPEX_coils_jackson(current_in,verbose)
 % J.D. Lore
 if nargin == 0
     error('Must specify inputs')

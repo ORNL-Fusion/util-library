@@ -11,7 +11,7 @@ verbose = 1;
 % Build coils
 [coil,current] = build_MPEX_coils_jackson(current_in,verbose);
 
-[rcoil,zcoil] = get_MPEX_coil_cross_sections;
+[rcoil,zcoil] = get_coil_cross_sections(fil);
 figure; hold on; box on;
 for i = 1:size(rcoil,1)
     plot(zcoil(i,:),rcoil(i,:),'r')
