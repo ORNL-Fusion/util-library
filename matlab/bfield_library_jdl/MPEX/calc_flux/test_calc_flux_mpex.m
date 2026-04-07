@@ -1,74 +1,75 @@
 clearvars;
 
+%%
 %-----------------------------------------------------
-% Set up magnetic field -- MPEX parameters
+% 0. Set up magnetic field -- MPEX parameters
 %-----------------------------------------------------
 config_name = 'D1-1';
 verbose = 1;
-[fil,current_in] = setup_MPEX_coils(config_name,verbose);
+[Coil,windingCurrent,CoilGeometry,currentPerWinding] = build_MPEX_coils_jackson(config_name,verbose);
+[rcoil,zcoil] = get_coil_cross_sections(CoilGeometry);
+bfield.coil = Coil; bfield.current = windingCurrent; bfield.type = 'MPEX';
+Geo = get_MPEX_geometry;
+
+%% Example 0: plot geometry
+figure; set(gcf,'color','w'); box on; grid on; hold on; set(gca,'fontsize',14);
+plot_coil_cross_section(rcoil,zcoil,0,currentPerWinding);
+colorbar;
+plot(Geo.Vessel.z,Geo.Vessel.r,'r-','LineWidth',2)
 
 
-% Build coils
-[coil,current] = build_MPEX_coils_jackson(current_in,verbose);
-
-[rcoil,zcoil] = get_coil_cross_sections(fil);
-figure; hold on; box on;
-for i = 1:size(rcoil,1)
-    plot(zcoil(i,:),rcoil(i,:),'r')
-    patch(zcoil(i,:),rcoil(i,:),current_in(i))
-end
-colorbar; cc=get(gca,'clim'); set(gca,'clim',[0,cc(2)]);
-% aasdf
-%--------------------------------------------------------------------------
-% Example 1: 
-% Calculate psi at a point R,Z
+%% Example 1: Calculate psi at a point R,Z
 %--------------------------------------------------------------------------
 % Reval = 0.063; Zeval = 1.75;
 Reval = 0.045; Zeval = 1.75;
-psi_eval = calc_psi_mpex(coil,current,Reval,Zeval);
+psi_eval = calc_psi_mpex(Coil,windingCurrent,Reval,Zeval);
 fprintf('\nExample 1\n')
 fprintf('At point (R,Z) = (%6.3f,%6.3f) [m], psi = %6.3e [Wb]\n',Reval,Zeval,psi_eval)
 
-%--------------------------------------------------------------------------
-% Example 2: 
+
+
+%% Example 2: 
 % Map a point R,Z to the a line at constant axial position (e.g., target)
 % by interpolating axial flux.
 %--------------------------------------------------------------------------
-if 0
-Ztarg = 4.33415;  % Set axial position for mapping
-% Ztarg = 2.68;  % Set axial position for mapping
-Rmap = map_pt_to_target_mpex(coil,current,Ztarg,Reval,Zeval);
+Zmap = Geo.Target.z;  % Set axial position for mapping
+Reval = 0.05; Zeval = 0;
+Rmap = map_pt_to_target_mpex(Coil,windingCurrent,Zmap,Reval,Zeval);
 fprintf('\nExample 2\n')
-fprintf('Point (R,Z) = (%6.3f,%6.3f) [m] maps to radius %8.5f [m] at Z = %6.3f [m]\n',Reval,Zeval,Rmap,Ztarg)
-end
-%--------------------------------------------------------------------------
-% Example 3: 
+fprintf('Point (R,Z) = (%6.3f,%6.3f) [m] maps to radius %8.5f [m] at Z = %6.3f [m]\n',Reval,Zeval,Rmap,Zmap)
+
+
+
+%% Example 3: 
 % Map a point R,Z to a line at constant axial position (e.g., target)
 % by following a field line
 %--------------------------------------------------------------------------
 MAKE_PLOT = 1;
-
-
-bfield.coil = coil; bfield.current = current; bfield.type = 'MPEX';
-if 0
 dz_want = 0.01;
-L = Ztarg - Zeval;
-nsteps = round(abs(L/dz_want));
+Reval = 0.05; Zeval = 0;
+% L = Geo.Target.z - Zeval;
+L = 0.5
+nsteps = round(abs(L/dz_want))
 dz = L/nsteps;
 f = follow_fieldlines_rzphi_dz(bfield,Reval,Zeval,0,dz,nsteps);
 fprintf('\nExample 3\n')
-fprintf('Point (R,Z) = (%6.3f,%6.3f) [m] maps to radius %8.5f [m] at Z = %6.3f [m]\n',Reval,Zeval,f.r(end),Ztarg)
+fprintf('Point (R,Z) = (%6.3f,%6.3f) [m] maps to radius %8.5f [m] at Z = %6.3f [m]\n',Reval,Zeval,f.r(end),Zmap)
+
+
+if MAKE_PLOT
+    figure; set(gcf,'color','w'); box on; grid on; hold on; set(gca,'fontsize',14);
+    plot_coil_cross_section(rcoil,zcoil,0,currentPerWinding);
+    plot(Geo.Vessel.z,Geo.Vessel.r,'r-','LineWidth',2)
+    colorbar;
+    plot(Zeval,Reval,'ko')
+    plot(f.z,f.r,'b','linewidth',2)
+    plot(f.z(end),f.r(end),'rx','markersize',12)
 end
-% if MAKE_PLOT
-%     skimmer = 1;
-%     target_position = 2;
-%     sleeve = 1;
-%     add_reflector = 1;
-%     geo = get_Proto_geometry(1,1,skimmer,target_position,sleeve,add_reflector);    
-%     plot(Zeval,Reval,'ko')
-%     plot(f.z,f.r,'b','linewidth',2)
-%     plot(f.z(end),f.r(end),'rx','markersize',12)
-% end
+
+
+adsfdas
+
+%%
 if 0
 figure; hold on; box on; grid on;
 
@@ -117,11 +118,11 @@ Z1d = linspace(-8,8,nz);
 R1d = linspace(0,1.8,nr);
 % R1d = linspace(0,0.175,nr);
 [R2d,Z2d] = meshgrid(R1d,Z1d);
-psi2d = calc_psi_mpex(coil,current,R2d,Z2d);
+psi2d = calc_psi_mpex(Coil,windingCurrent,R2d,Z2d);
 
 % Reval = 10e-2; Zeval = -2.85;
 Reval = 4.75*0.0254/2; Zeval = -2743.20e-3 ;
-psi_eval = calc_psi_mpex(coil,current,Reval,Zeval);
+psi_eval = calc_psi_mpex(Coil,windingCurrent,Reval,Zeval);
 
 % skimmer = 1;
 % target_position = 2;

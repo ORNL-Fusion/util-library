@@ -1,5 +1,5 @@
-function [fil,cur] = setup_MPEX_coils(current_in,verbose)
-% [fil,cur] = setup_MPEX_coils(current_in,verbose)
+function [CoilGeometry,currentPerWinding] = setup_MPEX_coils(current_in,verbose)
+% [CoilGeometry,currentPerWinding] = setup_MPEX_coils(current_in,verbose)
 % Sets the arrays cur for each winding of the coil set.
 %
 % current_in can be specified in two ways
@@ -16,7 +16,7 @@ function [fil,cur] = setup_MPEX_coils(current_in,verbose)
 
 % current_in = the current_in in each WINDING (amps)
 % J.D. Lore
-fil = define_MPEX_coil_filaments;
+CoilGeometry = define_MPEX_coils;
 [config_name,data] = get_MPEX_currents_by_config;
 
 
@@ -27,26 +27,26 @@ if nargin < 2
     verbose = 0;
 end
 
-cur = zeros(1,fil.ncoils);
+currentPerWinding = zeros(1,CoilGeometry.ncoils); %#ok<PREALL>
 if ischar(current_in) || (isstring(current_in) && isscalar(current_in))
     current_name = char(string(current_in));
     ind = find(strcmp(current_name,config_name),1,'first');
     if isempty(ind)
         error('Unknown MPEX current configuration "%s"',current_name)
     end
-    cur = data(:,ind).';
-elseif isnumeric(current_in) && isvector(current_in) && length(current_in) == fil.ncoils
-    cur = current_in;
+    currentPerWinding = data(:,ind).';
+elseif isnumeric(current_in) && isvector(current_in) && length(current_in) == CoilGeometry.ncoils
+    currentPerWinding = current_in;
 else
-    error('current_in must be a config name or a numeric array of length fil.ncoils = %d',fil.ncoils)
+    error('current_in must be a config name or a numeric array of length fil.ncoils = %d',CoilGeometry.ncoils)
 end
 
 if verbose
     fprintf('------------------------------------------------------------------------------------------------\n')
     fprintf('Coil currents set to: \n')
-    fprintf('%8d',1:fil.ncoils)
+    fprintf('%8d',1:CoilGeometry.ncoils)
     fprintf('\n')
-    fprintf('%8.1f',cur)
+    fprintf('%8.1f',currentPerWinding)
     fprintf('\n')
     if ischar(current_in) || (isstring(current_in) && isscalar(current_in))
         fprintf('Using configuration %s\n',current_name)
@@ -54,7 +54,7 @@ if verbose
     fprintf('------------------------------------------------------------------------------------------------\n')
 end
 
-
+%%
 function [config_name,data] = get_MPEX_currents_by_config
 config_name = { ...
     'D1-1', 'D1-2', 'D1-3', 'D1-4', 'D1-5', 'D1-6', ...

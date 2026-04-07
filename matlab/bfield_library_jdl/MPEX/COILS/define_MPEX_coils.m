@@ -1,4 +1,4 @@
-function fil = define_MPEX_coil_filaments
+function CoilGeometry = define_MPEX_coils
 % nturns = number of turns per coil layer in each coil (see note below)
 % nlayers = number of layers in each coil 
 % rr1 = inner radius of each coil
@@ -30,19 +30,19 @@ function fil = define_MPEX_coil_filaments
 
 data = mpex_coil_table;
 
-fil.ncoils = size(data,2);
-fil.nturns  = data(7,:);
-fil.nlayers = data(8,:);
-fil.nwind = fil.nturns.*fil.nlayers;
+CoilGeometry.ncoils = size(data,2);
+CoilGeometry.nturns  = data(7,:);
+CoilGeometry.nlayers = data(8,:);
+CoilGeometry.nwind = CoilGeometry.nturns.*CoilGeometry.nlayers;
 
-fil.z0  = data(3,:)./1000;
-fil.cl  = data(4,:)./1000;
-fil.rr1 = data(5,:)./1000;
-fil.rr2 = data(6,:)./1000;
+CoilGeometry.z0  = data(3,:)./1000;
+CoilGeometry.cl  = data(4,:)./1000;
+CoilGeometry.rr1 = data(5,:)./1000;
+CoilGeometry.rr2 = data(6,:)./1000;
 
-thick = fil.rr2 - fil.rr1;
+thick = CoilGeometry.rr2 - CoilGeometry.rr1;
 
-fil.area = fil.cl.*thick;
+CoilGeometry.area = CoilGeometry.cl.*thick;
 
 
 function data = mpex_coil_table

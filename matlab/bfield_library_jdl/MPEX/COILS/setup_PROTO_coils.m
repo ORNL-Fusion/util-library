@@ -1,5 +1,5 @@
-function [fil,cur] = setup_Proto_coils(current_in,config,verbose)
-% [fil,cur] = setup_Proto_coils(current_in,config,verbose)
+function [CoilGeometry,currentPerWinding] = setup_PROTO_coils(current_in,config,verbose)
+% [CoilGeometry,currentPerWinding] = setup_Proto_coils(current_in,config,verbose)
 % Sets the array cur for each winding of the coil set.
 %
 % current_in can be specified in two ways
@@ -33,7 +33,7 @@ function [fil,cur] = setup_Proto_coils(current_in,config,verbose)
 % The rest depend on config
 % cur = the current_in in each WINDING (amps)
 % J.D. Lore
-fil = define_proto_coil_filaments;
+CoilGeometry = define_proto_coil_filaments;
 
 if nargin == 0
     error('Must specify inputs')
@@ -44,8 +44,8 @@ end
 if nargin < 3
     verbose = 0;
 end
-if ~any(length(current_in) == [3,4,fil.ncoils])
-    error('Current array must have length 3, 4, or fil.ncoils = %d\n',fil.ncoils)
+if ~any(length(current_in) == [3,4,CoilGeometry.ncoils])
+    error('Current array must have length 3, 4, or fil.ncoils = %d\n',CoilGeometry.ncoils)
 end
 if any(length(current_in) == [3,4])
     if isempty(config)
@@ -53,9 +53,9 @@ if any(length(current_in) == [3,4])
     end
 end
 
-cur = zeros(1,fil.ncoils);
-if length(current_in) == fil.ncoils
-    cur = current_in;
+currentPerWinding = zeros(1,CoilGeometry.ncoils);
+if length(current_in) == CoilGeometry.ncoils
+    currentPerWinding = current_in;
 else
     helicon_current = current_in(1);
     current_A = current_in(2);
@@ -66,33 +66,33 @@ else
         current_C = [];
     end
     
-    cur(3:4) = helicon_current;
-    cur(10:12) = current_B;
+    currentPerWinding(3:4) = helicon_current;
+    currentPerWinding(10:12) = current_B;
     switch config
         case 'standard'
-            cur([1:2,5:9]) = current_A;
+            currentPerWinding([1:2,5:9]) = current_A;
         case 'focus'
-            cur([1,5:9]) = current_A;
+            currentPerWinding([1,5:9]) = current_A;
         case 'flat'
-            cur([1,6:9]) = current_A;
+            currentPerWinding([1,6:9]) = current_A;
         otherwise
             error(['Did not recognize field configuration: ',config])
     end
     if ~isempty(current_C)
-        cur(2) = current_C;
+        currentPerWinding(2) = current_C;
     end
 end
 
 if verbose
     fprintf('------------------------------------------------------------------------------------------------\n')
     fprintf('Coil currents set to: \n')
-    fprintf('%8d',1:fil.ncoils)
+    fprintf('%8d',1:CoilGeometry.ncoils)
     fprintf('\n')
-    fprintf('%8.1f',cur)
+    fprintf('%8.1f',currentPerWinding)
     fprintf('\n')
-    if length(current_in) ~= fil.ncoils        
+    if length(current_in) ~= CoilGeometry.ncoils        
         fprintf('Coil configuration is %s\n',config)
-        fprintf('Using helicon current (coils 3:4) of %f\n',cur(3))
+        fprintf('Using helicon current (coils 3:4) of %f\n',currentPerWinding(3))
         fprintf('Using current_A of %f\n',current_A)
         fprintf('Using current_B of %f\n',current_B)
         if ~isempty(current_C)

@@ -11,6 +11,8 @@ nTest = 200;
 zTest = linspace(-2,10,nTest);
 rTest = 0*ones(size(zTest));
 
+% geo = get_MPEX_geometry;
+
 %%
 figure; set(gcf,'color','w'); box on; grid on; hold on; set(gca,'fontsize',14)
 for i = 1:length(config_name)
@@ -33,4 +35,7 @@ end
 
 legend(config_name,'Location','best')
 xlabel('Z (m)')
+xlabel('R (m)')
 ylabel('|B| on-axis (T)')
+
+% plot(geo.z,geo.r,'r-','LineWidth',2)
