@@ -1,1 +1,0 @@
-Jackson versions will be more accurate and faster. Filament versions are legacy.

@@ -1,4 +1,4 @@
-function [geo] = get_Proto_geometry(plotit,newfig,add_skimmer,target_position,add_sleeve,add_reflector)
+function [geo] = get_PROTO_geometry(plotit,newfig,add_skimmer,target_position,add_sleeve,add_reflector)
 % target_position = 1, target is at 7.5  (+1")
 % target_position = 2, target is at 11.5 (+5")
 if nargin < 1
