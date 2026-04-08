@@ -1,41 +1,35 @@
-function [Br,Bz,Atheta] = bfield_circular_coils_vectorized(coil,current,r,z)
+function [Br,Bz] = bfield_circular_coils_vectorized_zconst(coil,current,r,z)
+% Optimized for the common MPEX fieldline-following path where z is scalar
+% and only Br,Bz are needed.
 
-if ~isequal(size(r),size(z))
-    error('r and z must have the same size')
+if ~isscalar(z)
+    error('z must be scalar')
 end
 
 nwind = length(coil.rwind);
-npts = numel(r);
-
 rvec = r(:);
-zvec = z(:);
 awind = reshape(coil.rwind,1,nwind);
 dwind = reshape(coil.zwind,1,nwind);
 cur = reshape(current,1,nwind);
 
 mu0_4pi = 1.e-7;
 
-Br_sum = zeros(npts,1);
-Bz_sum = zeros(npts,1);
-if nargout > 2
-    Atheta_sum = zeros(npts,1);
-end
+Br_sum = zeros(size(rvec));
+Bz_sum = zeros(size(rvec));
 
 is_axis = (rvec == 0);
 is_off_axis = ~is_axis;
 
 if any(is_axis(:))
-    z0 = zvec(is_axis);
-    dz0 = z0 - dwind;
+    dz0 = z - dwind;
     Bz_axis = 2*pi*mu0_4pi*awind.^2 ./ (awind.^2 + dz0.^2).^(3/2);
     Bz_sum(is_axis) = Bz_axis*cur.';
 end
 
 if any(is_off_axis(:))
     ro = rvec(is_off_axis);
-    zo = zvec(is_off_axis);
+    dz = z - dwind;
 
-    dz = zo - dwind;
     m = 4*(ro.*awind) ./ ((ro+awind).^2 + dz.^2);
     sm = sqrt(m);
     [K,E] = ellipke(m);
@@ -48,15 +42,7 @@ if any(is_off_axis(:))
     Bz_terms = 2*mu0_4pi./ro.*(sroa.*sm/2.*K - sm./(4*m1).*(sroa.*(m-2) + m./sroa).*E);
     Br_sum(is_off_axis) = Br_terms*cur.';
     Bz_sum(is_off_axis) = Bz_terms*cur.';
-
-    if nargout > 2
-        Atheta_terms = 2*mu0_4pi./sroa.*((2./sm - sm).*K - 2./sm.*E);
-        Atheta_sum(is_off_axis) = Atheta_terms*cur.';
-    end
 end
 
 Br = reshape(Br_sum,size(r));
 Bz = reshape(Bz_sum,size(r));
-if nargout > 2
-    Atheta = reshape(Atheta_sum,size(r));
-end

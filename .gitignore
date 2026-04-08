@@ -20,3 +20,4 @@ fortran/bfield_library_jdl/tests/*.out
 python/.ipynb_checkpoints
 python/__pycache__
 .DS_Store
+matlab/bfield_library_jdl/.codex
