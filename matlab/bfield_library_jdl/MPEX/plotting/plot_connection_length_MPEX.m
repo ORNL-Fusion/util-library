@@ -6,14 +6,10 @@ config_name = {'D3-6'};
 verbose = 1;
 SIMPLIFY_COILS = 1;
 PLOT_COILS = 1;
-% METHOD = 'structured';
-METHOD = 'scattered';
 PLOT_LC = 'right';
 PLOT_SCATTER = 0;
-PLOT_INTERPOLATION = 0;
 PLOT_TRIANGULATION = 1;
-PLOT_CONTOURF = 0;
-TRIANGULATION_ALPHA = [];
+TRIANGULATION_ALPHA = []; % 0.05, 0.03, 0.08 --  bigger smoother - smaller tighter
 
 
 Geo = get_MPEX_geometry;
@@ -34,7 +30,10 @@ for i = 1:length(config_name)
     %% Plot coils and vessel
     if PLOT_COILS
         [rcoil,zcoil] = get_coil_cross_sections(CoilGeometry);
-        plot_coil_cross_section(rcoil,zcoil,0,currentPerWinding);
+        plot_coil_cross_section(rcoil,zcoil,0);
+    else
+        rcoil = [];
+        zcoil = [];
     end
     plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
     plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
@@ -43,15 +42,18 @@ for i = 1:length(config_name)
     axis([-4,9,0,0.5])
 
     %% Find LUFS
-    f_lufs = find_lufs_MPEX(Bfield,Geo);
+    need_lufs_overlay = PLOT_SCATTER || PLOT_TRIANGULATION;
+    if need_lufs_overlay
+        f_lufs = find_lufs_MPEX(Bfield,Geo);
+    else
+        f_lufs = struct('r',[],'z',[],'hit_rz',[]);
+    end
     
 
     %% Now let's compute connection length in space
     nz = 1000;
     nr = 100;
     nlines_scattered = 200;
-    Rmin_structured = 0.2;
-    Rmax_structured = 0.3;
     Rmin_scattered = 0;
     Rmax_scattered = 0.7;
     Zmin = min(Geo.Vessel.z);
@@ -61,95 +63,56 @@ for i = 1:length(config_name)
     hull_shrink_factor = 0.2;
     need_left = strcmp(PLOT_LC,'left') || strcmp(PLOT_LC,'total');
     need_right = strcmp(PLOT_LC,'right') || strcmp(PLOT_LC,'total');
+    need_total = strcmp(PLOT_LC,'total');
     
     if strcmp(PLOT_LC,'left')
-        plot_title = 'Left connection length';
+        plot_title = 'Left connection length (m)';
     elseif strcmp(PLOT_LC,'right')
-        plot_title = 'Right connection length';
+        plot_title = 'Right connection length (m)';
     elseif strcmp(PLOT_LC,'total')
-        plot_title = 'Total connection length';
+        plot_title = 'Total connection length (m)';
     else
         error('Unknown PLOT_LC %s',PLOT_LC)
     end
     
-    if strcmp(METHOD,'structured')
-        Redges = linspace(Rmin_structured,Rmax_structured,nr+1);
-        Zedges = linspace(Zmin,Zmax,nz+1);
-        R1d = 0.5*(Redges(1:end-1) + Redges(2:end));
-        Z1d = 0.5*(Zedges(1:end-1) + Zedges(2:end));
-        [R2d,Z2d] = ndgrid(R1d,Z1d);
-        [Lc2d_forward,Lc2d_backward,Lc2d_total] = calc_connection_length_structured(Bfield,Geo,R2d,Z2d,Zmin,dz_fieldline0,need_left,need_right,strcmp(PLOT_LC,'total'));
-        
-        if strcmp(PLOT_LC,'left')
-            Lc2d_plot = Lc2d_backward;
-        elseif strcmp(PLOT_LC,'right')
-            Lc2d_plot = Lc2d_forward;
-        else
-            Lc2d_plot = Lc2d_total;
-        end
-        
-        if PLOT_INTERPOLATION
-            figure; set(gcf,'color','w')
-            plot_cell_centered_patches(Z2d,R2d,Lc2d_plot,Geo,['Structured ',plot_title])
-        end
-        if PLOT_CONTOURF
-            figure; set(gcf,'color','w')
-            plot_contourf_map(Z2d,R2d,Lc2d_plot,Geo,['Structured contour ',plot_title])
-        end
-    elseif strcmp(METHOD,'scattered')
-        [R2d,Z2d,Lc2d_forward,Lc2d_backward,Lc2d_total,r_plot,z_plot,L_forward_plot,L_backward_plot,L_total_plot] = calc_connection_length_scattered(Bfield,Geo,Rmin_scattered,Rmax_scattered,Zmin,Zmax,nlines_scattered,nr,nz,dz_fieldline0,dmax_interp,hull_shrink_factor,need_left,need_right,strcmp(PLOT_LC,'total'));
-        
-        if strcmp(PLOT_LC,'left')
-            L_plot = L_backward_plot;
-            Lc2d_plot = Lc2d_backward;
-        elseif strcmp(PLOT_LC,'right')
-            L_plot = L_forward_plot;
-            Lc2d_plot = Lc2d_forward;
-        else
-            L_plot = L_total_plot;
-            Lc2d_plot = Lc2d_total;
-        end
-        
-        if PLOT_SCATTER
-            figure; set(gcf,'color','w')
-            scatter(z_plot,r_plot,10,L_plot,'filled')
-            hold on
-            plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-            plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
-            box on; grid on; set(gca,'fontsize',14)
-            xlabel('Z (m)')
-            ylabel('R (m)')
-            title([plot_title,' from dense field line samples'])
-            colorbar
-            axis([-4,9,0,0.5])
-            plot_coil_cross_section(rcoil,zcoil,0)
-            plot(f_lufs.z,f_lufs.r,'r')
-        end
-
-        if PLOT_TRIANGULATION
-            figure; set(gcf,'color','w')
-            plot_triangulated_map(z_plot,r_plot,L_plot,Geo,[plot_title,' from triangulated field line samples'],TRIANGULATION_ALPHA)
-            plot_coil_cross_section(rcoil,zcoil,0)
-            plot(f_lufs.z,f_lufs.r,'r')            
-        end
-        
-        if PLOT_INTERPOLATION
-            figure; set(gcf,'color','w')
-            plot_cell_centered_patches(Z2d,R2d,Lc2d_plot,Geo,['Interpolated ',plot_title])
-        end
-        if PLOT_CONTOURF
-            figure; set(gcf,'color','w')
-            plot_contourf_map(Z2d,R2d,Lc2d_plot,Geo,['Interpolated contour ',plot_title])
-        end
+    [R2d,Z2d,Lc2d_forward,Lc2d_backward,Lc2d_total,r_plot,z_plot,L_forward_plot,L_backward_plot,L_total_plot] = calc_connection_length_scattered(Bfield,Geo,Rmin_scattered,Rmax_scattered,Zmin,Zmax,nlines_scattered,nr,nz,dz_fieldline0,dmax_interp,hull_shrink_factor,need_left,need_right,need_total);
+    
+    if strcmp(PLOT_LC,'left')
+        L_plot = L_backward_plot;
+        Lc2d_plot = Lc2d_backward;
+    elseif strcmp(PLOT_LC,'right')
+        L_plot = L_forward_plot;
+        Lc2d_plot = Lc2d_forward;
     else
-        error('Unknown METHOD %s',METHOD)
+        L_plot = L_total_plot;
+        Lc2d_plot = Lc2d_total;
+    end
+    
+    if PLOT_SCATTER
+        figure; set(gcf,'color','w')
+        scatter(z_plot,r_plot,10,L_plot,'filled')
+        hold on
+        plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
+        plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
+        box on; grid on; set(gca,'fontsize',14)
+        xlabel('Z (m)')
+        ylabel('R (m)')
+        title(plot_title)
+        colorbar
+        axis([-4,9,0,0.5])
+        plot_coil_cross_section(rcoil,zcoil,0);
+        plot(f_lufs.z,f_lufs.r,'r')
+
     end
 
+    if PLOT_TRIANGULATION
+        figure; set(gcf,'color','w')
+        plot_triangulated_map(z_plot,r_plot,L_plot,Geo,plot_title,TRIANGULATION_ALPHA)
+        plot_coil_cross_section(rcoil,zcoil,0);
+        plot(f_lufs.z,f_lufs.r,'r')
+    end
 
 end
-
-
-%%
 function f = find_lufs_MPEX(Bfield,Geo,RMax)
 
 % if nargin < 3
@@ -187,8 +150,12 @@ end
 
 r_good = rr(ind_last_good_line);
 r_bad = rr(ind_last_good_line+1);
-fl_good = get_fieldline_column(fl,ind_last_good_line);
-fl_bad = get_fieldline_column(fl,ind_last_good_line+1);
+fl_good.r = fl.r(:,ind_last_good_line);
+fl_good.z = fl.z(:,ind_last_good_line);
+fl_good.phi = fl.phi(:,ind_last_good_line);
+fl_bad.r = fl.r(:,ind_last_good_line+1);
+fl_bad.z = fl.z(:,ind_last_good_line+1);
+fl_bad.phi = fl.phi(:,ind_last_good_line+1);
 
 for ib = 1:nbisect
     r_mid = 0.5*(r_good + r_bad);
@@ -220,15 +187,6 @@ end
 function fl_single = trace_lufs_line(Bfield,Geo,r0,z0,dz_fieldline,nsteps)
 fl_raw = follow_fieldlines_rzphi_dz(Bfield,r0,z0,0,dz_fieldline,nsteps);
 fl_single = clip_fl_at_vessel(fl_raw,Geo.Vessel.r,Geo.Vessel.z);
-end
-
-
-function fl_single = get_fieldline_column(fl,icol)
-fl_single.r = fl.r(:,icol);
-fl_single.z = fl.z(:,icol);
-if isfield(fl,'phi')
-    fl_single.phi = fl.phi(:,icol);
-end
 end
 
 
@@ -311,42 +269,6 @@ end
 end
 
 
-function [Lc2d_forward,Lc2d_backward,Lc2d_total] = calc_connection_length_structured(Bfield,Geo,R2d,Z2d,Zmin,dz_fieldline0,need_left,need_right,need_total)
-Lc2d_forward = NaN(size(R2d));
-Lc2d_backward = NaN(size(R2d));
-Lc2d_total = NaN(size(R2d));
-
-for ir = 1:size(R2d,1)
-    fprintf('Working on ir %d of %d\n',ir,size(R2d,1))
-    for jz = 1:size(R2d,2)
-        if need_right
-            L = Geo.Target.z(1) - Z2d(ir,jz);
-            nsteps = max(1,ceil(abs(L/dz_fieldline0)));
-            dz_fieldline = L/nsteps;
-            fl = follow_fieldlines_rzphi_dz(Bfield,R2d(ir,jz),Z2d(ir,jz),0,dz_fieldline,nsteps);
-            fl_mask = mask_fl_at_vessel(fl,Geo.Vessel.r,Geo.Vessel.z);
-            [Lc_forward_fl,~,~] = calc_connection_length_sections(fl_mask,1,0,0);
-            Lc2d_forward(ir,jz) = Lc_forward_fl(1);
-        end
-
-        if need_left
-            L = Zmin - Z2d(ir,jz);
-            nsteps = max(1,ceil(abs(L/dz_fieldline0)));
-            dz_fieldline = L/nsteps;
-            fl = follow_fieldlines_rzphi_dz(Bfield,R2d(ir,jz),Z2d(ir,jz),0,dz_fieldline,nsteps);
-            fl_mask = mask_fl_at_vessel(fl,Geo.Vessel.r,Geo.Vessel.z);
-            [~,Lc_backward_fl,~] = calc_connection_length_sections(fl_mask,0,1,0);
-            Lc2d_backward(ir,jz) = Lc_backward_fl(1);
-        end
-
-        if need_total
-            Lc2d_total(ir,jz) = Lc2d_forward(ir,jz) + Lc2d_backward(ir,jz);
-        end
-    end
-end
-end
-
-
 function [R2d,Z2d,Lc2d_forward,Lc2d_backward,Lc2d_total,r_plot,z_plot,L_forward_plot,L_backward_plot,L_total_plot] = calc_connection_length_scattered(Bfield,Geo,Rmin_scattered,Rmax_scattered,Zmin,Zmax,nlines_scattered,nr,nz,dz_fieldline0,dmax_interp,hull_shrink_factor,need_left,need_right,need_total)
 RSeed = linspace(Rmin_scattered,Rmax_scattered,nlines_scattered);
 ZSeed = Zmin*ones(size(RSeed));
@@ -421,44 +343,6 @@ end
 end
 
 
-function plot_cell_centered_patches(Z2d,R2d,C2d,Geo,plot_title_str)
-z_centers = Z2d(1,:);
-r_centers = R2d(:,1);
-z_edges = centers_to_edges(z_centers);
-r_edges = centers_to_edges(r_centers);
-[Redge2d,Zedge2d] = ndgrid(r_edges,z_edges);
-
-inside_vertices = inpolygon(Redge2d,Zedge2d,Geo.Vessel.r,Geo.Vessel.z);
-inside_cells = inside_vertices(1:end-1,1:end-1) & inside_vertices(2:end,1:end-1) & ...
-    inside_vertices(1:end-1,2:end) & inside_vertices(2:end,2:end);
-valid_cells = isfinite(C2d) & inside_cells;
-
-vertex_ids = reshape(1:numel(Redge2d),size(Redge2d));
-v1 = vertex_ids(1:end-1,1:end-1);
-v2 = vertex_ids(2:end,1:end-1);
-v3 = vertex_ids(2:end,2:end);
-v4 = vertex_ids(1:end-1,2:end);
-faces = [v1(:), v2(:), v3(:), v4(:)];
-cell_values = C2d(:);
-valid_faces = valid_cells(:);
-
-patch('Faces',faces(valid_faces,:), ...
-    'Vertices',[Zedge2d(:),Redge2d(:)], ...
-    'FaceVertexCData',cell_values(valid_faces), ...
-    'FaceColor','flat', ...
-    'EdgeColor','none');
-hold on
-plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
-box on; grid on; set(gca,'fontsize',14)
-xlabel('Z (m)')
-ylabel('R (m)')
-title(plot_title_str)
-colorbar
-axis([-4,9,0,0.5])
-end
-
-
 function plot_triangulated_map(z_plot,r_plot,L_plot,Geo,plot_title_str,triangulation_alpha)
 dt = delaunayTriangulation(z_plot(:),r_plot(:));
 tri = dt.ConnectivityList;
@@ -496,46 +380,6 @@ ylabel('R (m)')
 title(plot_title_str)
 colorbar
 axis([-4,9,0,0.5])
-end
-
-
-function plot_contourf_map(Z2d,R2d,C2d,Geo,plot_title_str)
-contourf(Z2d,R2d,C2d,20,'LineStyle','none')
-hold on
-
-% Hide contours outside the vessel while preserving smooth in-vessel fills.
-z_centers = Z2d(1,:);
-r_centers = R2d(:,1);
-z_edges = centers_to_edges(z_centers);
-r_edges = centers_to_edges(r_centers);
-[Zmask,Rmask] = meshgrid(z_edges,r_edges);
-outside_vertices = ~inpolygon(Zmask,Rmask,Geo.Vessel.z,Geo.Vessel.r);
-mask_alpha = double(~outside_vertices);
-hmask = pcolor(Zmask,Rmask,zeros(size(Zmask)));
-set(hmask,'EdgeColor','none','FaceColor','w','FaceAlpha','flat','AlphaData',outside_vertices)
-
-plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
-box on; grid on; set(gca,'fontsize',14)
-xlabel('Z (m)')
-ylabel('R (m)')
-title(plot_title_str)
-colorbar
-axis([-4,9,0,0.5])
-end
-
-
-function edges = centers_to_edges(centers)
-centers = centers(:).';
-
-if numel(centers) < 2
-    error('Need at least two cell centers to infer cell edges.')
-end
-
-dcenters = diff(centers);
-edges = [centers(1) - 0.5*dcenters(1), ...
-    0.5*(centers(1:end-1) + centers(2:end)), ...
-    centers(end) + 0.5*dcenters(end)];
 end
 
 
