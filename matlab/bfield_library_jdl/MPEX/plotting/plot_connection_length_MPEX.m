@@ -9,6 +9,11 @@ PLOT_COILS = 1;
 % METHOD = 'structured';
 METHOD = 'scattered';
 PLOT_LC = 'right';
+PLOT_SCATTER = 0;
+PLOT_INTERPOLATION = 0;
+PLOT_TRIANGULATION = 1;
+PLOT_CONTOURF = 0;
+TRIANGULATION_ALPHA = [];
 
 
 Geo = get_MPEX_geometry;
@@ -32,14 +37,14 @@ for i = 1:length(config_name)
         plot_coil_cross_section(rcoil,zcoil,0,currentPerWinding);
     end
     plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-    plot(Geo.Target.z,Geo.Target.r,'r-','LineWidth',2)
+    plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
     xlabel('Z (m)')
     ylabel('R (m)')
     axis([-4,9,0,0.5])
 
     %% Find LUFS
-    % f_lufs = find_lufs_MPEX(Bfield,Geo);
-    % plot(f_lufs.z,f_lufs.r)
+    f_lufs = find_lufs_MPEX(Bfield,Geo);
+    
 
     %% Now let's compute connection length in space
     nz = 1000;
@@ -83,8 +88,14 @@ for i = 1:length(config_name)
             Lc2d_plot = Lc2d_total;
         end
         
-        figure; set(gcf,'color','w')
-        plot_cell_centered_patches(Z2d,R2d,Lc2d_plot,Geo,['Structured ',plot_title])
+        if PLOT_INTERPOLATION
+            figure; set(gcf,'color','w')
+            plot_cell_centered_patches(Z2d,R2d,Lc2d_plot,Geo,['Structured ',plot_title])
+        end
+        if PLOT_CONTOURF
+            figure; set(gcf,'color','w')
+            plot_contourf_map(Z2d,R2d,Lc2d_plot,Geo,['Structured contour ',plot_title])
+        end
     elseif strcmp(METHOD,'scattered')
         [R2d,Z2d,Lc2d_forward,Lc2d_backward,Lc2d_total,r_plot,z_plot,L_forward_plot,L_backward_plot,L_total_plot] = calc_connection_length_scattered(Bfield,Geo,Rmin_scattered,Rmax_scattered,Zmin,Zmax,nlines_scattered,nr,nz,dz_fieldline0,dmax_interp,hull_shrink_factor,need_left,need_right,strcmp(PLOT_LC,'total'));
         
@@ -99,20 +110,37 @@ for i = 1:length(config_name)
             Lc2d_plot = Lc2d_total;
         end
         
-        figure; set(gcf,'color','w')
-        scatter(z_plot,r_plot,10,L_plot,'filled')
-        hold on
-        plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-        plot(Geo.Target.z,Geo.Target.r,'r-','LineWidth',2)
-        box on; grid on; set(gca,'fontsize',14)
-        xlabel('Z (m)')
-        ylabel('R (m)')
-        title([plot_title,' from dense field line samples'])
-        colorbar
-        axis([-4,9,0,0.5])
+        if PLOT_SCATTER
+            figure; set(gcf,'color','w')
+            scatter(z_plot,r_plot,10,L_plot,'filled')
+            hold on
+            plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
+            plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
+            box on; grid on; set(gca,'fontsize',14)
+            xlabel('Z (m)')
+            ylabel('R (m)')
+            title([plot_title,' from dense field line samples'])
+            colorbar
+            axis([-4,9,0,0.5])
+            plot_coil_cross_section(rcoil,zcoil,0)
+            plot(f_lufs.z,f_lufs.r,'r')
+        end
+
+        if PLOT_TRIANGULATION
+            figure; set(gcf,'color','w')
+            plot_triangulated_map(z_plot,r_plot,L_plot,Geo,[plot_title,' from triangulated field line samples'],TRIANGULATION_ALPHA)
+            plot_coil_cross_section(rcoil,zcoil,0)
+            plot(f_lufs.z,f_lufs.r,'r')            
+        end
         
-        figure; set(gcf,'color','w')
-        plot_cell_centered_patches(Z2d,R2d,Lc2d_plot,Geo,['Interpolated ',plot_title])
+        if PLOT_INTERPOLATION
+            figure; set(gcf,'color','w')
+            plot_cell_centered_patches(Z2d,R2d,Lc2d_plot,Geo,['Interpolated ',plot_title])
+        end
+        if PLOT_CONTOURF
+            figure; set(gcf,'color','w')
+            plot_contourf_map(Z2d,R2d,Lc2d_plot,Geo,['Interpolated contour ',plot_title])
+        end
     else
         error('Unknown METHOD %s',METHOD)
     end
@@ -128,7 +156,7 @@ function f = find_lufs_MPEX(Bfield,Geo,RMax)
     num_lines = 10;
 % end
 % if nargin < 5
-    nresolve = 3;
+    nbisect = 8;
 % end
 
 ZMin = min(Geo.Vessel.z) + 0.01;  % Below this Z lines are not checked for cutoff
@@ -143,57 +171,64 @@ dz_fieldline = -0.01;
 nsteps = round(abs(L/dz_fieldline)); 
 dz_fieldline = sign(dz_fieldline)*L/nsteps;
 
-for iresolve = 1:nresolve
-    
-    % Forward and reverse lines from target
-    if iresolve == 1
-        rr = linspace(RMin,RMax,num_lines);
-    else
-        rr = linspace(rr(ind_last_good_line-1),rr(ind_last_good_line+1),num_lines*iresolve);
-    end
-    zz = Geo.Target.z(1)*ones(size(rr));
+rr = linspace(RMin,RMax,num_lines);
+phistart = zeros(size(rr));
+fl = follow_fieldlines_rzphi_dz(Bfield,rr,Geo.Target.z(1),phistart,dz_fieldline,nsteps);
+fl = clip_fl_at_vessel(fl,Geo.Vessel.r,Geo.Vessel.z);
+isgood = ~isnan(fl.z(end,:));
+ind_last_good_line = find(isgood,1,'last');
 
-    phistart = zeros(size(rr));    
-    fl = follow_fieldlines_rzphi_dz(Bfield,rr,zz(1),phistart,dz_fieldline,nsteps);
-    fl = clip_fl_at_vessel(fl,Geo.Vessel.r,Geo.Vessel.z);
-    ind_last_good_line = find(~isnan(fl.z(end,:)),1,'last');
-    if iresolve == nresolve
-        ind_hit = find(~isnan(fl.z(:,ind_last_good_line+1)),1,'last');
-        zhit = fl.z(ind_hit,ind_last_good_line+1);
-        rhit = fl.r(ind_hit,ind_last_good_line+1);
-        hit_rz = [rhit,zhit];
-    end
-    
-    if isempty(ind_last_good_line)        
-        plotit = 1;
-    else
-        plotit = 0;
-    end
-    
-    if plotit
-        if iresolve == 1
-            figure; hold on; box on;
-            plot(fl.z,fl.r,'linewidth',2);
-            set(gca,'fontsize',14)
-            xlabel('Z [m]','fontsize',14)
-            ylabel('R [m]','fontsize',14)
-            plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-            plot(Geo.Target.z,Geo.Target.r,'r-','LineWidth',2)
+if isempty(ind_last_good_line)
+    error('Could not identify LUFS bracket: all coarse lines hit the vessel before reaching ZMin.')
+end
+if ind_last_good_line == numel(rr)
+    error('Could not identify LUFS bracket: all coarse lines passed through. Increase RMax.')
+end
 
-        else
-            plot(fl.z,fl.r,'linewidth',2,'color',cf(iresolve,:));
-            plot(fl.z(:,ind_last_good_line),fl.r(:,ind_last_good_line),'r')
-        end
-        if isempty(ind_last_good_line)
-            error('Could not identify lcfs: all lines passed through')
-        end
+r_good = rr(ind_last_good_line);
+r_bad = rr(ind_last_good_line+1);
+fl_good = get_fieldline_column(fl,ind_last_good_line);
+fl_bad = get_fieldline_column(fl,ind_last_good_line+1);
+
+for ib = 1:nbisect
+    r_mid = 0.5*(r_good + r_bad);
+    fl_mid = trace_lufs_line(Bfield,Geo,r_mid,Geo.Target.z(1),dz_fieldline,nsteps);
+    if ~isnan(fl_mid.z(end))
+        r_good = r_mid;
+        fl_good = fl_mid;
+    else
+        r_bad = r_mid;
+        fl_bad = fl_mid;
     end
 end
-f.r = fl.r(:,ind_last_good_line);
-f.z = fl.z(:,ind_last_good_line);
+
+ind_hit = find(~isnan(fl_bad.z),1,'last');
+if isempty(ind_hit)
+    hit_rz = [NaN,NaN];
+else
+    hit_rz = [fl_bad.r(ind_hit),fl_bad.z(ind_hit)];
+end
+
+f.r = fl_good.r;
+f.z = fl_good.z;
 f.hit_rz = hit_rz;
 
 
+end
+
+
+function fl_single = trace_lufs_line(Bfield,Geo,r0,z0,dz_fieldline,nsteps)
+fl_raw = follow_fieldlines_rzphi_dz(Bfield,r0,z0,0,dz_fieldline,nsteps);
+fl_single = clip_fl_at_vessel(fl_raw,Geo.Vessel.r,Geo.Vessel.z);
+end
+
+
+function fl_single = get_fieldline_column(fl,icol)
+fl_single.r = fl.r(:,icol);
+fl_single.z = fl.z(:,icol);
+if isfield(fl,'phi')
+    fl_single.phi = fl.phi(:,icol);
+end
 end
 
 
@@ -358,12 +393,9 @@ outside_vessel = ~inpolygon(R2d,Z2d,Geo.Vessel.r,Geo.Vessel.z);
 ihull = boundary(z_plot,r_plot,hull_shrink_factor);
 inside_data_hull = inpolygon(Z2d,R2d,z_plot(ihull),r_plot(ihull));
 Dmin = NaN(size(R2d));
-for ir = 1:size(R2d,1)
-    for jz = 1:size(R2d,2)
-        if ~outside_vessel(ir,jz) && inside_data_hull(ir,jz)
-            Dmin(ir,jz) = min(sqrt((r_plot - R2d(ir,jz)).^2 + (z_plot - Z2d(ir,jz)).^2));
-        end
-    end
+icandidate = ~outside_vessel & inside_data_hull;
+if any(icandidate,'all')
+    Dmin(icandidate) = nearest_sample_distance(r_plot,z_plot,R2d(icandidate),Z2d(icandidate));
 end
 istoo_far = Dmin > dmax_interp;
 if any(istoo_far(~outside_vessel & inside_data_hull),'all')
@@ -417,7 +449,73 @@ patch('Faces',faces(valid_faces,:), ...
     'EdgeColor','none');
 hold on
 plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-plot(Geo.Target.z,Geo.Target.r,'r-','LineWidth',2)
+plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
+box on; grid on; set(gca,'fontsize',14)
+xlabel('Z (m)')
+ylabel('R (m)')
+title(plot_title_str)
+colorbar
+axis([-4,9,0,0.5])
+end
+
+
+function plot_triangulated_map(z_plot,r_plot,L_plot,Geo,plot_title_str,triangulation_alpha)
+dt = delaunayTriangulation(z_plot(:),r_plot(:));
+tri = dt.ConnectivityList;
+hold on
+ztri = reshape(dt.Points(tri,1),size(tri));
+rtri = reshape(dt.Points(tri,2),size(tri));
+ztri_centroid = mean(ztri,2);
+rtri_centroid = mean(rtri,2);
+
+if isempty(triangulation_alpha)
+    shp = alphaShape(z_plot(:),r_plot(:));
+    shp.Alpha = criticalAlpha(shp,'one-region');
+else
+    shp = alphaShape(z_plot(:),r_plot(:),triangulation_alpha);
+end
+
+inside_alpha = inShape(shp,ztri_centroid,rtri_centroid);
+inside_vessel = inpolygon(ztri(:,1),rtri(:,1),Geo.Vessel.z,Geo.Vessel.r) & ...
+    inpolygon(ztri(:,2),rtri(:,2),Geo.Vessel.z,Geo.Vessel.r) & ...
+    inpolygon(ztri(:,3),rtri(:,3),Geo.Vessel.z,Geo.Vessel.r) & ...
+    inpolygon(ztri_centroid,rtri_centroid,Geo.Vessel.z,Geo.Vessel.r);
+inside_tri = inside_alpha & inside_vessel;
+tri = tri(inside_tri,:);
+
+patch('Faces',tri, ...
+    'Vertices',dt.Points, ...
+    'FaceVertexCData',L_plot(:), ...
+    'FaceColor','interp', ...
+    'EdgeColor','none');
+plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
+plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
+box on; grid on; set(gca,'fontsize',14)
+xlabel('Z (m)')
+ylabel('R (m)')
+title(plot_title_str)
+colorbar
+axis([-4,9,0,0.5])
+end
+
+
+function plot_contourf_map(Z2d,R2d,C2d,Geo,plot_title_str)
+contourf(Z2d,R2d,C2d,20,'LineStyle','none')
+hold on
+
+% Hide contours outside the vessel while preserving smooth in-vessel fills.
+z_centers = Z2d(1,:);
+r_centers = R2d(:,1);
+z_edges = centers_to_edges(z_centers);
+r_edges = centers_to_edges(r_centers);
+[Zmask,Rmask] = meshgrid(z_edges,r_edges);
+outside_vertices = ~inpolygon(Zmask,Rmask,Geo.Vessel.z,Geo.Vessel.r);
+mask_alpha = double(~outside_vertices);
+hmask = pcolor(Zmask,Rmask,zeros(size(Zmask)));
+set(hmask,'EdgeColor','none','FaceColor','w','FaceAlpha','flat','AlphaData',outside_vertices)
+
+plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
+plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
 box on; grid on; set(gca,'fontsize',14)
 xlabel('Z (m)')
 ylabel('R (m)')
@@ -438,4 +536,15 @@ dcenters = diff(centers);
 edges = [centers(1) - 0.5*dcenters(1), ...
     0.5*(centers(1:end-1) + centers(2:end)), ...
     centers(end) + 0.5*dcenters(end)];
+end
+
+
+function dmin = nearest_sample_distance(r_sample,z_sample,r_query,z_query)
+sample_points = [r_sample(:), z_sample(:)];
+query_points = [r_query(:), z_query(:)];
+
+dt = delaunayTriangulation(sample_points);
+isample = nearestNeighbor(dt,query_points);
+dxyz = sample_points(isample,:) - query_points;
+dmin = sqrt(sum(dxyz.^2,2));
 end
