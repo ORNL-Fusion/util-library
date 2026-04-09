@@ -3,6 +3,7 @@ function Geo = get_MPEX_geometry
 % MPEX-modeling-data where PFCSetup_MPEX.m lives
 % J.D. Lore
 
+%% Get raw data from external routine
 GeoRaw = PFCSetup_MPEX;
 
 %% Vessel
@@ -22,7 +23,6 @@ end
 % Close the vessel contour on axis for polygon operations
 GeoRaw.VesselData.r = [0; GeoRaw.VesselData.r(:); 0];
 GeoRaw.VesselData.z = [GeoRaw.VesselData.z(1); GeoRaw.VesselData.z(:); GeoRaw.VesselData.z(end)];
-
 
 Geo.Vessel.r = GeoRaw.VesselData.r;
 Geo.Vessel.z = GeoRaw.VesselData.z;
