@@ -30,13 +30,13 @@ for i = 1:length(config_name)
     %% Plot coils and vessel
     if PLOT_COILS
         [rcoil,zcoil] = get_coil_cross_sections(CoilGeometry);
-        plot_coil_cross_section(rcoil,zcoil,0);
+        plot_coil_cross_section(rcoil,zcoil,0,currentPerWinding);
     else
         rcoil = [];
         zcoil = [];
     end
     plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-    plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
+    plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',5)
     xlabel('Z (m)')
     ylabel('R (m)')
     axis([-4,9,0,0.5])
@@ -51,16 +51,16 @@ for i = 1:length(config_name)
     
 
     %% Now let's compute connection length in space
-    nz = 1000;
-    nr = 100;
-    nlines_scattered = 200;
-    Rmin_scattered = 0;
-    Rmax_scattered = 0.7;
+    % nlines_scattered = 50;
+    % Rmin_scattered = 0.3;    
+    % Rmax_scattered = 1;
+    % RSeed = linspace(Rmin_scattered,Rmax_scattered,nlines_scattered);
+    RSeed = unique([linspace(0,0.1,50),linspace(0.1,0.3,150),linspace(0.3,1,150)]);
     Zmin = min(Geo.Vessel.z);
     Zmax = max(Geo.Vessel.z);
     dz_fieldline0 = 0.01;
-    dmax_interp = 0.10;
-    hull_shrink_factor = 0.2;
+
+
     need_left = strcmp(PLOT_LC,'left') || strcmp(PLOT_LC,'total');
     need_right = strcmp(PLOT_LC,'right') || strcmp(PLOT_LC,'total');
     need_total = strcmp(PLOT_LC,'total');
@@ -75,17 +75,14 @@ for i = 1:length(config_name)
         error('Unknown PLOT_LC %s',PLOT_LC)
     end
     
-    [R2d,Z2d,Lc2d_forward,Lc2d_backward,Lc2d_total,r_plot,z_plot,L_forward_plot,L_backward_plot,L_total_plot] = calc_connection_length_scattered(Bfield,Geo,Rmin_scattered,Rmax_scattered,Zmin,Zmax,nlines_scattered,nr,nz,dz_fieldline0,dmax_interp,hull_shrink_factor,need_left,need_right,need_total);
+    [r_plot,z_plot,L_forward_plot,L_backward_plot,L_total_plot] = calc_connection_length_scattered(Bfield,Geo,RSeed,Zmin,Zmax,dz_fieldline0,need_left,need_right,need_total);
     
     if strcmp(PLOT_LC,'left')
         L_plot = L_backward_plot;
-        Lc2d_plot = Lc2d_backward;
     elseif strcmp(PLOT_LC,'right')
         L_plot = L_forward_plot;
-        Lc2d_plot = Lc2d_forward;
     else
         L_plot = L_total_plot;
-        Lc2d_plot = Lc2d_total;
     end
     
     if PLOT_SCATTER
@@ -93,26 +90,34 @@ for i = 1:length(config_name)
         scatter(z_plot,r_plot,10,L_plot,'filled')
         hold on
         plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-        plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
+        plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',5)
         box on; grid on; set(gca,'fontsize',14)
         xlabel('Z (m)')
         ylabel('R (m)')
         title(plot_title)
         colorbar
         axis([-4,9,0,0.5])
-        plot_coil_cross_section(rcoil,zcoil,0);
-        plot(f_lufs.z,f_lufs.r,'r')
-
+        if PLOT_COILS
+            plot_coil_cross_section(rcoil,zcoil,0);
+        end
+        if ~isempty(f_lufs.z)
+            plot(f_lufs.z,f_lufs.r,'r')
+        end
     end
 
     if PLOT_TRIANGULATION
         figure; set(gcf,'color','w')
         plot_triangulated_map(z_plot,r_plot,L_plot,Geo,plot_title,TRIANGULATION_ALPHA)
-        plot_coil_cross_section(rcoil,zcoil,0);
-        plot(f_lufs.z,f_lufs.r,'r')
+        if PLOT_COILS
+            plot_coil_cross_section(rcoil,zcoil,0);
+        end
+        if ~isempty(f_lufs.z)
+            plot(f_lufs.z,f_lufs.r,'r')
+        end
     end
 
 end
+
 function f = find_lufs_MPEX(Bfield,Geo,RMax)
 
 % if nargin < 3
@@ -269,8 +274,8 @@ end
 end
 
 
-function [R2d,Z2d,Lc2d_forward,Lc2d_backward,Lc2d_total,r_plot,z_plot,L_forward_plot,L_backward_plot,L_total_plot] = calc_connection_length_scattered(Bfield,Geo,Rmin_scattered,Rmax_scattered,Zmin,Zmax,nlines_scattered,nr,nz,dz_fieldline0,dmax_interp,hull_shrink_factor,need_left,need_right,need_total)
-RSeed = linspace(Rmin_scattered,Rmax_scattered,nlines_scattered);
+function [r_plot,z_plot,L_forward_plot,L_backward_plot,L_total_plot] = calc_connection_length_scattered(Bfield,Geo,RSeed,Zmin,Zmax,dz_fieldline0,need_left,need_right,need_total)
+% RSeed = linspace(Rmin_scattered,Rmax_scattered,nlines_scattered);
 ZSeed = Zmin*ones(size(RSeed));
 L = Zmax - Zmin;
 nsteps = max(1,ceil(abs(L/dz_fieldline0)));
@@ -305,41 +310,6 @@ for iline = 1:size(fl_all.r,2)
     L_backward_plot = [L_backward_plot;Lc_backward_all(ivalid,iline)];
     L_total_plot = [L_total_plot;Lc_total_all(ivalid,iline)];
 end
-
-Redges = linspace(Rmin_scattered,Rmax_scattered,nr+1);
-Zedges = linspace(Zmin,Zmax,nz+1);
-R1d = 0.5*(Redges(1:end-1) + Redges(2:end));
-Z1d = 0.5*(Zedges(1:end-1) + Zedges(2:end));
-[R2d,Z2d] = ndgrid(R1d,Z1d);
-outside_vessel = ~inpolygon(R2d,Z2d,Geo.Vessel.r,Geo.Vessel.z);
-ihull = boundary(z_plot,r_plot,hull_shrink_factor);
-inside_data_hull = inpolygon(Z2d,R2d,z_plot(ihull),r_plot(ihull));
-Dmin = NaN(size(R2d));
-icandidate = ~outside_vessel & inside_data_hull;
-if any(icandidate,'all')
-    Dmin(icandidate) = nearest_sample_distance(r_plot,z_plot,R2d(icandidate),Z2d(icandidate));
-end
-istoo_far = Dmin > dmax_interp;
-if any(istoo_far(~outside_vessel & inside_data_hull),'all')
-    warning('Some in-vessel interpolation points are farther than dmax_interp = %.2f m from the field-line samples. Consider increasing nlines_scattered, increasing nr/nz for the sampled lines, or reducing the interpolation domain.',dmax_interp)
-end
-
-igood = ~outside_vessel & inside_data_hull & ~istoo_far;
-Lc2d_forward = NaN(size(R2d));
-Lc2d_backward = NaN(size(R2d));
-Lc2d_total = NaN(size(R2d));
-if need_right
-    F_forward = scatteredInterpolant(r_plot,z_plot,L_forward_plot,'linear','none');
-    Lc2d_forward(igood) = F_forward(R2d(igood),Z2d(igood));
-end
-if need_left
-    F_backward = scatteredInterpolant(r_plot,z_plot,L_backward_plot,'linear','none');
-    Lc2d_backward(igood) = F_backward(R2d(igood),Z2d(igood));
-end
-if need_total
-    F_total = scatteredInterpolant(r_plot,z_plot,L_total_plot,'linear','none');
-    Lc2d_total(igood) = F_total(R2d(igood),Z2d(igood));
-end
 end
 
 
@@ -373,7 +343,7 @@ patch('Faces',tri, ...
     'FaceColor','interp', ...
     'EdgeColor','none');
 plot(Geo.Vessel.z,Geo.Vessel.r,'k-','LineWidth',2)
-plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',3)
+plot(Geo.Target.z,Geo.Target.r,'k-','LineWidth',5)
 box on; grid on; set(gca,'fontsize',14)
 xlabel('Z (m)')
 ylabel('R (m)')
@@ -382,13 +352,3 @@ colorbar
 axis([-4,9,0,0.5])
 end
 
-
-function dmin = nearest_sample_distance(r_sample,z_sample,r_query,z_query)
-sample_points = [r_sample(:), z_sample(:)];
-query_points = [r_query(:), z_query(:)];
-
-dt = delaunayTriangulation(sample_points);
-isample = nearestNeighbor(dt,query_points);
-dxyz = sample_points(isample,:) - query_points;
-dmin = sqrt(sum(dxyz.^2,2));
-end
