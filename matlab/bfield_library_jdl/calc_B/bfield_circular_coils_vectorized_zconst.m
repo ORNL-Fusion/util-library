@@ -26,13 +26,13 @@ if any(is_axis(:))
     Bz_sum(is_axis) = Bz_axis*cur.';
 end
 
-if any(is_off_axis(:))
-    ro = rvec(is_off_axis);
-    dz = z - dwind;
+    if any(is_off_axis(:))
+        ro = rvec(is_off_axis);
+        dz = z - dwind;
 
-    m = 4*(ro.*awind) ./ ((ro+awind).^2 + dz.^2);
-    sm = sqrt(m);
-    [K,E] = ellipke(m);
+        m = 4*(ro.*awind) ./ ((ro+awind).^2 + dz.^2);
+        sm = sqrt(m);
+        [K,E] = ellipke(m);
 
     sa = sqrt(awind);
     sroa = sqrt(ro./awind);
