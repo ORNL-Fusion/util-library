@@ -9,7 +9,7 @@ switch bfield.type
     case 'MPEX'
         [dydx,ierr] = fl_derivs_dz_MPEX(x,y,bfield,nowarn);     
     otherwise
-        fprintf([errstr,'Did not recognize bfield type\n'])
+        fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
         fprintf('     just_coils\n')        
         fprintf('     MPEX\n')        

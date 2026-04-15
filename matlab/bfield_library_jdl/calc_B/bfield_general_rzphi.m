@@ -19,6 +19,11 @@ switch bfield.type
         Bout.bphi = Bphi;
         Bout.bz = Bz;
         ierr = 0; 
+    case 'm3dc1'
+        [Br,Bz,Bphi,ierr]=bfield_m3dc1(bfield.b,R,phi_radian,Z,bfield.scale);
+        Bout.br = Br;
+        Bout.bphi = Bphi;
+        Bout.bz = Bz;
     case 'Bgrid'        
         [Br,Bz,Bphi]=bfield_grid(R,Z,phi_radian,bfield.Bgrid,nowarn);        
         Bout.br = Br;
@@ -51,6 +56,7 @@ switch bfield.type
         fprintf('Supported types are:\n')
         fprintf('     gfile\n')
         fprintf('     gfile+coils\n')
+        fprintf('     m3dc1\n')
 %         fprintf('     vmec\n')        
         fprintf('     just_coils\n')
 %         fprintf('     ipec_eq\n')

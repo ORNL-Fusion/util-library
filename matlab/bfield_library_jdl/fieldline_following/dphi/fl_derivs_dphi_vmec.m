@@ -4,7 +4,7 @@ if nargin < 5
 end
 N = length(RZ);
 
-[Br,Bz,Bphi] = bcyl_vmec(RZ(1:2:N-1),(2:2:N),phi,bfield.wout);
+[Br,Bz,Bphi] = bcyl_vmec(RZ(1:2:N-1),RZ(2:2:N),phi,bfield.wout);
 ierr_Bvmec = 0;  % need to implement this
 if ierr_Bvmec == 1
     if ~nowarn

@@ -8,6 +8,8 @@ switch bfield.type
         [dydx,ierr] = fl_derivs_dl_gfile(y,bfield,nowarn);
     case 'gfile+coils'
         [dydx,ierr] = fl_derivs_dl_gfile_coils(y,bfield,nowarn);
+    case 'm3dc1'
+        [dydx,ierr] = fl_derivs_dl_general(y,bfield,nowarn);
     case 'just_coils'        
         [dydx,ierr] = fl_derivs_dl_just_coils(y,bfield,nowarn);     
     case 'MPEX'
@@ -15,10 +17,11 @@ switch bfield.type
     case 'equ'
         [dydx,ierr] = fl_derivs_dl_equ(y,bfield,nowarn);
     otherwise
-        fprintf([errstr,'Did not recognize bfield type\n'])
+        fprintf('Did not recognize bfield type\n')
         fprintf('Supported types are:\n')
         fprintf('     gfile\n')
         fprintf('     gfile+coils\n')
+        fprintf('     m3dc1\n')
         fprintf('     just_coils\n')        
         fprintf('     MPEX\n')    
         fprintf('     equ\n')

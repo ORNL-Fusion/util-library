@@ -50,6 +50,18 @@ switch bfield.type
             ierr = 1;
             return;
         end  
+    case 'm3dc1'
+        errstr2 = 'for m3dc1 ';
+        if ~isfield(bfield,'b')
+            fprintf([errstr,errstr2,'type structure must contain field "b"\n'])
+            ierr = 1;
+            return;
+        end
+        if ~isfield(bfield,'scale')
+            fprintf([errstr,errstr2,'type structure must contain field "scale"\n'])
+            ierr = 1;
+            return;
+        end
     case 'vmec'
         errstr2 = 'for vmec ';
         if ~isfield(bfield,'wout')
@@ -159,7 +171,44 @@ switch bfield.type
             fprintf([errstr,errstr2,'type structure must contain field "Arcoeff"\n'])
             ierr = 1;
             return;
-        end        
+        end
+        if ~isfield(bfield,'Azcoeff')
+            fprintf([errstr,errstr2,'type structure must contain field "Azcoeff"\n'])
+            ierr = 1;
+            return;
+        end
+        if ~isfield(bfield,'Aphicoeff')
+            fprintf([errstr,errstr2,'type structure must contain field "Aphicoeff"\n'])
+            ierr = 1;
+            return;
+        end
+        if ~isfield(bfield,'spline_info')
+            fprintf([errstr,errstr2,'type structure must contain field "spline_info"\n'])
+            ierr = 1;
+            return;
+        end
+    case {'Bspline'}
+        errstr2 = 'for Bspline';
+        if ~isfield(bfield,'Brcoeff')
+            fprintf([errstr,errstr2,'type structure must contain field "Brcoeff"\n'])
+            ierr = 1;
+            return;
+        end
+        if ~isfield(bfield,'Bzcoeff')
+            fprintf([errstr,errstr2,'type structure must contain field "Bzcoeff"\n'])
+            ierr = 1;
+            return;
+        end
+        if ~isfield(bfield,'Bphicoeff')
+            fprintf([errstr,errstr2,'type structure must contain field "Bphicoeff"\n'])
+            ierr = 1;
+            return;
+        end
+        if ~isfield(bfield,'spline_info')
+            fprintf([errstr,errstr2,'type structure must contain field "spline_info"\n'])
+            ierr = 1;
+            return;
+        end
     case {'xdr'}
         errstr2 = 'for xdr';
         if ~isfield(bfield,'xdr')
@@ -179,6 +228,7 @@ switch bfield.type
         fprintf('Supported types are:\n')
         fprintf('     gfile\n')
         fprintf('     gfile+coils\n')
+        fprintf('     m3dc1\n')
         fprintf('     vmec\n')        
         fprintf('     just_coils\n')        
         fprintf('     MPEX\n')      
@@ -190,6 +240,8 @@ switch bfield.type
         fprintf('     xpand_pert\n') 
         fprintf('     xpand_vac\n') 
         fprintf('     Bgrid\n')
+        fprintf('     Aspline\n')
+        fprintf('     Bspline\n')
         fprintf('     xdr\n')
         fprintf('     equ\n')
         ierr = 1;

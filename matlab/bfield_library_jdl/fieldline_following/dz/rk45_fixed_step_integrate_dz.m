@@ -40,8 +40,10 @@ for i = 1:nsteps
                 error('need to write phi vessel interpolation')
             end
             rtest(~isin) = NaN;
+            phitest = ytmp(2:2:end);
+            phitest(~isin) = NaN;
             ytmp(1:2:end) = rtest;
-            ytmp(2:2:end) = rtest;
+            ytmp(2:2:end) = phitest;
         end
     end
     

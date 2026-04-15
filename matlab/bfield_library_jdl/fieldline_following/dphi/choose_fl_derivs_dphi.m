@@ -8,6 +8,8 @@ switch bfield.type
         [dydx,ierr] = fl_derivs_dphi_gfile(y,bfield,nowarn);
     case 'gfile+coils'
         [dydx,ierr] = fl_derivs_dphi_gfile_coils(x,y,bfield,nowarn);
+    case 'm3dc1'
+        [dydx,ierr] = fl_derivs_dphi_general(x,y,bfield,nowarn);
     case 'vmec'        
         [dydx,ierr] = fl_derivs_dphi_vmec(x,y,bfield,nowarn);
     case 'just_coils'        
@@ -30,6 +32,10 @@ switch bfield.type
         [dydx,ierr] = fl_derivs_dphi_Bgrid(x,y,bfield,nowarn);               
     case 'Aspline'        
         [dydx,ierr] = fl_derivs_dphi_Aspline(x,y,bfield,nowarn);  
+    case 'Bspline'
+        [dydx,ierr] = fl_derivs_dphi_general(x,y,bfield,nowarn);
+    case 'xdr'
+        [dydx,ierr] = fl_derivs_dphi_general(x,y,bfield,nowarn);
     case 'equ'
         [dydx,ierr] = fl_derivs_dphi_equ(y,bfield,nowarn);
     otherwise
@@ -37,6 +43,7 @@ switch bfield.type
         fprintf('Supported types are:\n')
         fprintf('     gfile\n')
         fprintf('     gfile+coils\n')
+        fprintf('     m3dc1\n')
         fprintf('     vmec\n')        
         fprintf('     just_coils\n')
         fprintf('     ipec_eq\n')
@@ -48,6 +55,8 @@ switch bfield.type
         fprintf('     xpand_pert\n')
         fprintf('     Bgrid\n')
         fprintf('     Aspline\n')
+        fprintf('     Bspline\n')
+        fprintf('     xdr\n')
         fprintf('     equ\n')
         ierr = 1;
         error('barfing')
