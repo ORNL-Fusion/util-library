@@ -1,4 +1,4 @@
-function [yout,xout,ierr,i_last_good] = rk45_fixed_step_integrate_dz(y0,x0,dx,nsteps,bfield,nowarn)
+function [yout,xout,ierr,i_last_good] = rk4_fixed_step_integrate_dz(y0,x0,dx,nsteps,bfield,nowarn)
 if nargin < 6
     nowarn = 0;
 end

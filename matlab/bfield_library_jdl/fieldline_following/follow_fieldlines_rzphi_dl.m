@@ -27,7 +27,7 @@ y(3:Neq:Nsys*Neq)   = Zstart;
 x = 0;
 dx = dl;
 
-[yout,xout,ierr_rk45,i_last_good] = rk45_fixed_step_integrate_dl(y,x,dx,nsteps,bfield,nowarn);
+[yout,xout,ierr_rk45,i_last_good] = rk4_fixed_step_integrate_dl(y,x,dx,nsteps,bfield,nowarn);
 
 s.r   = yout(:,1:Neq:Nsys*Neq-2);
 s.phi = yout(:,2:Neq:Nsys*Neq-1);

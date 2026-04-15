@@ -33,7 +33,7 @@ y(2:Neq:Nsys*Neq)   = Zstart;
 x = phistart;
 dx = dphi;
 
-[yout,xout,ierr_rk45,i_last_good] = rk45_fixed_step_integrate_dphi_diffuse_flip(y,x,dx,nsteps,bfield,nowarn,dmag,lambda_par);
+[yout,xout,ierr_rk45,i_last_good] = rk4_fixed_step_integrate_dphi_diffuse_flip(y,x,dx,nsteps,bfield,nowarn,dmag,lambda_par);
 
 s.r = yout(:,1:Neq:Nsys*Neq-1);
 s.z = yout(:,2:Neq:Nsys*Neq);

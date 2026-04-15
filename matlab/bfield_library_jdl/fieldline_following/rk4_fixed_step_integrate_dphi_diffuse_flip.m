@@ -1,9 +1,24 @@
-function [yout,xout,ierr,i_last_good] = rk45_fixed_step_integrate_dphi_diffuse(y0,x0,dx,nsteps,bfield,nowarn,dmag)
+function [yout,xout,ierr,i_last_good] = rk4_fixed_step_integrate_dphi_diffuse_flip(y0,x0,dx,nsteps,bfield,nowarn,dmag,lambda_par)
 % Same as normal version but applies cross-field kicks
 % dmag: Magnetic diffusivity (m^2/m)
+% lambda_par: mean free path along B for parallel scattering
+% D|| = 1/2 lambda_par vth. lam_par ~ vth/vee
+% Dperp = 1/2 dmag * vth
 if nargin < 6
     nowarn = 0;
 end
+if nargin < 8
+    lambda_par = Inf;
+else
+    % % Initialize direction (randomly forward or backward)
+    % if rand < 0.5
+    %     dx = -abs(dx);
+    % else
+    %     dx = abs(dx);
+    % end
+
+end
+
 
 N = length(y0);
 
@@ -15,6 +30,11 @@ xout(1) = x0;
 
 y = y0;
 x = x0;
+
+
+
+
+
 for i = 1:nsteps
     [dydx,ierr_deriv] = choose_fl_derivs_dphi(x,y,bfield,nowarn);
     if ierr_deriv == 1
@@ -64,6 +84,11 @@ for i = 1:nsteps
     ytmp(1)   = ytmp(1)   + delta_x*(dca*perpdir1(1) + dsa*perpdir2(1));
     x         = x         + delta_x*(dca*perpdir1(2) + dsa*perpdir2(2));
     ytmp(2)   = ytmp(2)   + delta_x*(dca*perpdir1(3) + dsa*perpdir2(3));
+
+    % Probabilistic direction flip
+    if rand < dL / lambda_par
+        dx = -dx;
+    end
 
     % Update
     yout(i+1,:) = ytmp;
