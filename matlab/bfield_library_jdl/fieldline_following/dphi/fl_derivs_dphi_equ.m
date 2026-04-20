@@ -6,7 +6,7 @@ N = length(RZ);
 
 % Axisym part
 [Bout,ierr] = bfield_equ_bicub(bfield.Equ,RZ(1:2:N-1),RZ(2:2:N),nowarn);
-if ierr == 1
+if any(ierr(:))
     if ~nowarn
         warning('AS bfield error in fl_derivs_dphi_equ')
     end

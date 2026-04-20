@@ -7,7 +7,7 @@ Neq = 2;
 
 % Axisym part
 [Bout,ierr_Bas] = bfield_geq_bicub(bfield.g,RZ(1:Neq:N-1),RZ(2:Neq:N),nowarn);
-if ierr_Bas == 1
+if any(ierr_Bas(:))
     if ~nowarn
         warning('AS bfield error in fl_derivs_dlp_gfile')
     end

@@ -43,6 +43,7 @@ psiN = (g.ip_sign*psi-g.ssimag)/(g.ssibry-g.ssimag);
 % end
 
 fpol = polyval(g.fpol_coeffs,psiN);
+% fpol = interp1(g.pn,g.fpol,psiN,'pchip','extrap');
 
 % toroidal field
 bt1 = g.bcentr*g.rzero.*R1_inv;

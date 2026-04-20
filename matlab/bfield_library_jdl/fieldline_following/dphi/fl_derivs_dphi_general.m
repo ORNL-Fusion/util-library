@@ -5,7 +5,7 @@ end
 
 N = length(RZ);
 [Bout,ierr] = bfield_general_rzphi(RZ(1:2:N-1),RZ(2:2:N),phi,bfield,nowarn);
-if ierr == 1
+if any(ierr(:))
     if ~nowarn
         warning('bfield error in fl_derivs_dphi_general')
     end

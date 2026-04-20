@@ -6,7 +6,7 @@ N = length(RZ);
 
 % Axisym part
 [Bout,ierr_Bas] = bfield_geq_bicub(g,RZ(1:2:N-1),RZ(2:2:N),nowarn);
-if ierr_Bas == 1
+if any(ierr_Bas(:))
     if ~nowarn
         warning('AS bfield error in fl_derivs_phi_g3d')
     end
