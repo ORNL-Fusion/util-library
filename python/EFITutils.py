@@ -5,6 +5,9 @@
 # JDL
 # -------------------------------------------------------------------------------------------------------------------------
 
+import argparse
+import copy
+
 import numpy as np
 
 class geq():
@@ -268,7 +271,12 @@ def calc_psi_derivs(g,R,Z,inds=None):
 def readg_g3d(filename):
 
     g = readg_g3d_simple(filename)
+    g = postprocess_gfile(g)
+    
+    return g
 
+
+def postprocess_gfile(g):
     nR = g['mw']
     nZ = g['mh']
 
@@ -276,7 +284,7 @@ def readg_g3d(filename):
     g['dZ'] = np.array(g['zdim']/(nZ - 1))
     g['R'] = np.array([g['rgrid1'] + g['dR']*i for i in range(nR)])
     g['Z'] = np.array([g['zmid'] - 0.5*g['zdim'] + g['dZ']*i for i in range(nZ)])
-    g['pn'] = np.array([i/(nZ-1) for i in range(nZ)])
+    g['pn'] = np.array([i/(nR-1) for i in range(nR)])
 
     if g['cpasma'] == []:
         g['ip_sign'] = 1
@@ -287,6 +295,107 @@ def readg_g3d(filename):
     g['psi_bicub_coeffs_inv'] = _get_psi_bicub_coeffs_inv(g)
     
     return g
+
+
+def refine_gfile(g, fac=2):
+    if fac < 1:
+        raise ValueError('refinement factor must be at least 1')
+
+    gNew = copy.deepcopy(g)
+    gNew['mw'] = (g['mw'] - 1)*fac + 1
+    gNew['mh'] = (g['mh'] - 1)*fac + 1
+
+    nR = gNew['mw']
+    nZ = gNew['mh']
+    gNew['dR'] = np.array(gNew['xdim']/(nR - 1))
+    gNew['dZ'] = np.array(gNew['zdim']/(nZ - 1))
+    gNew['R'] = np.array([gNew['rgrid1'] + gNew['dR']*i for i in range(nR)])
+    gNew['Z'] = np.array([gNew['zmid'] - 0.5*gNew['zdim'] + gNew['dZ']*i for i in range(nZ)])
+
+    if gNew['cpasma'] == []:
+        gNew['ip_sign'] = 1
+    else:
+        gNew['ip_sign'] = -np.sign(gNew['cpasma'])
+
+    gNew['psirz'] = np.empty((nR, nZ))
+    for i, zval in enumerate(gNew['Z']):
+        gNew['psirz'][:, i] = gNew['ip_sign']*calc_psi(
+            g,
+            gNew['R'],
+            zval*np.ones_like(gNew['R']),
+        )
+
+    x_old = np.arange(g['mw'])
+    x_new = np.linspace(0, g['mw'] - 1, nR)
+    for field in ['fpol', 'pres', 'ffprim', 'pprime', 'qpsi']:
+        if field in g and np.asarray(g[field]).size > 0:
+            gNew[field] = np.interp(x_new, x_old, np.asarray(g[field]))
+
+    return postprocess_gfile(gNew)
+
+
+def _write_gfile_values(fid, vals):
+    vals = np.asarray(vals).reshape(-1, order='F')
+    for i in range(0, vals.size, 5):
+        fid.write(''.join([f'{v:16.9e}' for v in vals[i:i+5]]) + '\n')
+
+
+def write_gfile(g, filename):
+    xdum = 0.0
+    line0 = g.get('line0', '')
+    txt = line0[:29]
+    header = f'{txt:<48}{0:4d}{g["mw"]:4d}{g["mh"]:4d}'
+
+    if np.asarray(g['lim']).shape != (2, g['limitr']):
+        raise ValueError('lim shape and limitr do not match')
+    if np.asarray(g['bdry']).shape != (2, g['nbdry']):
+        raise ValueError('bdry shape and nbdry do not match')
+
+    with open(filename, 'w') as fid:
+        fid.write(header + '\n')
+        _write_gfile_values(fid, [g['xdim'], g['zdim'], g['rzero'], g['rgrid1'], g['zmid']])
+        _write_gfile_values(fid, [g['rmaxis'], g['zmaxis'], g['ssimag'], g['ssibry'], g['bcentr']])
+        _write_gfile_values(fid, [g['cpasma'], g['ssimag'], xdum, g['rmaxis'], xdum])
+        _write_gfile_values(fid, [g['zmaxis'], xdum, g['ssibry'], xdum, xdum])
+        _write_gfile_values(fid, g['fpol'])
+        _write_gfile_values(fid, g['pres'])
+        _write_gfile_values(fid, g['ffprim'])
+        _write_gfile_values(fid, g['pprime'])
+        _write_gfile_values(fid, g['psirz'])
+        _write_gfile_values(fid, g['qpsi'])
+        fid.write(f'{g["nbdry"]:5d}{g["limitr"]:5d}\n')
+        _write_gfile_values(fid, g['bdry'])
+        _write_gfile_values(fid, g['lim'])
+
+    return filename
+
+
+def double_gfile_resolution(gfile_name, output_file):
+    print(f'Reading {gfile_name}')
+    g = readg_g3d(gfile_name)
+    print(f'Input resolution: nr={g["mw"]}, nz={g["mh"]}')
+
+    gNew = refine_gfile(g, fac=2)
+    print(f'Output resolution: nr={gNew["mw"]}, nz={gNew["mh"]}')
+    print(f'Writing {output_file}')
+    write_gfile(gNew, output_file)
+
+    return output_file
+
+
+def double_gfile_resolution_main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Double the R and Z resolution of an EFIT gfile/geqdsk.'
+    )
+    parser.add_argument('gfile', help='Input EFIT gfile/geqdsk path')
+    parser.add_argument(
+        'output',
+        help='Output EFIT gfile/geqdsk path',
+    )
+
+    args = parser.parse_args(argv)
+    double_gfile_resolution(args.gfile, args.output)
+    return 0
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Helper routine to refine psiN for plotting
@@ -515,9 +624,9 @@ def readg_g3d_simple(filename):
     g['psirz'] = np.reshape(np.array(array),(g['mw'],g['mh']),order='F')
 
     # q values on uniform flux grid from axis to boundary
-    array = []      
+    array = []
     icount = 0
-    while icount < g['mw']:
+    while icount < g['mw'] and iline < len(lines):
         line = lines[iline]
         nfields = len(line) // fieldwidth
         icount2 = 0
@@ -526,13 +635,10 @@ def readg_g3d_simple(filename):
             icount2 += 1
             icount += 1
         iline += 1
-    g['qpsi'] = np.array(array)  
-    
-    if np.equal(g['qpsi'],0).any(): 
-        g['qpsi'] = []
+    g['qpsi'] = np.array(array)
 
     # file ends here in some cases
-    if not g['qpsi'] == []:
+    if g['qpsi'].size == g['mw']:
         # Format 2i5
         line = lines[iline]
         splitline = line.split()
