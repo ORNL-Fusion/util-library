@@ -92,6 +92,7 @@ if isfield(g,'lim')
 end
 contour(rPlot,zPlot,psiPlot.',linspace(psi_min,psi_max,npsi),'-','linewidth',1);
 contour(rPlot,zPlot,psiPlot.',sepVal*[1,1],'k-','linewidth',2);
+caxis(sort([psi_min,psi_max]));
 hc = colorbar; set(hc,'fontsize',14); colormap(turbo); hc.Label.String = cLabel;
 xlabel('R (m)','fontsize',14); ylabel('Z (m)','fontsize',14)
 axis equal; axis tight;
@@ -109,7 +110,7 @@ if isfield(g,'bdry')
     xz1 = xpt_info.zx;
     xr2 = xpt_info.rx2;
     xz2 = xpt_info.zx2;
-    switch plot_psi
+    switch lower(plot_psi)
         case lower('psiN')
             psi_this = calc_psiN(g,xr2,xz2);           
         case lower('psi')
@@ -140,4 +141,3 @@ for i = 1:length(z2)
     end
 end
 end
-
