@@ -157,8 +157,16 @@ def follow_fieldlines_rzphi_dl(g,Rstart,Zstart,phistart,dl,nsteps):
     dx = dl
     
     this = _rk4_fixed_step_integrate_dl(y,x,dx,nsteps,g)
-    
-    return {'r':this['yout'][:,0::Neq],'phi':this['yout'][:,1::Neq],'z':this['yout'][:,2::Neq],
+
+    r = np.asarray(this['yout'][:,0::Neq])
+    phi = np.asarray(this['yout'][:,1::Neq])
+    z = np.asarray(this['yout'][:,2::Neq])
+    if Nsys == 1:
+        r = r.reshape(-1)
+        phi = phi.reshape(-1)
+        z = z.reshape(-1)
+
+    return {'r':r,'phi':phi,'z':z,
             'L':this['xout'],'ierr':this['ierr'],
             'iLastGood':this['iLastGood']}
 
@@ -170,23 +178,36 @@ def follow_fieldlines_rzphi_dl(g,Rstart,Zstart,phistart,dl,nsteps):
 # -------------------------------------------------------------------------------------------------------------------------
 def calc_bfield(g,R,Z):
 
-    inds = _calc_interpolation_inds(g,R,Z)  
+    inds = _calc_interpolation_inds(g,R,Z)
+    scalar_input = np.ndim(np.asarray(R)) == 0 and np.ndim(np.asarray(Z)) == 0
 
     # this applies g.ip_sign
     psi = calc_psi(g,R,Z,inds=inds)
     psiDerivs = calc_psi_derivs(g,R,Z,inds=inds)
     # so have to apply it again because ssi quantities will be flipped (if ip_sign = -1)
-    psiN = (g['ip_sign']*psi - g['ssimag'])/(g['ssibry'] - g['ssimag'])        
+    psiN = (g['ip_sign']*psi - g['ssimag'])/(g['ssibry'] - g['ssimag'])
 
-    Br = np.where(inds['ierr'] == True, np.nan, -psiDerivs['dpsidz']/R)
-    Bz = np.where(inds['ierr'] == True, np.nan,  psiDerivs['dpsidr']/R)
-    
+    Br = np.where(inds['ierr'], np.nan, -psiDerivs['dpsidz']/R)
+    Bz = np.where(inds['ierr'], np.nan,  psiDerivs['dpsidr']/R)
+
     fpol = np.polyval(g['fpol_coeffs'],psiN)
     Bt  = np.where(psiN <= 1, fpol/R, g['bcentr']*g['rzero']/R)
-    
+
     Bpol = np.sqrt(Br**2 + Bz**2)
     Btot = np.sqrt(Br**2 + Bz**2 + Bt**2)
-    
+
+    if scalar_input:
+        return {
+            'Br': float(Br),
+            'Bz': float(Bz),
+            'Bt': float(Bt),
+            'Bpol': float(Bpol),
+            'Btot': float(Btot),
+            'psi': float(psi),
+            'psiN': float(psiN),
+            'ierr': bool(inds['ierr']),
+        }
+
     return {'Br':Br,'Bz':Bz,'Bt':Bt,'Bpol':Bpol,'Btot':Btot,'psi':psi,'psiN':psiN,'ierr':inds['ierr']}
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1397,15 +1418,25 @@ def _refine_xpt(g,xptStart,drStart,dzStart,tol):
 # -------------------------------------------------------------------------------------------------------------------------
 def _calc_interpolation_inds(g,R,Z):
     # Add a small offset to avoid error with first grid point
-    ir = np.asarray(np.floor( (R - g['R'][0] + 1e-10)/g['dR'] ).astype(int))
-    iz = np.asarray(np.floor( (Z - g['Z'][0] + 1e-10)/g['dZ'] ).astype(int))
+    ir = np.asarray(np.floor((R - g['R'][0] + 1e-10)/g['dR']).astype(int))
+    iz = np.asarray(np.floor((Z - g['Z'][0] + 1e-10)/g['dZ']).astype(int))
+
+    scalar_input = ir.ndim == 0 and iz.ndim == 0
 
     # check for points off grid, no derivatives on boundary cells
-    ierr = np.where((ir < 1) | (ir > g['mw'] - 1) |
-                    (iz < 1) | (iz > g['mh'] - 1), True, False)
-    ir[ierr == True] = 0
-    iz[ierr == True] = 0
-    
+    ierr = (ir < 1) | (ir > g['mw'] - 1) | (iz < 1) | (iz > g['mh'] - 1)
+
+    if scalar_input:
+        if bool(ierr):
+            ir = np.asarray(0)
+            iz = np.asarray(0)
+        return {'ierr': bool(ierr), 'ir': int(ir), 'iz': int(iz)}
+
+    ir = ir.copy()
+    iz = iz.copy()
+    ir[ierr] = 0
+    iz[ierr] = 0
+
     return {'ierr':ierr,'ir':ir,'iz':iz}
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1627,30 +1658,30 @@ def _rk4_fixed_step_integrate_dl(y0,x0,dx,nsteps,g):
     xout = np.full((nsteps+1,),np.nan)
     yout[0,] = y0
     xout[0] = x0
-    
+
     y = y0
     x = x0
     for i in range(nsteps):
         dydx = _fl_derivs_dl_gfile(y,g)
-        if any(np.isnan(dydx)):
-            ierr = 0
+        if np.isnan(dydx).any():
+            ierr = True
             iLastGood = i
             return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
-        
+
         ytmp = _rk4_core_dl(y,dydx,dx,g)
-        if any(np.isnan(ytmp)):
-            ierr = 0
+        if np.isnan(ytmp).any():
+            ierr = True
             iLastGood = i
             return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
-        
+
         x = x + dx
-        
+
         yout[i+1,] = ytmp
         xout[i+1] = x
         y = ytmp
-        
-    ierr = 0
-    iLastGood = nsteps + 1
+
+    ierr = False
+    iLastGood = nsteps
     return {'yout':yout,'xout':xout,'ierr':ierr,'iLastGood':iLastGood}
                 
 # -------------------------------------------------------------------------------------------------------------------------
