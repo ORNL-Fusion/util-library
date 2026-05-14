@@ -27,6 +27,12 @@ import EFITutils
 import GeoUtils
 ```
 
+MPEX-specific Python routines also need the private `MPEX-modeling-data` repo:
+
+```bash
+source /path/to/MPEX-modeling-data/setup_paths.sh
+```
+
 and command-line helpers such as:
 
 ```bash

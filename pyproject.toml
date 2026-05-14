@@ -18,6 +18,13 @@ plot = [
 
 [tool.setuptools]
 py-modules = ["EFITutils", "GeoUtils"]
+packages = [
+    "calc_B",
+    "MPEX",
+    "MPEX.COILS",
+    "MPEX.COILS.MPEX",
+    "MPEX.plotting",
+]
 
 [tool.setuptools.package-dir]
 "" = "python"
