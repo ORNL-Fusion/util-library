@@ -1,0 +1,17 @@
+# Normalize text files in the index while letting each platform choose checkout endings.
+* text=auto
+
+# Files that must keep LF endings to run correctly on Unix-like systems.
+*.sh text eol=lf
+*.csh text eol=lf
+scripts/* text eol=lf
+*.py text eol=lf
+*.toml text eol=lf
+
+# Treat common generated/binary scientific files as binary.
+*.mex* binary
+*.mat binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
