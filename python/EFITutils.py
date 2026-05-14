@@ -22,7 +22,9 @@ class geq():
     def plot(self,ax):
         psiFine = _refine_psi(self.g,self.g['R'][1:-1],self.g['Z'][1:-1],2)
         ax.plot(self.xpt_info['xpt1']['rx'],self.xpt_info['xpt1']['zx'],'rx')
-        ax.contour(psiFine['r'],psiFine['z'],np.transpose(psiFine['psiN']),[1.0])        
+        ax.plot(self.xpt_info['xpt2']['rx'],self.xpt_info['xpt2']['zx'],'rx')
+        ax.contour(psiFine['r'],psiFine['z'],np.transpose(psiFine['psiN']),[1.0])
+        ax.grid()        
         
     def read_gfile(self, gfile_name="gfile"):    
         self.g = readg_g3d(gfile_name)        
@@ -74,6 +76,7 @@ class geq():
             print('Refined 2nd x-point:',xpt2['rx'],xpt2['zx'],xpt2['bpx'])
 
         self.xpt_info = {'xpt1':xpt1,'xpt2':xpt2}
+            
         return self
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -286,7 +289,7 @@ def postprocess_gfile(g):
     g['Z'] = np.array([g['zmid'] - 0.5*g['zdim'] + g['dZ']*i for i in range(nZ)])
     g['pn'] = np.array([i/(nR-1) for i in range(nR)])
 
-    if g['cpasma'] == []:
+    if g['cpasma'] == [] or abs(g['cpasma']) < 1e-6:
         g['ip_sign'] = 1
     else:
         g['ip_sign'] = -np.sign(g['cpasma'])
@@ -312,7 +315,7 @@ def refine_gfile(g, fac=2):
     gNew['R'] = np.array([gNew['rgrid1'] + gNew['dR']*i for i in range(nR)])
     gNew['Z'] = np.array([gNew['zmid'] - 0.5*gNew['zdim'] + gNew['dZ']*i for i in range(nZ)])
 
-    if gNew['cpasma'] == []:
+    if gNew['cpasma'] == [] or abs(gNew['cpasma']) < 1e-6:
         gNew['ip_sign'] = 1
     else:
         gNew['ip_sign'] = -np.sign(gNew['cpasma'])

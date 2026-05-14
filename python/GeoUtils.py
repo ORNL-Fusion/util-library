@@ -17,6 +17,11 @@ import numpy as np
 # -------------------------------------------------------------------------------------------------------------------------
 def int_curve_curve(line1R,line1Z,line2R,line2Z,first=True):
 
+    line1R = np.asarray(line1R).reshape(-1)
+    line1Z = np.asarray(line1Z).reshape(-1)
+    line2R = np.asarray(line2R).reshape(-1)
+    line2Z = np.asarray(line2Z).reshape(-1)
+
     if line1R.size != line1Z.size:
         print('Error: line1 R and Z do not match')
         return {'ierr':True}
@@ -61,6 +66,11 @@ def int_curve_curve(line1R,line1Z,line2R,line2Z,first=True):
 # JDL 
 # -------------------------------------------------------------------------------------------------------------------------
 def int_line_curve(p1,p2,lineR,lineZ,first=True):
+
+    p1 = np.asarray(p1).reshape(-1)
+    p2 = np.asarray(p2).reshape(-1)
+    lineR = np.asarray(lineR).reshape(-1)
+    lineZ = np.asarray(lineZ).reshape(-1)
     
     if p1.size != 2:
         print('Error: p1 must be a point')   
@@ -144,7 +154,10 @@ def int_two_lines(p1,p2,p3,p4):
 # -------------------------------------------------------------------------------------------------------------------------
 def move_L_on_C(L,rline,zline):
 
-    dL = np.zeros((rline.size,1))
+    rline = np.asarray(rline).reshape(-1)
+    zline = np.asarray(zline).reshape(-1)
+
+    dL = np.zeros((rline.size,))
     dL[1:] = np.sqrt( (rline[0:-1] - rline[1:])**2 + (zline[0:-1] - zline[1:])**2)
     Ltot = np.nansum(dL)
     
@@ -159,13 +172,13 @@ def move_L_on_C(L,rline,zline):
         ind = np.argmax(sumL >= L) - 1
     
     f = (L - sumL[ind])/dL[ind+1]
-    R_L = f*(rline[ind+1] - rline[ind]) + rline[ind]
-    Z_L = f*(zline[ind+1] - zline[ind]) + zline[ind]
+    R_L = float(f*(rline[ind+1] - rline[ind]) + rline[ind])
+    Z_L = float(f*(zline[ind+1] - zline[ind]) + zline[ind])
     if f > 0.5:
         icurve_near_L = ind + 1
-        err_near_L = (1-f)*dL[ind+1]
+        err_near_L = float((1-f)*dL[ind+1])
     else:
         icurve_near_L = ind
-        err_near_L = f*dL[ind+1]
+        err_near_L = float(f*dL[ind+1])
                 
     return {'icurve_near_L':icurve_near_L,'err_near_L':err_near_L,'R_L':R_L,'Z_L':Z_L}

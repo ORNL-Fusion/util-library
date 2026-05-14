@@ -50,3 +50,7 @@ or install the optional plotting dependency with the repo:
 ```bash
 python -m pip install -e '.[plot]'
 ```
+
+## Attribution
+
+Developed and maintained by J.D. Lore.
