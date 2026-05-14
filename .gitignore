@@ -1,6 +1,10 @@
 *#
 *.#*
 *.x
+*.swp
+*.swo
+*.tmp
+*.bak
 
 #Emacs old files
 *~
@@ -17,8 +21,17 @@ fortran/bfield_library_jdl/tests/*.out
 *.asv
 
 # python
-python/.ipynb_checkpoints
-python/__pycache__
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+
 .DS_Store
 
 *.codex

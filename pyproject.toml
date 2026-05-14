@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jdl-util-library"
+version = "0.1.0"
+description = "General EFIT, geometry, bfield, and plotting utilities"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+]
+
+[project.optional-dependencies]
+plot = [
+    "matplotlib",
+]
+
+[tool.setuptools]
+py-modules = ["EFITutils", "GeoUtils"]
+
+[tool.setuptools.package-dir]
+"" = "python"
+
+[project.scripts]
+double_gfile_resolution = "EFITutils:double_gfile_resolution_main"
+gfile_vessel = "EFITutils:gfile_vessel_main"
+plot_ogr = "EFITutils:plot_ogr_main"
+simply_ogr_file = "EFITutils:simply_ogr_file_main"
+simplify_ogr_file = "EFITutils:simply_ogr_file_main"
+order_ogr = "EFITutils:order_ogr_main"
+refine_ogr_elements = "EFITutils:refine_ogr_elements_main"
+convert_ogr_to_structure_dat = "EFITutils:convert_ogr_to_structure_dat_main"

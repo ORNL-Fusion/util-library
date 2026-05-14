@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from EFITutils import order_ogr_main
+
+
+if __name__ == "__main__":
+    raise SystemExit(order_ogr_main())

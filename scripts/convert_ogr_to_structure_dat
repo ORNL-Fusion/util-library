@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from EFITutils import convert_ogr_to_structure_dat_main
+
+
+if __name__ == "__main__":
+    raise SystemExit(convert_ogr_to_structure_dat_main())

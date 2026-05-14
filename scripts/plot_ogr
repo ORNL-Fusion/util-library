@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from EFITutils import plot_ogr_main
+
+
+if __name__ == "__main__":
+    raise SystemExit(plot_ogr_main())

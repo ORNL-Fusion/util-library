@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+from EFITutils import double_gfile_resolution_main
+
+
+if __name__ == "__main__":
+    raise SystemExit(double_gfile_resolution_main())
