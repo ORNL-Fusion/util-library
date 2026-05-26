@@ -27,6 +27,7 @@ ierr = 0;
 raw_exists = isfile(fname_raw);
 
 if purge && isfile(fname_mat)
+    fprintf('Removing cache file: %s\n',fname_mat);
     delete(fname_mat);
 end
 mat_exists = isfile(fname_mat);

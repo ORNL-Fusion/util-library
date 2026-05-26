@@ -33,6 +33,8 @@ while ~feof(fid)
 end
 total_line = [];
 while ~strcmp(strtrim(line),'/')
+    % Collect the namelist into one line so assignments can be separated by
+    % equals signs, independent of the original line breaks.
     % Check for comments
     exdex=strfind(line,'!');
     if ~isempty(exdex)
@@ -64,7 +66,9 @@ for i = 1:length(eqdex)
     else
         this_right = total_line(eqdex(i)+1:eqdex(i+1)-1);
         
-        % Handle right --> get data from eq to next varname
+        % Handle right side: data runs from this equals sign to the next
+        % variable name.  Character data may contain words, so use the last
+        % word before the next equals sign as the next variable name.
         
         % Special case for underscore not caught by isletter -- allow varnames to have underscore
         isUnderscore = false(1,length(this_right));
@@ -111,7 +115,7 @@ for i = 1:length(eqdex)
     
     
     if strfind(this_data,'*')
-        
+        % Expand Fortran repeat syntax, e.g. 3*0.0 -> 0.0,0.0,0.0.
         while any(strfind(this_data,'*'))
             thisDataTmp = this_data; 
             thisDataTmp(strfind(thisDataTmp,' ')) = ',';
@@ -135,12 +139,11 @@ for i = 1:length(eqdex)
     
     % Should now have this_var, and this_data
     if DEBUG
-        fprintf('This var: %s\n',this_var)
-        fprintf('This data: %s\n',this_data)
+        fprintf('get_data_from_namelist parsed %s = %s\n',this_var,this_data)
     end
     if strcmpi(var_want,this_var)
         if DEBUG
-            fprintf('Found an instance of %s\n',var_want)
+            fprintf('get_data_from_namelist found requested variable %s\n',var_want)
         end
         icount = icount + 1;
         found.eqdex(icount) = eqdex(i);
@@ -164,6 +167,10 @@ end
 % if found.icount == 1
 
 mydata = NaN(var_want_size);
+% A namelist variable can be defined in more than one assignment.  Usually
+% there is one full-array assignment, but indexed partial assignments like
+% conpar(1,2,1)=... arrive as multiple found instances and are stitched into
+% mydata here.
 for i = 1:found.icount
     
     data_raw = regexprep(found.data{i},',',' ','ignorecase'); % Remove commas
@@ -176,8 +183,21 @@ for i = 1:found.icount
         data = sscanf(data_raw,'%e'); % get numeric data
         isChar = 0;
     end
+
+    if DEBUG
+        fprintf('get_data_from_namelist working on %s assignment %d of %d\n',var_want,i,found.icount)
+        fprintf('  requested size [%s], parsed %d values, nind = %d\n',num2str(var_want_size),length(data),found.nind(i))
+        if found.nopar(i)
+            fprintf('  detected assignment without explicit indices\n')
+        else
+            fprintf('  detected assignment with indices (%s)\n',found.par_inside{i})
+        end
+    end
     
     if prod(var_want_size) == length(data)
+        if DEBUG
+            fprintf('get_data_from_namelist assigning full %s, size [%s]\n',var_want,num2str(var_want_size))
+        end
         mydata = data;
     else
         % If we got here could be a partial definition
@@ -197,14 +217,32 @@ for i = 1:found.icount
         else
             % partial def
             % check for colons
-            coldex = strfind(par_inside,':');
+            coldex = strfind(found.par_inside{i},':');
             if ~isempty(coldex)
+                if DEBUG
+                    fprintf('get_data_from_namelist detected colon indexing for %s(%s)\n',var_want,found.par_inside{i})
+                end
                 error('need to handle colons')
             end
-            if length(var_want_size) == found.nind(i)
+            if found.nopar(i)
+                % Fortran namelists allow unindexed partial array assignments.
+                % Start at the first array element and continue in column-major
+                % order until the supplied data are exhausted.
+                if numel(data) > numel(mydata)
+                    error('get_data_from_namelist: too much unindexed partial data for %s',var_want)
+                end
+                if DEBUG
+                    fprintf('get_data_from_namelist assigning unindexed partial %s from start, %d values\n',var_want,numel(data))
+                end
+                mydata(1:numel(data)) = data;
+            elseif length(var_want_size) == found.nind(i)
                 % should be easy case
                 ind_data_raw = regexprep(found.par_inside{i},',',' ','ignorecase'); % Remove commas
                 ind_data = sscanf(ind_data_raw,'%d');
+                if DEBUG
+                    fprintf('get_data_from_namelist partial %s(%s), %d values, offsets [%s]\n', ...
+                        var_want,found.par_inside{i},numel(data),num2str(ind_offsets))
+                end
                 if ndims(mydata) == 1
                     ind_start = sub2ind(var_want_size,ind_data + ind_offsets);
                 elseif ndims(mydata) == 2 %#ok<ISMAT>
@@ -216,10 +254,19 @@ for i = 1:found.icount
                 else
                     error('Extend this to higher dimensions')
                 end
+                if DEBUG
+                    fprintf('get_data_from_namelist writing %s linear indices %d:%d\n', ...
+                        var_want,ind_start,ind_start + numel(data)-1)
+                end
                 
                 mydata(ind_start:ind_start + numel(data)-1) = data;
             else
                 % implied loop? -- should still work with 1d indices like above, just have to generalize sub2ind
+                if DEBUG
+                    fprintf('get_data_from_namelist cannot assign %s: expected %d indices, found %d\n', ...
+                        var_want,length(var_want_size),found.nind(i))
+                    fprintf('  raw data: %s\n',strtrim(data_raw))
+                end
                 error('extend this')
             end
             

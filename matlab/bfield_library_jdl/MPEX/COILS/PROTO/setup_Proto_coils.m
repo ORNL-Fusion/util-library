@@ -1,4 +1,4 @@
-function [CoilGeometry,currentPerWinding] = setup_PROTO_coils(current_in,config,verbose)
+function [CoilGeometry,currentPerWinding] = setup_Proto_coils(current_in,config,verbose)
 % [CoilGeometry,currentPerWinding] = setup_Proto_coils(current_in,config,verbose)
 % Sets the array cur for each winding of the coil set.
 %
