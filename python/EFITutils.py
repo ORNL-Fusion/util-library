@@ -7,6 +7,7 @@
 
 import argparse
 import copy
+from pathlib import Path
 
 import numpy as np
 
@@ -461,7 +462,7 @@ def gfile_vessel_main(argv=None):
     return 0
 
 
-def plot_ogr_files(filenames, label_elements=False):
+def plot_ogr_files(filenames, label_elements=False, output='ogr_plot.png', show=False):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots()
@@ -475,7 +476,12 @@ def plot_ogr_files(filenames, label_elements=False):
     ax.legend(loc='center left', bbox_to_anchor=(1.02, 0.5))
     ax.grid(True)
     fig.tight_layout()
-    plt.show()
+    fig.savefig(output, dpi=260)
+    print(f'Wrote {output}')
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
 
 
 def plot_ogr_main(argv=None):
@@ -484,13 +490,19 @@ def plot_ogr_main(argv=None):
     )
     parser.add_argument('files', nargs='+', help='Input OGR coordinate files')
     parser.add_argument(
-        '--label_elements',
+        '--label-elements',
         action='store_true',
         help='Label adjacent OGR elements as block.element',
     )
+    parser.add_argument(
+        '--output',
+        default='ogr_plot.png',
+        help='Output PNG/PDF path (default: ogr_plot.png)',
+    )
+    parser.add_argument('--show', action='store_true', help='Show the plot interactively')
 
     args = parser.parse_args(argv)
-    plot_ogr_files(args.files, label_elements=args.label_elements)
+    plot_ogr_files(args.files, label_elements=args.label_elements, output=args.output, show=args.show)
     return 0
 
 
@@ -657,7 +669,7 @@ def simplify_ogr_file(input_file, output_file, tolerance):
     return output_file
 
 
-def simply_ogr_file_main(argv=None):
+def simplify_ogr_file_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Simplify/reduce OGR polylines using a distance tolerance.'
     )
@@ -970,13 +982,13 @@ def _plot_ogr_polygons(
             )
 
 
-def _plot_structures(ax, structures):
+def _plot_structures(ax, structures, label_elements=True, label_structures=True):
     for structure_id, points in enumerate(structures, start=1):
         r = points[:, 0]
         z = points[:, 1]
         line, = ax.plot(r, z, '-o', label=f'structure {structure_id}')
 
-        if points.shape[0] > 0:
+        if label_structures and points.shape[0] > 0:
             imid = points.shape[0]//2
             ax.text(
                 r[imid],
@@ -988,6 +1000,9 @@ def _plot_structures(ax, structures):
                 ha='center',
                 va='center',
             )
+
+        if not label_elements:
+            continue
 
         for i in range(points.shape[0] - 1):
             rm = 0.5*(r[i] + r[i + 1])
@@ -1074,7 +1089,7 @@ def plot_ogr_structure_conversion(
     )
     ax_ogr.set_title('OGR elements')
 
-    _plot_structures(ax_struct, structures)
+    _plot_structures(ax_struct, structures, label_elements=label_segments)
     ax_struct.set_title('structure.dat groups')
 
     for ax in axes:
@@ -1142,6 +1157,94 @@ def convert_ogr_to_structure_dat_main(argv=None):
         label_points=args.label_points,
     )
     return 0
+
+
+def plot_structure_dat_main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Plot a GOAT/SOLPS structure.dat file.'
+    )
+    parser.add_argument(
+        'structure_dat',
+        nargs='?',
+        default='structure.dat',
+        help='Input structure.dat file (default: structure.dat)',
+    )
+    parser.add_argument(
+        '--ogr',
+        help='Optional OGR file used to show original OGR element labels beside structure groups',
+    )
+    parser.add_argument(
+        '--label-elements',
+        action='store_true',
+        help='Label original OGR elements; requires --ogr',
+    )
+    parser.add_argument('--output', default='structure_dat_plot.png', help='Output PNG/PDF path')
+    parser.add_argument('--show', action='store_true', help='Show the plot interactively')
+
+    args = parser.parse_args(argv)
+    if args.label_elements and not args.ogr:
+        parser.error('--label-elements requires --ogr so labels match original OGR indices')
+
+    plot_structure_dat(
+        args.structure_dat,
+        ogr_file=args.ogr,
+        output=args.output,
+        show=args.show,
+        label_elements=args.label_elements,
+    )
+    return 0
+
+
+def plot_structure_dat(
+    structure_dat,
+    ogr_file=None,
+    output='structure_dat_plot.png',
+    show=False,
+    label_elements=False,
+):
+    import matplotlib.pyplot as plt
+
+    print(f'Reading {structure_dat}')
+    structures = read_structure_dat(structure_dat)
+    print(f'Structures: {len(structures)}')
+    for i, points in enumerate(structures, start=1):
+        print(f'  structure {i}: points={points.shape[0]}, elements={max(points.shape[0] - 1, 0)}')
+
+    if ogr_file:
+        polygons = close_ogr_polygons(order_ogr_polygons(read_ogr(ogr_file)), verbose=True)
+        if not polygons:
+            raise ValueError(f'No OGR polygons found in {ogr_file}')
+        plot_ogr_structure_conversion(
+            ogr_file,
+            polygons,
+            structures,
+            output_png=output,
+            show=show,
+            label_segments=label_elements,
+            label_points=False,
+        )
+        return output
+
+    fig, ax = plt.subplots()
+    _plot_structures(ax, structures, label_elements=False)
+    ax.set_aspect('equal', adjustable='box')
+    ax.set_xlabel('R (m)')
+    ax.set_ylabel('Z (m)')
+    ax.set_title(structure_dat)
+    ax.grid(True)
+    ax.legend(loc='center left', bbox_to_anchor=(1.02, 0.5))
+    fig.tight_layout()
+
+    if output:
+        print(f'Writing {output}')
+        fig.savefig(output, dpi=200, bbox_inches='tight')
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+    return output
 
 
 def expand_ogr_group_arguments(texts):
@@ -1343,6 +1446,31 @@ def write_structure_dat(filename, structures, closed=False):
                 fid.write(f'{r:20.16f} {z:20.16f}\n')
 
         fid.write('$end\n')
+
+
+def read_structure_dat(filename):
+    lines = Path(filename).read_text().splitlines()
+    if not lines:
+        raise ValueError(f'Empty structure.dat file: {filename}')
+
+    nstruct = int(lines[0].split()[0])
+    structures = []
+    idx = 2
+    for _ in range(nstruct):
+        if idx >= len(lines):
+            raise ValueError(f'Unexpected end of file reading {filename}')
+
+        idx += 1
+        npoints_signed = int(lines[idx].split()[0])
+        npoints = abs(npoints_signed)
+        idx += 1
+        points = np.asarray(
+            [[float(value) for value in lines[idx + i].split()[:2]] for i in range(npoints)]
+        )
+        idx += npoints
+        structures.append(points)
+
+    return structures
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Helper routine to refine psiN for plotting
