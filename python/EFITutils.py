@@ -462,10 +462,29 @@ def gfile_vessel_main(argv=None):
     return 0
 
 
-def plot_ogr_files(filenames, label_elements=False, output='ogr_plot.png', show=False):
+def plot_ogr_files(
+    filenames,
+    label_elements=False,
+    output='ogr_plot.png',
+    show=False,
+    rzpsi=None,
+    levels=96,
+):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots()
+    if rzpsi is not None:
+        from solps_routines.plotting.rzpsi_cases import (
+            local_levels,
+            plot_rzpsi_box,
+            plot_rzpsi_contours,
+            read_rzpsi,
+        )
+
+        rzpsi_data = read_rzpsi(Path(rzpsi))
+        plot_rzpsi_contours(ax, rzpsi_data, local_levels(rzpsi_data, levels))
+        plot_rzpsi_box(ax, rzpsi_data)
+
     for filename in filenames:
         polygons = close_ogr_polygons(order_ogr_polygons(read_ogr(filename)), verbose=True)
         _plot_ogr_polygons(ax, polygons, filename=filename, label_elements=label_elements)
@@ -499,10 +518,28 @@ def plot_ogr_main(argv=None):
         default='ogr_plot.png',
         help='Output PNG/PDF path (default: ogr_plot.png)',
     )
+    parser.add_argument(
+        '--rzpsi',
+        type=Path,
+        help='Overlay psi contours from rzpsi.dat',
+    )
+    parser.add_argument(
+        '--levels',
+        type=int,
+        default=96,
+        help='Number of psi contour levels when --rzpsi is used',
+    )
     parser.add_argument('--show', action='store_true', help='Show the plot interactively')
 
     args = parser.parse_args(argv)
-    plot_ogr_files(args.files, label_elements=args.label_elements, output=args.output, show=args.show)
+    plot_ogr_files(
+        args.files,
+        label_elements=args.label_elements,
+        output=args.output,
+        show=args.show,
+        rzpsi=args.rzpsi,
+        levels=args.levels,
+    )
     return 0
 
 
