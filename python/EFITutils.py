@@ -469,6 +469,7 @@ def plot_ogr_files(
     show=False,
     rzpsi=None,
     levels=96,
+    mark_topology=None,
 ):
     import matplotlib.pyplot as plt
 
@@ -484,6 +485,11 @@ def plot_ogr_files(
         rzpsi_data = read_rzpsi(Path(rzpsi))
         plot_rzpsi_contours(ax, rzpsi_data, local_levels(rzpsi_data, levels))
         plot_rzpsi_box(ax, rzpsi_data)
+
+    if mark_topology is not None:
+        from solps_routines.plotting.rzpsi_cases import plot_gfile_topology
+
+        plot_gfile_topology(ax, Path(mark_topology))
 
     for filename in filenames:
         polygons = close_ogr_polygons(order_ogr_polygons(read_ogr(filename)), verbose=True)
@@ -529,9 +535,19 @@ def plot_ogr_main(argv=None):
         default=96,
         help='Number of psi contour levels when --rzpsi is used',
     )
+    parser.add_argument(
+        '--mark-topology',
+        nargs='?',
+        const=Path('gfile'),
+        type=Path,
+        help='Mark separatrix and X-points from an EFIT gfile (default: ./gfile)',
+    )
     parser.add_argument('--show', action='store_true', help='Show the plot interactively')
 
     args = parser.parse_args(argv)
+    if args.mark_topology is not None and not args.mark_topology.is_file():
+        parser.error(f'Missing topology gfile: {args.mark_topology.resolve()}')
+
     plot_ogr_files(
         args.files,
         label_elements=args.label_elements,
@@ -539,6 +555,7 @@ def plot_ogr_main(argv=None):
         show=args.show,
         rzpsi=args.rzpsi,
         levels=args.levels,
+        mark_topology=args.mark_topology,
     )
     return 0
 
@@ -1395,7 +1412,10 @@ def convert_ogr_to_structure_dat(
     print(f'Elements included in more than one structure: {format_ogr_element_list(repeated)}')
     print(f'Elements not included in any structure: {format_ogr_element_list(missing)}')
 
-    print(f'Writing {structure_dat} (open structures: negative point counts)')
+    print(
+        f'Writing {structure_dat} '
+        '(open polylines: structure.dat stores their point counts as negative)'
+    )
     write_structure_dat(structure_dat, structures, closed=False)
 
     if output_png or show:
