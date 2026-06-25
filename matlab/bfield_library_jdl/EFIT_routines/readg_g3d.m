@@ -23,11 +23,17 @@ if isempty(filename)
 end
 
 fname_mat = [filename,'.mat'];
-if exist(fname_mat,'file') ~= 2 || force_rewrite
-    if ~quiet
-        disp([' >>>> Reading gfile ',filename])
-    end
-else
+iwarn = 0;
+[action,ierr] = check_file_exist_and_new(filename,fname_mat,iwarn,0);
+if ierr
+    error('Could not find gfile or cached .mat file: %s',filename)
+end
+
+if force_rewrite
+    action = 'raw';
+end
+
+if strcmp(action,'mat')
     if ~quiet
         disp(['>>>> Reading .mat version of gfile ',fname_mat])
     end
@@ -44,6 +50,10 @@ else
         g.version = 0;
     end
     fprintf(' Found version %i (or no version), expected %i, remaking.\n',g.version,version_)
+else
+    if ~quiet
+        disp([' >>>> Reading gfile ',filename])
+    end
 end
 
 g = readg_g3d_simple(filename);
@@ -58,6 +68,7 @@ try
     [~,f2,f3] = fileparts(filename);
     g.shot = sscanf(f2(2:end),'%d');
     g.gfilename = [f2,f3];
+catch
 end
 
 g.version = version_;
@@ -65,6 +76,12 @@ g.version = version_;
 if ~quiet
     disp('>>> Saving .mat version of gfile')
 end
-save(fname_mat,'g');
+try
+    save(fname_mat,'g');
+catch
+    if ~quiet
+        fprintf('Info: Was unable to save .mat version of gfile: %s\n',fname_mat)
+    end
+end
 
 end
