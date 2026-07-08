@@ -9,13 +9,14 @@ if nargin < 3
 end
 
 % Version identifies changes to routine that may require re-creating .mat file
-version_ = 8;
+version_ = 9;
 % v3: Changed outputs to row vectors and added bicub inverse
 % v4: Added aminor and nGW
 % v5: More robust processing of incomplete eqdsk files, remove spline fits
 % v6: removing old bicub matrix
 % v7: Add tri calculation
 % v8: Add better shape metrics
+% v9: Add Bpol_est estimate from Ip filament at magnetic axis
 
 if isempty(filename)
     g = [];
@@ -56,7 +57,30 @@ else
     end
 end
 
-g = readg_g3d_simple(filename);
+try
+    g = readg_g3d_simple(filename);
+catch ME
+    rawFileAccessError = strncmp(ME.message,'File not found:',15) || ...
+        strncmp(ME.message,'Could not open file:',20);
+    if rawFileAccessError && ~force_rewrite && exist(fname_mat,'file') == 2
+        if ~quiet
+            fprintf('Info: Unable to read raw gfile, using .mat cache: %s\n',fname_mat)
+            fprintf('      Raw read error: %s\n',ME.message)
+        end
+        S = load(fname_mat);
+        g = S.g;
+        g.filename = filename;
+        return
+    elseif rawFileAccessError && ~force_rewrite
+        if ~quiet
+            fprintf('Info: Unable to read raw gfile, returning []: %s\n',filename)
+            fprintf('      Raw read error: %s\n',ME.message)
+        end
+        g = [];
+        return
+    end
+    rethrow(ME)
+end
 
 %% Add shaping parameters and other grid details
 g = postprocess_gfile(g);

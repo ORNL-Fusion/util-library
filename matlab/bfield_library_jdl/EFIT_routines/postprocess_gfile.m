@@ -37,6 +37,15 @@ if ~isempty(g.cpasma) && ~isempty(g.aminor)
     g.nGW = g.cpasma/1e6/pi/g.aminor^2*1e20;
 end
 
+g.Bpol_est = [];
+if ~isempty(g.cpasma)
+    mu0 = 4*pi*1e-7;
+    [R,Z] = ndgrid(g.r,g.z);
+    rminor = sqrt((R-g.rmaxis).^2 + (Z-g.zmaxis).^2);
+    g.Bpol_est = mu0*abs(g.cpasma)./(2*pi*rminor);
+    g.Bpol_est(rminor == 0) = nan;
+end
+
 if isempty(g.cpasma)
     g.ip_sign = 1;
 else

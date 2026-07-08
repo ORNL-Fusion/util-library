@@ -24,13 +24,13 @@ end
 action = 'none';
 ierr = 0;
 
-raw_exists = isfile(fname_raw);
+raw_exists = exist(fname_raw,'file') == 2;
 
-if purge && isfile(fname_mat)
+if purge && exist(fname_mat,'file') == 2
     fprintf('Removing cache file: %s\n',fname_mat);
     delete(fname_mat);
 end
-mat_exists = isfile(fname_mat);
+mat_exists = exist(fname_mat,'file') == 2;
 
 
 
@@ -55,8 +55,8 @@ end
 raw_time = dir(fname_raw).datenum;
 mat_time = dir(fname_mat).datenum;
 
-if mat_time > raw_time
-    action = 'mat';                     % cache newer than raw
+if mat_time >= raw_time
+    action = 'mat';                     % cache at least as new as raw
 else
     action = 'raw';                     % raw newer, refresh cache
 end
