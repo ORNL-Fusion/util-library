@@ -7,9 +7,9 @@ function psi_bicub_coeffs_inv = get_psi_bicub_coeffs_inv(g)
 % are the relative points on the rectilinear grid.
 %
 % To evaluate z inside of a grid cell, dz/dx, dz/dy, and dz/dxdy are
-% required at each vertex. We use central differences, which will preserve
-% div(B) = 0. The derivatives cannot be calculated for the vertices on the
-% boundary, which means that z cannot be evaluated for the boundary cells.
+% required at each vertex. We use central differences internally and
+% one-sided differences on the grid edges, allowing all cells to be evaluated
+% while preserving div(B) = 0.
 %
 % Note: ip_sign = -sign(g.Ip) is ****NOT**** applied to the psirz grid here
 %
@@ -128,12 +128,12 @@ if ADD_EDGES
     % Handle edges using one-sided differences where needed
 
     % Edges in R direction, Z fixed
-    d2psidrdz(1, iz) = (psi(2, iz+1) - psi(2, iz-1) - psi(1, iz+1) + psi(1, iz-1)) / (2 * g.dR * 2 * g.dZ);
-    d2psidrdz(nr, iz) = (psi(nr, iz+1) - psi(nr, iz-1) - psi(nr-1, iz+1) + psi(nr-1, iz-1)) / (2 * g.dR * 2 * g.dZ);
+    d2psidrdz(1, iz) = (psi(2, iz+1) - psi(2, iz-1) - psi(1, iz+1) + psi(1, iz-1)) / (g.dR * 2 * g.dZ);
+    d2psidrdz(nr, iz) = (psi(nr, iz+1) - psi(nr, iz-1) - psi(nr-1, iz+1) + psi(nr-1, iz-1)) / (g.dR * 2 * g.dZ);
 
     % Edges in Z direction, R fixed
-    d2psidrdz(ir, 1) = (psi(ir+1, 2) - psi(ir-1, 2) - psi(ir+1, 1) + psi(ir-1, 1)) / (2 * g.dR * 2 * g.dZ);
-    d2psidrdz(ir, nz) = (psi(ir+1, nz) - psi(ir-1, nz) - psi(ir+1, nz-1) + psi(ir-1, nz-1)) / (2 * g.dR * 2 * g.dZ);
+    d2psidrdz(ir, 1) = (psi(ir+1, 2) - psi(ir-1, 2) - psi(ir+1, 1) + psi(ir-1, 1)) / (2 * g.dR * g.dZ);
+    d2psidrdz(ir, nz) = (psi(ir+1, nz) - psi(ir-1, nz) - psi(ir+1, nz-1) + psi(ir-1, nz-1)) / (2 * g.dR * g.dZ);
 
     % Corner cases
     d2psidrdz(1, 1) = (psi(2, 2) - psi(2, 1) - psi(1, 2) + psi(1, 1)) / (g.dR * g.dZ);

@@ -365,7 +365,25 @@ def _write_gfile_values(fid, vals):
         fid.write(''.join([f'{v:16.9e}' for v in vals[i:i+5]]) + '\n')
 
 
+def _validate_gfile_finite(g):
+    fields = [
+        'xdim', 'zdim', 'rzero', 'rgrid1', 'zmid',
+        'rmaxis', 'zmaxis', 'ssimag', 'ssibry', 'bcentr', 'cpasma',
+        'fpol', 'pres', 'ffprim', 'pprime', 'psirz', 'qpsi',
+        'bdry', 'lim',
+    ]
+    for field in fields:
+        values = np.asarray(g[field], dtype=float)
+        n_nonfinite = np.count_nonzero(~np.isfinite(values))
+        if n_nonfinite:
+            raise ValueError(
+                f'{field} contains {n_nonfinite} nonfinite value(s)'
+            )
+
+
 def write_gfile(g, filename):
+    _validate_gfile_finite(g)
+
     xdum = 0.0
     line0 = g.get('line0', '')
     txt = line0[:29]
@@ -992,6 +1010,16 @@ def refine_ogr_elements_main(argv=None):
     )
 
     args = parser.parse_args(argv)
+    try:
+        _parse_ogr_element_label(Path(args.output_ogr).name)
+    except ValueError:
+        pass
+    else:
+        parser.error(
+            f"output filename {args.output_ogr!r} looks like an element label; "
+            "did you omit the output filename?"
+        )
+
     refine_ogr_element(args.input_ogr, args.output_ogr, args.element, args.nsections)
     return 0
 
@@ -1602,25 +1630,32 @@ def _refine_xpt(g,xptStart,drStart,dzStart,tol):
 # JDL
 # -------------------------------------------------------------------------------------------------------------------------
 def _calc_interpolation_inds(g,R,Z):
-    # Add a small offset to avoid error with first grid point
-    ir = np.asarray(np.floor((R - g['R'][0] + 1e-10)/g['dR']).astype(int))
-    iz = np.asarray(np.floor((Z - g['Z'][0] + 1e-10)/g['dZ']).astype(int))
+    R, Z = np.broadcast_arrays(
+        np.asarray(R, dtype=float),
+        np.asarray(Z, dtype=float),
+    )
+    scalar_input = R.ndim == 0
 
-    scalar_input = ir.ndim == 0 and iz.ndim == 0
+    r_index = (R - g['R'][0])/g['dR']
+    z_index = (Z - g['Z'][0])/g['dZ']
+    tol = 64*np.finfo(float).eps*max(g['mw'], g['mh'])
 
-    # check for points off grid, no derivatives on boundary cells
-    ierr = (ir < 1) | (ir > g['mw'] - 1) | (iz < 1) | (iz > g['mh'] - 1)
+    ierr = (
+        ~np.isfinite(r_index)
+        | ~np.isfinite(z_index)
+        | (r_index < -tol)
+        | (r_index > g['mw'] - 1 + tol)
+        | (z_index < -tol)
+        | (z_index > g['mh'] - 1 + tol)
+    )
+
+    r_index = np.where(ierr, 0.0, np.clip(r_index, 0, g['mw'] - 1))
+    z_index = np.where(ierr, 0.0, np.clip(z_index, 0, g['mh'] - 1))
+    ir = np.minimum(np.floor(r_index).astype(int), g['mw'] - 2)
+    iz = np.minimum(np.floor(z_index).astype(int), g['mh'] - 2)
 
     if scalar_input:
-        if bool(ierr):
-            ir = np.asarray(0)
-            iz = np.asarray(0)
         return {'ierr': bool(ierr), 'ir': int(ir), 'iz': int(iz)}
-
-    ir = ir.copy()
-    iz = iz.copy()
-    ir[ierr] = 0
-    iz[ierr] = 0
 
     return {'ierr':ierr,'ir':ir,'iz':iz}
 
@@ -1914,9 +1949,9 @@ def _fl_derivs_dl_gfile(RPZ,g):
 # are the relative points on the rectilinear grid. 
 # 
 # To evaluate z inside of a grid cell, dz/dx, dz/dy, and dz/dxdy are 
-# required at each vertex. We use central differences, which will preserve 
-# div(B) = 0. The derivatives cannot be calculated for the vertices on the
-# boundary, which means that z cannot be evaluated for the boundary cells.
+# required at each vertex. We use central differences internally and
+# one-sided differences on the grid edges, allowing all cells to be evaluated
+# while preserving div(B) = 0.
 #
 # Note: ip_sign = -sign(g.Ip) is ****NOT**** applied to the psirz grid here
 #
@@ -1931,73 +1966,135 @@ def _get_psi_bicub_coeffs_inv(g):
     nZ = g['mh']
     dR = g['dR']
     dZ = g['dZ']
-    
-    psi = g['psirz']
+    if nR < 3 or nZ < 3:
+        raise ValueError('bicubic interpolation requires at least 3 R and Z points')
 
-    # Initialize full arrays, only interior points will be evaluated
-    dpsidr = np.full([nR,nZ],np.nan)
-    dpsidz = np.full([nR,nZ],np.nan)
-    d2psidrdz = np.full([nR,nZ],np.nan)
-    
-    pbci = {}
-    pbci['c00'] = np.full([nR,nZ],np.nan)
-    pbci['c10'] = np.full([nR,nZ],np.nan)
-    pbci['c20'] = np.full([nR,nZ],np.nan)
-    pbci['c30'] = np.full([nR,nZ],np.nan)
-    pbci['c01'] = np.full([nR,nZ],np.nan)
-    pbci['c11'] = np.full([nR,nZ],np.nan)
-    pbci['c21'] = np.full([nR,nZ],np.nan)
-    pbci['c31'] = np.full([nR,nZ],np.nan)
-    pbci['c02'] = np.full([nR,nZ],np.nan)
-    pbci['c12'] = np.full([nR,nZ],np.nan)
-    pbci['c22'] = np.full([nR,nZ],np.nan)
-    pbci['c32'] = np.full([nR,nZ],np.nan)
-    pbci['c03'] = np.full([nR,nZ],np.nan)
-    pbci['c13'] = np.full([nR,nZ],np.nan)
-    pbci['c23'] = np.full([nR,nZ],np.nan)
-    pbci['c33'] = np.full([nR,nZ],np.nan)
-    
-    # Calculate central derivatives on interior points. The 1D derivatives
-    # would be valid on the boundaries in the orthogonal direction, but we 
-    # keep them as nan for simplicity.
+    psi = np.asarray(g['psirz'])
+    if psi.shape != (nR, nZ):
+        raise ValueError(
+            f'psirz shape {psi.shape} does not match ({nR}, {nZ})'
+        )
 
-    dpsidr[1:nR-1,1:nZ-1] = (psi[2:nR,1:nZ-1] - psi[0:nR-2,1:nZ-1])/(2*dR);
-    dpsidz[1:nR-1,1:nZ-1] = (psi[1:nR-1,2:nZ] - psi[1:nR-1,0:nZ-2])/(2*dZ);
-    d2psidrdz[1:nR-1,1:nZ-1] = ( psi[2:nR,2:nZ] - psi[0:nR-2,2:nZ]
-                   - psi[2:nR,0:nZ-2] + psi[0:nR-2,0:nZ-2] )/(4*dR*dZ);
-    
-    # Evaluate coefficients on interior points
-    pbci['c00'][1:nR-1,1:nZ-1] = psi[1:nR-1,1:nZ-1]
-    pbci['c10'][1:nR-1,1:nZ-1] = dpsidr[1:nR-1,1:nZ-1]*dR
-    pbci['c20'][1:nR-1,1:nZ-1] = -3*psi[1:nR-1,1:nZ-1] + 3*psi[2:nR,1:nZ-1] - 2*dpsidr[1:nR-1,1:nZ-1]*dR - dpsidr[2:nR,1:nZ-1]*dR
-    pbci['c30'][1:nR-1,1:nZ-1] =  2*psi[1:nR-1,1:nZ-1] - 2*psi[2:nR,1:nZ-1] +   dpsidr[1:nR-1,1:nZ-1]*dR + dpsidr[2:nR,1:nZ-1]*dR
+    dpsidr = np.empty((nR, nZ))
+    dpsidz = np.empty((nR, nZ))
+    d2psidrdz = np.empty((nR, nZ))
 
-    pbci['c01'][1:nR-1,1:nZ-1] = dpsidz[1:nR-1,1:nZ-1]*dZ
-    pbci['c11'][1:nR-1,1:nZ-1] = d2psidrdz[1:nR-1,1:nZ-1]*dR*dZ
-    pbci['c21'][1:nR-1,1:nZ-1] = -3*dpsidz[1:nR-1,1:nZ-1]*dZ + 3*dpsidz[2:nR,1:nZ-1]*dZ - 2*d2psidrdz[1:nR-1,1:nZ-1]*dR*dZ - d2psidrdz[2:nR,1:nZ-1]*dR*dZ
-    pbci['c31'][1:nR-1,1:nZ-1] =  2*dpsidz[1:nR-1,1:nZ-1]*dZ - 2*dpsidz[2:nR,1:nZ-1]*dZ +   d2psidrdz[1:nR-1,1:nZ-1]*dR*dZ + d2psidrdz[2:nR,1:nZ-1]*dR*dZ
+    # Centered differences internally and one-sided differences on edges.
+    dpsidr[1:-1, :] = (psi[2:, :] - psi[:-2, :])/(2*dR)
+    dpsidr[0, :] = (psi[1, :] - psi[0, :])/dR
+    dpsidr[-1, :] = (psi[-1, :] - psi[-2, :])/dR
 
-    pbci['c02'][1:nR-1,1:nZ-1] = -3*psi[1:nR-1,1:nZ-1] + 3*psi[1:nR-1,2:nZ] - 2*dpsidz[1:nR-1,1:nZ-1]*dZ - dpsidz[1:nR-1,2:nZ]*dZ
-    pbci['c12'][1:nR-1,1:nZ-1] = -3*dpsidr[1:nR-1,1:nZ-1]*dR + 3*dpsidr[1:nR-1,2:nZ]*dR - 2*d2psidrdz[1:nR-1,1:nZ-1]*dR*dZ - d2psidrdz[1:nR-1,2:nZ]*dR*dZ
-    pbci['c22'][1:nR-1,1:nZ-1] = ( 9*psi[1:nR-1,1:nZ-1] - 9*psi[2:nR,1:nZ-1] - 9*psi[1:nR-1,2:nZ] + 9*psi[2:nR,2:nZ]
-        + 6*dpsidr[1:nR-1,1:nZ-1]*dR + 3*dpsidr[2:nR,1:nZ-1]*dR - 6*dpsidr[1:nR-1,2:nZ]*dR - 3*dpsidr[2:nR,2:nZ]*dR 
-        + 6*dpsidz[1:nR-1,1:nZ-1]*dZ - 6*dpsidz[2:nR,1:nZ-1]*dZ + 3*dpsidz[1:nR-1,2:nZ]*dZ - 3*dpsidz[2:nR,2:nZ]*dZ 
-        + 4*d2psidrdz[1:nR-1,1:nZ-1]*dR*dZ + 2*d2psidrdz[2:nR,1:nZ-1]*dR*dZ 
-        + 2*d2psidrdz[1:nR-1,2:nZ]*dR*dZ + d2psidrdz[2:nR,2:nZ]*dR*dZ)
-    pbci['c32'][1:nR-1,1:nZ-1] = ( -6*psi[1:nR-1,1:nZ-1] + 6*psi[2:nR,1:nZ-1] + 6*psi[1:nR-1,2:nZ] - 6*psi[2:nR,2:nZ] 
-        - 3*dpsidr[1:nR-1,1:nZ-1]*dR - 3*dpsidr[2:nR,1:nZ-1]*dR + 3*dpsidr[1:nR-1,2:nZ]*dR + 3*dpsidr[2:nR,2:nZ]*dR 
-        - 4*dpsidz[1:nR-1,1:nZ-1]*dZ + 4*dpsidz[2:nR,1:nZ-1]*dZ - 2*dpsidz[1:nR-1,2:nZ]*dZ + 2*dpsidz[2:nR,2:nZ]*dZ 
-        - 2*d2psidrdz[1:nR-1,1:nZ-1]*dR*dZ - 2*d2psidrdz[2:nR,1:nZ-1]*dR*dZ - d2psidrdz[1:nR-1,2:nZ]*dR*dZ - d2psidrdz[2:nR,2:nZ]*dR*dZ)
+    dpsidz[:, 1:-1] = (psi[:, 2:] - psi[:, :-2])/(2*dZ)
+    dpsidz[:, 0] = (psi[:, 1] - psi[:, 0])/dZ
+    dpsidz[:, -1] = (psi[:, -1] - psi[:, -2])/dZ
 
-    pbci['c03'][1:nR-1,1:nZ-1] = 2*psi[1:nR-1,1:nZ-1] - 2*psi[1:nR-1,2:nZ] + dpsidz[1:nR-1,1:nZ-1]*dZ + dpsidz[1:nR-1,2:nZ]*dZ
-    pbci['c13'][1:nR-1,1:nZ-1] = 2*dpsidr[1:nR-1,1:nZ-1]*dR - 2*dpsidr[1:nR-1,2:nZ]*dR + d2psidrdz[1:nR-1,1:nZ-1]*dR*dZ + d2psidrdz[1:nR-1,2:nZ]*dR*dZ
-    pbci['c23'][1:nR-1,1:nZ-1] = (-6*psi[1:nR-1,1:nZ-1] + 6*psi[2:nR,1:nZ-1] + 6*psi[1:nR-1,2:nZ] - 6*psi[2:nR,2:nZ] 
-        - 4*dpsidr[1:nR-1,1:nZ-1]*dR - 2*dpsidr[2:nR,1:nZ-1]*dR + 4*dpsidr[1:nR-1,2:nZ]*dR + 2*dpsidr[2:nR,2:nZ]*dR 
-        - 3*dpsidz[1:nR-1,1:nZ-1]*dZ + 3*dpsidz[2:nR,1:nZ-1]*dZ - 3*dpsidz[1:nR-1,2:nZ]*dZ + 3*dpsidz[2:nR,2:nZ]*dZ 
-        - 2*d2psidrdz[1:nR-1,1:nZ-1]*dR*dZ - d2psidrdz[2:nR,1:nZ-1]*dR*dZ - 2*d2psidrdz[1:nR-1,2:nZ]*dR*dZ - d2psidrdz[2:nR,2:nZ]*dR*dZ)
-    pbci['c33'][1:nR-1,1:nZ-1] =  (4*psi[1:nR-1,1:nZ-1] - 4*psi[2:nR,1:nZ-1] - 4*psi[1:nR-1,2:nZ] + 4*psi[2:nR,2:nZ] 
-        + 2*dpsidr[1:nR-1,1:nZ-1]*dR + 2*dpsidr[2:nR,1:nZ-1]*dR - 2*dpsidr[1:nR-1,2:nZ]*dR - 2*dpsidr[2:nR,2:nZ]*dR 
-        + 2*dpsidz[1:nR-1,1:nZ-1]*dZ - 2*dpsidz[2:nR,1:nZ-1]*dZ + 2*dpsidz[1:nR-1,2:nZ]*dZ - 2*dpsidz[2:nR,2:nZ]*dZ 
-        + d2psidrdz[1:nR-1,1:nZ-1]*dR*dZ + d2psidrdz[2:nR,1:nZ-1]*dR*dZ + d2psidrdz[1:nR-1,2:nZ]*dR*dZ + d2psidrdz[2:nR,2:nZ]*dR*dZ)
-    
+    d2psidrdz[1:-1, 1:-1] = (
+        psi[2:, 2:] - psi[:-2, 2:]
+        - psi[2:, :-2] + psi[:-2, :-2]
+    )/(4*dR*dZ)
+
+    d2psidrdz[0, 1:-1] = (
+        psi[1, 2:] - psi[1, :-2]
+        - psi[0, 2:] + psi[0, :-2]
+    )/(2*dR*dZ)
+    d2psidrdz[-1, 1:-1] = (
+        psi[-1, 2:] - psi[-1, :-2]
+        - psi[-2, 2:] + psi[-2, :-2]
+    )/(2*dR*dZ)
+
+    d2psidrdz[1:-1, 0] = (
+        psi[2:, 1] - psi[:-2, 1]
+        - psi[2:, 0] + psi[:-2, 0]
+    )/(2*dR*dZ)
+    d2psidrdz[1:-1, -1] = (
+        psi[2:, -1] - psi[:-2, -1]
+        - psi[2:, -2] + psi[:-2, -2]
+    )/(2*dR*dZ)
+
+    d2psidrdz[0, 0] = (
+        psi[1, 1] - psi[1, 0] - psi[0, 1] + psi[0, 0]
+    )/(dR*dZ)
+    d2psidrdz[-1, 0] = (
+        psi[-1, 1] - psi[-2, 1] - psi[-1, 0] + psi[-2, 0]
+    )/(dR*dZ)
+    d2psidrdz[0, -1] = (
+        psi[1, -1] - psi[1, -2] - psi[0, -1] + psi[0, -2]
+    )/(dR*dZ)
+    d2psidrdz[-1, -1] = (
+        psi[-1, -1] - psi[-2, -1]
+        - psi[-1, -2] + psi[-2, -2]
+    )/(dR*dZ)
+
+    pbci = {
+        name: np.full((nR, nZ), np.nan)
+        for name in [
+            'c00', 'c10', 'c20', 'c30',
+            'c01', 'c11', 'c21', 'c31',
+            'c02', 'c12', 'c22', 'c32',
+            'c03', 'c13', 'c23', 'c33',
+        ]
+    }
+
+    cells = (slice(None, -1), slice(None, -1))
+    p00, p10 = psi[:-1, :-1], psi[1:, :-1]
+    p01, p11 = psi[:-1, 1:], psi[1:, 1:]
+    pr00, pr10 = dpsidr[:-1, :-1], dpsidr[1:, :-1]
+    pr01, pr11 = dpsidr[:-1, 1:], dpsidr[1:, 1:]
+    pz00, pz10 = dpsidz[:-1, :-1], dpsidz[1:, :-1]
+    pz01, pz11 = dpsidz[:-1, 1:], dpsidz[1:, 1:]
+    prz00, prz10 = d2psidrdz[:-1, :-1], d2psidrdz[1:, :-1]
+    prz01, prz11 = d2psidrdz[:-1, 1:], d2psidrdz[1:, 1:]
+
+    pbci['c00'][cells] = p00
+    pbci['c10'][cells] = pr00*dR
+    pbci['c20'][cells] = -3*p00 + 3*p10 - 2*pr00*dR - pr10*dR
+    pbci['c30'][cells] = 2*p00 - 2*p10 + pr00*dR + pr10*dR
+
+    pbci['c01'][cells] = pz00*dZ
+    pbci['c11'][cells] = prz00*dR*dZ
+    pbci['c21'][cells] = (
+        -3*pz00*dZ + 3*pz10*dZ - 2*prz00*dR*dZ - prz10*dR*dZ
+    )
+    pbci['c31'][cells] = (
+        2*pz00*dZ - 2*pz10*dZ + prz00*dR*dZ + prz10*dR*dZ
+    )
+
+    pbci['c02'][cells] = -3*p00 + 3*p01 - 2*pz00*dZ - pz01*dZ
+    pbci['c12'][cells] = (
+        -3*pr00*dR + 3*pr01*dR - 2*prz00*dR*dZ - prz01*dR*dZ
+    )
+    pbci['c22'][cells] = (
+        9*p00 - 9*p10 - 9*p01 + 9*p11
+        + 6*pr00*dR + 3*pr10*dR - 6*pr01*dR - 3*pr11*dR
+        + 6*pz00*dZ - 6*pz10*dZ + 3*pz01*dZ - 3*pz11*dZ
+        + 4*prz00*dR*dZ + 2*prz10*dR*dZ
+        + 2*prz01*dR*dZ + prz11*dR*dZ
+    )
+    pbci['c32'][cells] = (
+        -6*p00 + 6*p10 + 6*p01 - 6*p11
+        - 3*pr00*dR - 3*pr10*dR + 3*pr01*dR + 3*pr11*dR
+        - 4*pz00*dZ + 4*pz10*dZ - 2*pz01*dZ + 2*pz11*dZ
+        - 2*prz00*dR*dZ - 2*prz10*dR*dZ
+        - prz01*dR*dZ - prz11*dR*dZ
+    )
+
+    pbci['c03'][cells] = 2*p00 - 2*p01 + pz00*dZ + pz01*dZ
+    pbci['c13'][cells] = (
+        2*pr00*dR - 2*pr01*dR + prz00*dR*dZ + prz01*dR*dZ
+    )
+    pbci['c23'][cells] = (
+        -6*p00 + 6*p10 + 6*p01 - 6*p11
+        - 4*pr00*dR - 2*pr10*dR + 4*pr01*dR + 2*pr11*dR
+        - 3*pz00*dZ + 3*pz10*dZ - 3*pz01*dZ + 3*pz11*dZ
+        - 2*prz00*dR*dZ - prz10*dR*dZ
+        - 2*prz01*dR*dZ - prz11*dR*dZ
+    )
+    pbci['c33'][cells] = (
+        4*p00 - 4*p10 - 4*p01 + 4*p11
+        + 2*pr00*dR + 2*pr10*dR - 2*pr01*dR - 2*pr11*dR
+        + 2*pz00*dZ - 2*pz10*dZ + 2*pz01*dZ - 2*pz11*dZ
+        + prz00*dR*dZ + prz10*dR*dZ
+        + prz01*dR*dZ + prz11*dR*dZ
+    )
+
     return pbci
