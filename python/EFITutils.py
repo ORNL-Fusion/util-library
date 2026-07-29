@@ -1950,8 +1950,8 @@ def _fl_derivs_dl_gfile(RPZ,g):
 # 
 # To evaluate z inside of a grid cell, dz/dx, dz/dy, and dz/dxdy are 
 # required at each vertex. We use central differences internally and
-# one-sided differences on the grid edges, allowing all cells to be evaluated
-# while preserving div(B) = 0.
+# second-order one-sided differences on the grid edges, allowing all cells to
+# be evaluated while preserving div(B) = 0.
 #
 # Note: ip_sign = -sign(g.Ip) is ****NOT**** applied to the psirz grid here
 #
@@ -1979,51 +1979,27 @@ def _get_psi_bicub_coeffs_inv(g):
     dpsidz = np.empty((nR, nZ))
     d2psidrdz = np.empty((nR, nZ))
 
-    # Centered differences internally and one-sided differences on edges.
+    # Centered differences internally and second-order one-sided differences
+    # on edges.
     dpsidr[1:-1, :] = (psi[2:, :] - psi[:-2, :])/(2*dR)
-    dpsidr[0, :] = (psi[1, :] - psi[0, :])/dR
-    dpsidr[-1, :] = (psi[-1, :] - psi[-2, :])/dR
+    dpsidr[0, :] = (-3*psi[0, :] + 4*psi[1, :] - psi[2, :])/(2*dR)
+    dpsidr[-1, :] = (
+        3*psi[-1, :] - 4*psi[-2, :] + psi[-3, :]
+    )/(2*dR)
 
     dpsidz[:, 1:-1] = (psi[:, 2:] - psi[:, :-2])/(2*dZ)
-    dpsidz[:, 0] = (psi[:, 1] - psi[:, 0])/dZ
-    dpsidz[:, -1] = (psi[:, -1] - psi[:, -2])/dZ
+    dpsidz[:, 0] = (-3*psi[:, 0] + 4*psi[:, 1] - psi[:, 2])/(2*dZ)
+    dpsidz[:, -1] = (
+        3*psi[:, -1] - 4*psi[:, -2] + psi[:, -3]
+    )/(2*dZ)
 
-    d2psidrdz[1:-1, 1:-1] = (
-        psi[2:, 2:] - psi[:-2, 2:]
-        - psi[2:, :-2] + psi[:-2, :-2]
-    )/(4*dR*dZ)
-
-    d2psidrdz[0, 1:-1] = (
-        psi[1, 2:] - psi[1, :-2]
-        - psi[0, 2:] + psi[0, :-2]
-    )/(2*dR*dZ)
-    d2psidrdz[-1, 1:-1] = (
-        psi[-1, 2:] - psi[-1, :-2]
-        - psi[-2, 2:] + psi[-2, :-2]
-    )/(2*dR*dZ)
-
-    d2psidrdz[1:-1, 0] = (
-        psi[2:, 1] - psi[:-2, 1]
-        - psi[2:, 0] + psi[:-2, 0]
-    )/(2*dR*dZ)
-    d2psidrdz[1:-1, -1] = (
-        psi[2:, -1] - psi[:-2, -1]
-        - psi[2:, -2] + psi[:-2, -2]
-    )/(2*dR*dZ)
-
-    d2psidrdz[0, 0] = (
-        psi[1, 1] - psi[1, 0] - psi[0, 1] + psi[0, 0]
-    )/(dR*dZ)
-    d2psidrdz[-1, 0] = (
-        psi[-1, 1] - psi[-2, 1] - psi[-1, 0] + psi[-2, 0]
-    )/(dR*dZ)
-    d2psidrdz[0, -1] = (
-        psi[1, -1] - psi[1, -2] - psi[0, -1] + psi[0, -2]
-    )/(dR*dZ)
-    d2psidrdz[-1, -1] = (
-        psi[-1, -1] - psi[-2, -1]
-        - psi[-1, -2] + psi[-2, -2]
-    )/(dR*dZ)
+    d2psidrdz[:, 1:-1] = (dpsidr[:, 2:] - dpsidr[:, :-2])/(2*dZ)
+    d2psidrdz[:, 0] = (
+        -3*dpsidr[:, 0] + 4*dpsidr[:, 1] - dpsidr[:, 2]
+    )/(2*dZ)
+    d2psidrdz[:, -1] = (
+        3*dpsidr[:, -1] - 4*dpsidr[:, -2] + dpsidr[:, -3]
+    )/(2*dZ)
 
     pbci = {
         name: np.full((nR, nZ), np.nan)
