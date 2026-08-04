@@ -211,6 +211,92 @@ def calc_bfield(g,R,Z):
 
     return {'Br':Br,'Bz':Bz,'Bt':Bt,'Bpol':Bpol,'Btot':Btot,'psi':psi,'psiN':psiN,'ierr':inds['ierr']}
 
+
+def _outboard_midplane_boundary_point(g):
+    """Return the outboard LCFS intersection with the magnetic-axis plane."""
+    rbdry = np.asarray(g.get('rbdry', []), dtype=float).reshape(-1)
+    zbdry = np.asarray(g.get('zbdry', []), dtype=float).reshape(-1)
+    if rbdry.size < 2 or rbdry.size != zbdry.size:
+        raise ValueError('gfile does not contain a usable plasma boundary')
+
+    zaxis = float(g['zmaxis'])
+    candidates = []
+    for i in range(rbdry.size):
+        j = (i + 1) % rbdry.size
+        r0, z0 = rbdry[i], zbdry[i]
+        r1, z1 = rbdry[j], zbdry[j]
+        if z0 == z1:
+            if z0 == zaxis:
+                candidates.extend((float(r0), float(r1)))
+            continue
+        if min(z0, z1) <= zaxis <= max(z0, z1):
+            fraction = (zaxis - z0)/(z1 - z0)
+            candidates.append(float(r0 + fraction*(r1 - r0)))
+
+    if candidates:
+        return max(candidates), zaxis
+
+    i = int(np.argmax(rbdry))
+    return float(rbdry[i]), float(zbdry[i])
+
+
+def diagnose_gfile_psi_units(g):
+    """Compare gfile psi conventions with a circular-plasma Bpol estimate.
+
+    The estimate treats the quoted plasma current as a filament at the
+    magnetic axis. It is intended to expose a possible 2*pi normalization
+    error, not to determine the convention automatically.
+    """
+    try:
+        ip_values = np.asarray(g.get('cpasma', []), dtype=float).reshape(-1)
+        if ip_values.size != 1 or not np.isfinite(ip_values[0]):
+            raise ValueError('gfile does not contain a usable plasma current')
+        plasma_current = abs(float(ip_values[0]))
+        if plasma_current < 1.0e-6:
+            raise ValueError('gfile plasma current is zero')
+
+        raxis = float(g['rmaxis'])
+        zaxis = float(g['zmaxis'])
+        r, z = _outboard_midplane_boundary_point(g)
+        rminor = float(np.hypot(r - raxis, z - zaxis))
+        if r <= 0.0 or rminor <= 0.0:
+            raise ValueError('outboard boundary point is not usable')
+
+        derivatives = calc_psi_derivs(g, r, z)
+        grad_psi = float(np.hypot(derivatives['dpsidr'], derivatives['dpsidz']))
+        bpol_wb_per_rad = grad_psi/r
+        bpol_wb = bpol_wb_per_rad/(2.0*np.pi)
+        bpol_estimate = 4.0*np.pi*1.0e-7*plasma_current/(2.0*np.pi*rminor)
+
+        values = (bpol_wb_per_rad, bpol_wb, bpol_estimate)
+        if not all(np.isfinite(values)) or min(values) <= 0.0:
+            raise ValueError('could not evaluate finite positive Bpol values')
+
+        ratio_wb_per_rad = bpol_wb_per_rad/bpol_estimate
+        ratio_wb = bpol_wb/bpol_estimate
+        score_wb_per_rad = abs(np.log(ratio_wb_per_rad))
+        score_wb = abs(np.log(ratio_wb))
+        suggested_units = 'wb-per-rad' if score_wb_per_rad < score_wb else 'wb'
+
+        return {
+            'available': True,
+            'plasma_current': plasma_current,
+            'r': r,
+            'z': z,
+            'rminor': rminor,
+            'bpol_estimate': bpol_estimate,
+            'bpol_wb_per_rad': bpol_wb_per_rad,
+            'bpol_wb': bpol_wb,
+            'ratio_wb_per_rad': ratio_wb_per_rad,
+            'ratio_wb': ratio_wb,
+            'score_wb_per_rad': score_wb_per_rad,
+            'score_wb': score_wb,
+            'suggested_units': suggested_units,
+        }
+    except (KeyError, TypeError, ValueError) as exc:
+        return {'available': False, 'reason': str(exc)}
+
+
 # -------------------------------------------------------------------------------------------------------------------------
 # Get psiN at a point from a gfile
 # psiN = (psi(R,Z) - psi(axis))/(psi(boundary) - psi(axis))
@@ -1024,6 +1110,15 @@ def refine_ogr_elements_main(argv=None):
     return 0
 
 
+def _segment_label_offset(r0, z0, r1, z1, distance):
+    dr = r1 - r0
+    dz = z1 - z0
+    length = np.hypot(dr, dz)
+    if length == 0.0:
+        return 0.0, distance
+    return -distance*dz/length, distance*dr/length
+
+
 def _plot_ogr_labels(ax, r, z, block_id, label_segments=True, label_points=False):
     if label_points:
         for i, (ri, zi) in enumerate(zip(r, z), start=1):
@@ -1033,7 +1128,16 @@ def _plot_ogr_labels(ax, r, z, block_id, label_segments=True, label_points=False
         for i in range(len(r) - 1):
             rm = 0.5*(r[i] + r[i + 1])
             zm = 0.5*(z[i] + z[i + 1])
-            ax.text(rm, zm, f'{block_id}.{i + 1}', fontsize=8, ha='center', va='center')
+            offset = _segment_label_offset(r[i], z[i], r[i + 1], z[i + 1], 5.0)
+            ax.annotate(
+                f'{block_id}.{i + 1}',
+                (rm, zm),
+                xytext=offset,
+                textcoords='offset points',
+                fontsize=8,
+                ha='center',
+                va='center',
+            )
 
 
 def _plot_ogr_polygons(
@@ -1065,17 +1169,41 @@ def _plot_ogr_polygons(
 
 
 def _plot_structures(ax, structures, label_elements=True, label_structures=True):
+    nonempty = [points for points in structures if points.shape[0] > 0]
+    if nonempty:
+        all_points = np.vstack(nonempty)
+        plot_center = 0.5*(np.min(all_points, axis=0) + np.max(all_points, axis=0))
+    else:
+        plot_center = np.zeros(2)
+
     for structure_id, points in enumerate(structures, start=1):
         r = points[:, 0]
         z = points[:, 1]
         line, = ax.plot(r, z, '-o', label=f'structure {structure_id}')
 
-        if label_structures and points.shape[0] > 0:
-            imid = points.shape[0]//2
-            ax.text(
-                r[imid],
-                z[imid],
+        if label_structures and points.shape[0] > 1:
+            segment_lengths = np.hypot(np.diff(r), np.diff(z))
+            ilongest = int(np.argmax(segment_lengths))
+            rm = 0.5*(r[ilongest] + r[ilongest + 1])
+            zm = 0.5*(z[ilongest] + z[ilongest + 1])
+            dr = r[ilongest + 1] - r[ilongest]
+            dz = z[ilongest + 1] - z[ilongest]
+            normal_toward_center = (
+                -dz*(plot_center[0] - rm) + dr*(plot_center[1] - zm)
+            )
+            label_distance = 20.0 if normal_toward_center >= 0.0 else -12.0
+            offset = _segment_label_offset(
+                r[ilongest],
+                z[ilongest],
+                r[ilongest + 1],
+                z[ilongest + 1],
+                label_distance,
+            )
+            ax.annotate(
                 f'S{structure_id}',
+                (rm, zm),
+                xytext=offset,
+                textcoords='offset points',
                 color=line.get_color(),
                 fontsize=10,
                 fontweight='bold',
@@ -1089,10 +1217,12 @@ def _plot_structures(ax, structures, label_elements=True, label_structures=True)
         for i in range(points.shape[0] - 1):
             rm = 0.5*(r[i] + r[i + 1])
             zm = 0.5*(z[i] + z[i + 1])
-            ax.text(
-                rm,
-                zm,
+            offset = _segment_label_offset(r[i], z[i], r[i + 1], z[i + 1], 5.0)
+            ax.annotate(
                 f'{structure_id}.{i + 1}',
+                (rm, zm),
+                xytext=offset,
+                textcoords='offset points',
                 color=line.get_color(),
                 fontsize=8,
                 ha='center',
@@ -1482,6 +1612,20 @@ def points_from_element_group(r, z, group):
         p1 = np.array([r[elem], z[elem]])
 
         if not points:
+            # End the first segment at its shared endpoint with the second.
+            if len(group) > 1:
+                next_elem = group[1]
+                if next_elem < 1 or next_elem > n_elements:
+                    raise ValueError(
+                        f'Element {next_elem} out of range 1:{n_elements}'
+                    )
+                next_p0 = np.array([r[next_elem - 1], z[next_elem - 1]])
+                next_p1 = np.array([r[next_elem], z[next_elem]])
+                if (
+                    np.linalg.norm(p0 - next_p0) <= 1e-12
+                    or np.linalg.norm(p0 - next_p1) <= 1e-12
+                ):
+                    p0, p1 = p1, p0
             points.append(p0)
             points.append(p1)
             continue
