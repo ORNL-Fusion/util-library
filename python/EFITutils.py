@@ -597,6 +597,14 @@ def plot_ogr_files(
 
     for filename in filenames:
         polygons = close_ogr_polygons(order_ogr_polygons(read_ogr(filename)), verbose=True)
+        total_elements = 0
+        print(f'{filename}:')
+        for block_id, poly in enumerate(polygons, start=1):
+            n_points = np.asarray(poly['r']).size
+            n_elements = max(n_points - 1, 0)
+            total_elements += n_elements
+            print(f'  block {block_id}: points={n_points}, elements={n_elements}')
+        print(f'  total elements={total_elements}')
         _plot_ogr_polygons(ax, polygons, filename=filename, label_elements=label_elements)
 
     ax.set_aspect('equal', adjustable='box')
