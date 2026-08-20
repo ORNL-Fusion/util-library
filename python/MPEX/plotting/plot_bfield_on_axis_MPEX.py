@@ -22,6 +22,7 @@ from MPEX.COILS.MPEX.coils import (
 )
 
 
+# Plot on-axis MPEX magnetic-field profiles for selected configurations.
 def plot_bfield_on_axis_mpex(
     config_name: list[str] | tuple[str, ...] | None = None,
     field_models: list[str] | tuple[str, ...] | None = None,
@@ -141,6 +142,7 @@ def plot_bfield_on_axis_mpex(
     }
 
 
+# Plot rectangular coil cross sections, optionally colored by current.
 def _plot_coil_cross_section(rcoil, zcoil, current=None, ax=None):
     import matplotlib.pyplot as plt
 
@@ -176,6 +178,7 @@ def _plot_coil_cross_section(rcoil, zcoil, current=None, ax=None):
     return fig, ax
 
 
+# Build the command-line parser for the MPEX on-axis field plot.
 def _build_parser() -> argparse.ArgumentParser:
     defaults = get_mpex_plot_defaults()
     parser = argparse.ArgumentParser(
@@ -222,6 +225,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# Command-line entry point for plot_bfield_on_axis_MPEX.
 def main() -> int:
     parser = _build_parser()
     args = parser.parse_args()

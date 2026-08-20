@@ -16,7 +16,7 @@ except ImportError as exc:
 else:
     _MPEX_MODELING_DATA_IMPORT_ERROR = None
 
-
+# Container for the MPEX coil geometry table.
 @dataclass(frozen=True)
 class MPEXCoilGeometry:
     coil_index: np.ndarray
@@ -28,19 +28,23 @@ class MPEXCoilGeometry:
     nturns: np.ndarray
     nlayers: np.ndarray
 
+    # Return the number of MPEX coil rows.
     @property
     def ncoils(self) -> int:
         return int(self.coil_index.size)
 
+    # Return windings per coil from turns times layers.
     @property
     def nwind(self) -> np.ndarray:
         return self.nturns * self.nlayers
 
+    # Return rectangular coil cross-section areas.
     @property
     def area(self) -> np.ndarray:
         return self.cl * (self.rr2 - self.rr1)
 
 
+# Return raw MPEX coil geometry names and table data.
 def get_mpex_geometry_table() -> tuple[list[str], np.ndarray]:
     if _MPEX_MODELING_DATA_IMPORT_ERROR is not None:
         raise ImportError(
@@ -51,6 +55,7 @@ def get_mpex_geometry_table() -> tuple[list[str], np.ndarray]:
     return _get_mpex_geometry_table()
 
 
+# Convert the raw MPEX geometry table into typed arrays.
 def define_mpex_coils() -> MPEXCoilGeometry:
     _, table = get_mpex_geometry_table()
     return MPEXCoilGeometry(
@@ -65,6 +70,7 @@ def define_mpex_coils() -> MPEXCoilGeometry:
     )
 
 
+# Return named MPEX current configurations.
 def get_mpex_currents_by_config() -> tuple[tuple[str, ...], np.ndarray]:
     if _MPEX_MODELING_DATA_IMPORT_ERROR is not None:
         raise ImportError(
@@ -75,6 +81,7 @@ def get_mpex_currents_by_config() -> tuple[tuple[str, ...], np.ndarray]:
     return _get_mpex_currents_by_config()
 
 
+# Resolve an MPEX current configuration into coil geometry and currents.
 def setup_mpex_coils(
     current_in: str | np.ndarray,
     verbose: int = 0,
@@ -108,6 +115,7 @@ def setup_mpex_coils(
     return coil_geometry, current_per_winding
 
 
+# Build explicit Jackson circular-coil windings for all MPEX coils.
 def build_mpex_coils_jackson(
     current_in: str | np.ndarray,
     verbose: int = 0,
@@ -144,6 +152,7 @@ def build_mpex_coils_jackson(
     )
 
 
+# Build MPEX coils with selected coils represented by simplified windings.
 def build_mpex_coils_jackson_hybrid(
     current_in: str | np.ndarray,
     simplify_coils: None | np.ndarray | list[int] | list[bool] = None,
@@ -214,6 +223,7 @@ def build_mpex_coils_jackson_hybrid(
     )
 
 
+# Return closed R,Z rectangles for plotting MPEX coil cross sections.
 def get_coil_cross_sections(coil_geometry: MPEXCoilGeometry) -> tuple[np.ndarray, np.ndarray]:
     rcoil = np.column_stack(
         [coil_geometry.rr1, coil_geometry.rr2, coil_geometry.rr2, coil_geometry.rr1, coil_geometry.rr1]
@@ -230,6 +240,7 @@ def get_coil_cross_sections(coil_geometry: MPEXCoilGeometry) -> tuple[np.ndarray
     return rcoil, zcoil
 
 
+# Return plotting defaults for MPEX on-axis field comparisons.
 def get_mpex_plot_defaults() -> dict[str, object]:
     return {
         "config_name": ["D3-6", "D2-2", "D1-1"],
@@ -245,6 +256,7 @@ def get_mpex_plot_defaults() -> dict[str, object]:
     }
 
 
+# Convert user simplify-coil input into a boolean coil mask.
 def _get_simplify_mask(
     coil_geometry: MPEXCoilGeometry,
     simplify_coils: None | np.ndarray | list[int] | list[bool],

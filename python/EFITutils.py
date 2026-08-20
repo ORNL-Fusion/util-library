@@ -12,29 +12,35 @@ import re
 
 import numpy as np
 
+
+# Lightweight object wrapper for reading, plotting, and locating gfile x-points.
 class geq():
+    # Store the gfile name used when setting up the magnetic field.
     def __init__(self, gfile_name="gfile"):
         self.gfile_name = gfile_name
         pass
-    
+
+    # Read the gfile and find its x-points.
     def setup_bfield(self):        
         self.read_gfile(self.gfile_name)
         self.find_xpt()
-        
+
+    # Plot the separatrix and x-point markers on an existing axis.
     def plot(self,ax):
         psiFine = _refine_psi(self.g,self.g['R'][1:-1],self.g['Z'][1:-1],2)
         ax.plot(self.xpt_info['xpt1']['rx'],self.xpt_info['xpt1']['zx'],'rx')
         ax.plot(self.xpt_info['xpt2']['rx'],self.xpt_info['xpt2']['zx'],'rx')
         ax.contour(psiFine['r'],psiFine['z'],np.transpose(psiFine['psiN']),[1.0])
         ax.grid()        
-        
+
+    # Read and postprocess a gfile into this object.
     def read_gfile(self, gfile_name="gfile"):    
         self.g = readg_g3d(gfile_name)        
         
     # -------------------------------------------------------------------------------------------------------------------------
     # Find xpt(s) by searching for min(Bpol)
     # JDL
-    # -------------------------------------------------------------------------------------------------------------------------
+    # Refine the primary and mirrored x-point locations from minimum Bpol.
     def find_xpt(self):
 
         verbose = False
@@ -98,7 +104,7 @@ class geq():
 # P.beta is the angle in the poloidal plane between B and the surface normal
 #
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Evaluate magnetic incidence angles along one R-Z wall segment.
 def calc_Bangle_g(g,R1,Z1,R2,Z2,npts=3):
     if npts < 1:
         print('Error: npts must be at least 1')
@@ -136,7 +142,7 @@ def calc_Bangle_g(g,R1,Z1,R2,Z2,npts=3):
 # Driver for fieldline following with parallel distance as integration variable
 #
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Follow one magnetic field line using parallel distance as the step variable.
 def follow_fieldlines_rzphi_dl(g,Rstart,Zstart,phistart,dl,nsteps):
     # Number of equations for each ode system
     Neq = 3
@@ -177,7 +183,7 @@ def follow_fieldlines_rzphi_dl(g,Rstart,Zstart,phistart,dl,nsteps):
 # -------------------------------------------------------------------------------------------------------------------------
 # Get magnetic field components from gfile, units of Tesla    
 # also returns psi and psiN
-# -------------------------------------------------------------------------------------------------------------------------
+# Evaluate magnetic field components, psi, and psiN from a postprocessed gfile.
 def calc_bfield(g,R,Z):
 
     inds = _calc_interpolation_inds(g,R,Z)
@@ -213,6 +219,7 @@ def calc_bfield(g,R,Z):
     return {'Br':Br,'Bz':Bz,'Bt':Bt,'Bpol':Bpol,'Btot':Btot,'psi':psi,'psiN':psiN,'ierr':inds['ierr']}
 
 
+# Find the outboard boundary point nearest the magnetic-axis plane.
 def _outboard_midplane_boundary_point(g):
     """Return the outboard LCFS intersection with the magnetic-axis plane."""
     rbdry = np.asarray(g.get('rbdry', []), dtype=float).reshape(-1)
@@ -241,6 +248,7 @@ def _outboard_midplane_boundary_point(g):
     return float(rbdry[i]), float(zbdry[i])
 
 
+# Diagnose whether a gfile likely stores psi in Wb or Wb/rad.
 def diagnose_gfile_psi_units(g):
     """Compare gfile psi conventions with a circular-plasma Bpol estimate.
 
@@ -301,7 +309,7 @@ def diagnose_gfile_psi_units(g):
 # -------------------------------------------------------------------------------------------------------------------------
 # Get psiN at a point from a gfile
 # psiN = (psi(R,Z) - psi(axis))/(psi(boundary) - psi(axis))
-# -------------------------------------------------------------------------------------------------------------------------
+# Evaluate normalized poloidal flux from a postprocessed gfile.
 def calc_psiN(g,R,Z):
     # this applies g.ip_sign
     psi = calc_psi(g,R,Z)
@@ -312,7 +320,7 @@ def calc_psiN(g,R,Z):
 # -------------------------------------------------------------------------------------------------------------------------
 # Get psi at a point from a gfile
 # psi = -sign(Ip)*psirz(R,Z), where psirz is the value in the gfile
-# -------------------------------------------------------------------------------------------------------------------------
+# Evaluate signed poloidal flux from a postprocessed gfile.
 def calc_psi(g,R,Z,inds=None):
     
     if inds is None:
@@ -337,7 +345,7 @@ def calc_psi(g,R,Z,inds=None):
 # -------------------------------------------------------------------------------------------------------------------------
 # Get psi derivatives at a point from a gfile
 # derivatives computed from psi = -sign(Ip)*psirz(R,Z), where psirz is the value in the gfile
-# -------------------------------------------------------------------------------------------------------------------------
+# Evaluate bicubic psi derivatives used for Bpol interpolation.
 def calc_psi_derivs(g,R,Z,inds=None):
     
     if inds is None:
@@ -379,7 +387,7 @@ def calc_psi_derivs(g,R,Z,inds=None):
 # bfield interpolation
 # Use readg_g3d_simple if you just want the gfile contents
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Read a gfile and add interpolation quantities for psi and bfield calls.
 def readg_g3d(filename):
 
     g = readg_g3d_simple(filename)
@@ -388,6 +396,7 @@ def readg_g3d(filename):
     return g
 
 
+# Add derived gfile quantities needed for psi and bfield interpolation.
 def postprocess_gfile(g):
     nR = g['mw']
     nZ = g['mh']
@@ -409,6 +418,7 @@ def postprocess_gfile(g):
     return g
 
 
+# Refine the R,Z resolution of an in-memory gfile by interpolation.
 def refine_gfile(g, fac=2):
     if fac < 1:
         raise ValueError('refinement factor must be at least 1')
@@ -446,12 +456,14 @@ def refine_gfile(g, fac=2):
     return postprocess_gfile(gNew)
 
 
+# Write gfile numeric arrays in fixed-width GEQDSK format.
 def _write_gfile_values(fid, vals):
     vals = np.asarray(vals).reshape(-1, order='F')
     for i in range(0, vals.size, 5):
         fid.write(''.join([f'{v:16.9e}' for v in vals[i:i+5]]) + '\n')
 
 
+# Check that required gfile fields contain only finite numeric values.
 def _validate_gfile_finite(g):
     fields = [
         'xdim', 'zdim', 'rzero', 'rgrid1', 'zmid',
@@ -468,6 +480,7 @@ def _validate_gfile_finite(g):
             )
 
 
+# Write an in-memory gfile dictionary to GEQDSK format.
 def write_gfile(g, filename):
     _validate_gfile_finite(g)
 
@@ -500,6 +513,7 @@ def write_gfile(g, filename):
     return filename
 
 
+# Double the R,Z resolution of a gfile on disk.
 def double_gfile_resolution(gfile_name, output_file):
     print(f'Reading {gfile_name}')
     g = readg_g3d(gfile_name)
@@ -513,6 +527,7 @@ def double_gfile_resolution(gfile_name, output_file):
     return output_file
 
 
+# Command-line entry point for double_gfile_resolution.
 def double_gfile_resolution_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Double the R and Z resolution of an EFIT gfile/geqdsk.'
@@ -528,6 +543,7 @@ def double_gfile_resolution_main(argv=None):
     return 0
 
 
+# Write the gfile limiter as an OGR vessel file in mm.
 def write_gfile_vessel_ogr(gfile_name, output_file='vvfile.ogr'):
     print(f'Reading {gfile_name}')
     g = readg_g3d_simple(gfile_name)
@@ -551,6 +567,7 @@ def write_gfile_vessel_ogr(gfile_name, output_file='vvfile.ogr'):
     return output_file
 
 
+# Command-line entry point for gfile_vessel.
 def gfile_vessel_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Write vvfile.ogr limiter coordinates from an EFIT gfile/geqdsk.'
@@ -571,6 +588,7 @@ GFILE_PSI_UNITS = ('wb-per-rad', 'wb')
 _EQU_NUMBER_RE = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?")
 
 
+# Normalize supported strings for gfile psi units.
 def normalize_gfile_psi_units(value):
     aliases = {
         'wb-per-rad': 'wb-per-rad',
@@ -583,6 +601,7 @@ def normalize_gfile_psi_units(value):
     return normalized
 
 
+# Return the multiplier for converting between supported psi units.
 def _psi_unit_factor(source_units, target_units):
     source_units = normalize_gfile_psi_units(source_units)
     target_units = normalize_gfile_psi_units(target_units)
@@ -591,6 +610,7 @@ def _psi_unit_factor(source_units, target_units):
     return source_to_wb/target_to_wb
 
 
+# Read a fixed number of whitespace-separated values from a text block.
 def _read_free_values(lines, iline, count, dtype=float):
     values = []
     while len(values) < count and iline < len(lines):
@@ -601,10 +621,12 @@ def _read_free_values(lines, iline, count, dtype=float):
     return np.asarray(values[:count], dtype=dtype), iline
 
 
+# Read a SOLPS rzpsi.dat file into R, Z, and psi arrays.
 def read_rzpsi_dat(filename):
     with open(filename, 'r') as fid:
         lines = fid.readlines()
 
+    # Find named rzpsi sections without assuming fixed blank-line spacing.
     def find_marker(pattern, start=0):
         marker_re = re.compile(pattern, re.IGNORECASE)
         for iline in range(start, len(lines)):
@@ -649,10 +671,12 @@ def read_rzpsi_dat(filename):
     return r, z, psi
 
 
+# Convert a Fortran-style floating-point token to a Python float.
 def _parse_equ_float(value):
     return float(value.replace('D', 'E').replace('d', 'e'))
 
 
+# Find a scalar assignment in a SOLPS/DG EQU file.
 def _find_equ_scalar(lines, name):
     pattern = re.compile(rf"^\s*{name}\s*=\s*({_EQU_NUMBER_RE.pattern})", re.IGNORECASE)
     for iline, line in enumerate(lines):
@@ -662,6 +686,7 @@ def _find_equ_scalar(lines, name):
     raise ValueError(f"Could not find EQU scalar {name!r}")
 
 
+# Find the start line for a named EQU array block.
 def _find_equ_marker(lines, start, pattern, description):
     marker_re = re.compile(pattern, re.IGNORECASE)
     for iline in range(start, len(lines)):
@@ -670,6 +695,7 @@ def _find_equ_marker(lines, start, pattern, description):
     raise ValueError(f"Could not find EQU {description} block")
 
 
+# Read a fixed number of numeric values from a SOLPS/DG EQU block.
 def _read_equ_values(lines, start, count, description):
     values = []
     iline = start
@@ -681,6 +707,7 @@ def _read_equ_values(lines, start, count, description):
     return np.asarray(values[:count]), iline
 
 
+# Read a SOLPS/DG EQU file into rectangular-grid magnetic data.
 def read_equ_file(filename):
     with open(filename, 'r') as fid:
         lines = fid.readlines()
@@ -718,6 +745,7 @@ def read_equ_file(filename):
     }
 
 
+# Keep legacy r/z boundary aliases in sync with bdry/lim arrays.
 def _sync_gfile_boundary_aliases(g):
     if 'bdry' in g and np.asarray(g['bdry']).size:
         g['rbdry'] = np.asarray(g['bdry'])[0, :]
@@ -728,6 +756,7 @@ def _sync_gfile_boundary_aliases(g):
     return g
 
 
+# Resize 1-D gfile profiles when the rectangular R grid changes.
 def _resize_gfile_profiles(g, n_old, n_new):
     if n_old == n_new:
         return g
@@ -745,6 +774,7 @@ def _resize_gfile_profiles(g, n_old, n_new):
     return g
 
 
+# Replace the rectangular gfile flux grid and derived grid metadata.
 def _update_gfile_grid(g, r, z, psi, source_psi_units, gfile_psi_units):
     r = np.asarray(r, dtype=float).reshape(-1)
     z = np.asarray(z, dtype=float).reshape(-1)
@@ -769,11 +799,13 @@ def _update_gfile_grid(g, r, z, psi, source_psi_units, gfile_psi_units):
     return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
 
 
+# Update a gfile dictionary from a rzpsi.dat rectangular flux grid.
 def update_gfile_from_rzpsi(g, rzpsi_file, rzpsi_psi_units='wb', gfile_psi_units='wb-per-rad'):
     r, z, psi = read_rzpsi_dat(rzpsi_file)
     return _update_gfile_grid(g, r, z, psi, rzpsi_psi_units, gfile_psi_units)
 
 
+# Update a gfile dictionary from a SOLPS/DG EQU file.
 def update_gfile_from_equ(g, equ_file, gfile_psi_units='wb-per-rad'):
     equ = read_equ_file(equ_file)
     gNew = _update_gfile_grid(
@@ -790,6 +822,7 @@ def update_gfile_from_equ(g, equ_file, gfile_psi_units='wb-per-rad'):
     return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
 
 
+# Replace a gfile limiter/vessel point list from a single OGR polygon.
 def update_gfile_vessel(g, vessel_file):
     polygons = read_ogr(vessel_file)
     if not polygons:
@@ -806,6 +839,7 @@ def update_gfile_vessel(g, vessel_file):
     return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
 
 
+# Read a gfile, apply requested updates, and write the updated gfile.
 def gfile_update(
     gfile_name,
     output_file,
@@ -843,6 +877,7 @@ def gfile_update(
     return output_file
 
 
+# Command-line entry point for gfile_update.
 def gfile_update_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Update selected fields in an EFIT gfile/geqdsk.'
@@ -881,6 +916,7 @@ def gfile_update_main(argv=None):
     return 0
 
 
+# Mirror an in-memory gfile vertically about a specified Z plane.
 def vertical_mirror_gfile(g, symmetry_point_z=0.0, reverse_curves=True):
     z0 = float(symmetry_point_z)
     gNew = copy.deepcopy(g)
@@ -901,6 +937,7 @@ def vertical_mirror_gfile(g, symmetry_point_z=0.0, reverse_curves=True):
     return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
 
 
+# Read a gfile, mirror it vertically, and write the mirrored gfile.
 def gfile_vertical_mirror(
     gfile_name,
     output_file,
@@ -919,6 +956,7 @@ def gfile_vertical_mirror(
     return output_file
 
 
+# Command-line entry point for gfile_vertical_mirror.
 def gfile_vertical_mirror_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Mirror an EFIT gfile/geqdsk vertically about a Z location.'
@@ -946,6 +984,7 @@ def gfile_vertical_mirror_main(argv=None):
     return 0
 
 
+# Interpolate psirz onto a supplied Z grid, preserving the R grid.
 def _interp_psirz_on_z(g, z_values):
     z_values = np.asarray(z_values, dtype=float)
     psirz = np.empty((int(g['mw']), z_values.size))
@@ -954,6 +993,7 @@ def _interp_psirz_on_z(g, z_values):
     return psirz
 
 
+# Remove adjacent duplicate points from a curve.
 def _dedupe_curve_points(points, tol=1.0e-12):
     if points.size == 0:
         return points
@@ -964,12 +1004,14 @@ def _dedupe_curve_points(points, tol=1.0e-12):
     return points[keep, :]
 
 
+# Return the forward closed-curve path between two point indices.
 def _path_between_indices(points, i0, i1):
     if i0 <= i1:
         return points[i0:i1 + 1, :]
     return np.vstack((points[i0:, :], points[:i1 + 1, :]))
 
 
+# Build a symmetric closed curve by keeping one side and mirroring it.
 def _symmetrize_closed_curve_from_side(r, z, keep_side, symmetry_point_z, tol=1.0e-10):
     points = np.column_stack((np.asarray(r, dtype=float), np.asarray(z, dtype=float)))
     if points.shape[0] < 4:
@@ -1019,6 +1061,7 @@ def _symmetrize_closed_curve_from_side(r, z, keep_side, symmetry_point_z, tol=1.
     return combined[:, 0], combined[:, 1]
 
 
+# Symmetrize an in-memory gfile by retaining the upper or lower side.
 def symmetrize_gfile_from_side(
     g,
     keep_side='upper',
@@ -1071,6 +1114,7 @@ def symmetrize_gfile_from_side(
     return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
 
 
+# Read a gfile, symmetrize it from one side, and write the result.
 def gfile_symmetrize(
     gfile_name,
     output_file,
@@ -1093,6 +1137,7 @@ def gfile_symmetrize(
     return output_file
 
 
+# Command-line entry point for gfile_symmetrize.
 def gfile_symmetrize_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Create a vertically symmetric EFIT gfile/geqdsk from one side.'
@@ -1133,6 +1178,7 @@ def gfile_symmetrize_main(argv=None):
     return 0
 
 
+# Draw one gfile panel with flux contours, limiter, boundary, and axis.
 def _plot_gfile_panel(ax, g, title, levels=48):
     r = np.asarray(g['R'])
     z = np.asarray(g['Z'])
@@ -1155,6 +1201,7 @@ def _plot_gfile_panel(ax, g, title, levels=48):
     ax.grid(True, linewidth=0.35, alpha=0.5)
 
 
+# Plot a side-by-side comparison of an input and transformed gfile.
 def plot_gfile_comparison(input_gfile, output_gfile, output_plot, title=None, levels=48, show=False):
     import matplotlib.pyplot as plt
 
@@ -1177,6 +1224,7 @@ def plot_gfile_comparison(input_gfile, output_gfile, output_plot, title=None, le
     return output_plot
 
 
+# Generate transform output files and PNGs for visual inspection.
 def plot_gfile_transform_tests(
     gfile_name,
     output_dir='gfile_transform_tests',
@@ -1238,6 +1286,7 @@ def plot_gfile_transform_tests(
     return outputs
 
 
+# Command-line entry point for plot_gfile_transform_tests.
 def plot_gfile_transform_tests_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Generate gfile transform outputs and before/after plots for visual inspection.'
@@ -1303,6 +1352,7 @@ def plot_gfile_transform_tests_main(argv=None):
     return 0
 
 
+# Plot OGR polygons, optionally with psi/topology overlays.
 def plot_ogr_files(
     filenames,
     label_elements=False,
@@ -1358,6 +1408,7 @@ def plot_ogr_files(
         plt.close(fig)
 
 
+# Command-line entry point for plot_ogr.
 def plot_ogr_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Plot one or more two-column OGR coordinate files.'
@@ -1409,10 +1460,12 @@ def plot_ogr_main(argv=None):
     return 0
 
 
+# Read one or more OGR polygons, converting file mm to internal m.
 def read_ogr(filename):
     polygons = []
     coords = []
 
+    # Store the current coordinate block as one polygon.
     def flush_coords():
         if coords:
             arr = np.asarray(coords, dtype=float)*0.001
@@ -1434,6 +1487,7 @@ def read_ogr(filename):
     return polygons
 
 
+# Write OGR polygons, converting internal m to file mm.
 def write_ogr(filename, polygons):
     with open(filename, 'w') as fid:
         for i, poly in enumerate(polygons):
@@ -1449,6 +1503,7 @@ def write_ogr(filename, polygons):
                 fid.write('\n')
 
 
+# Calculate point-to-line-segment distances for one or more points.
 def _point_line_distance(points, start, end):
     points = np.asarray(points)
     start = np.asarray(start)
@@ -1465,12 +1520,14 @@ def _point_line_distance(points, start, end):
     return np.linalg.norm(points - proj, axis=1)
 
 
+# Return the Douglas-Peucker point mask for a polyline.
 def _douglas_peucker_keep(points, tolerance):
     n = points.shape[0]
     keep = np.zeros(n, dtype=bool)
     keep[0] = True
     keep[-1] = True
 
+    # Recursively mark points needed to satisfy the tolerance.
     def recurse(i0, i1):
         if i1 <= i0 + 1:
             return
@@ -1490,12 +1547,14 @@ def _douglas_peucker_keep(points, tolerance):
     return keep
 
 
+# Test whether a polyline is closed within a distance tolerance.
 def _is_closed_polyline(points, tolerance):
     if points.shape[0] < 3:
         return False
     return np.linalg.norm(points[0] - points[-1]) <= tolerance
 
 
+# Simplify one OGR polygon with Douglas-Peucker reduction.
 def simplify_ogr_polygon(poly, tolerance):
     r = np.asarray(poly['r'])
     z = np.asarray(poly['z'])
@@ -1522,6 +1581,7 @@ def simplify_ogr_polygon(poly, tolerance):
     return {'r': simplified[:, 0], 'z': simplified[:, 1]}
 
 
+# Measure the maximum distance from original points to a reduced polyline.
 def _max_distance_to_polyline(points, reduced_points):
     if points.shape[0] == 0:
         return 0.0
@@ -1535,6 +1595,7 @@ def _max_distance_to_polyline(points, reduced_points):
     return float(np.max(best))
 
 
+# Simplify all polygons in an OGR file and write the reduced file.
 def simplify_ogr_file(input_file, output_file, tolerance):
     if tolerance < 0:
         raise ValueError('tolerance must be non-negative')
@@ -1572,6 +1633,7 @@ def simplify_ogr_file(input_file, output_file, tolerance):
     return output_file
 
 
+# Command-line entry point for simplify_ogr_file.
 def simplify_ogr_file_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Simplify/reduce OGR polylines using a distance tolerance.'
@@ -1589,10 +1651,12 @@ def simplify_ogr_file_main(argv=None):
     return 0
 
 
+# Round a point into a hashable graph key.
 def _point_key(point, ndigits=12):
     return tuple(np.round(point, ndigits))
 
 
+# Order unordered OGR edges into connected polyline blocks.
 def _order_edges(points, edges):
     key_to_point = {}
     adjacency = {}
@@ -1649,6 +1713,7 @@ def _order_edges(points, edges):
     return ordered_blocks
 
 
+# Infer edge pairs from one raw OGR block.
 def _edges_from_ogr_block(points):
     if points.shape[0] < 2:
         return []
@@ -1668,6 +1733,7 @@ def _edges_from_ogr_block(points):
     return adjacent_edges
 
 
+# Count graph components and maximum node degree for candidate edges.
 def _edge_graph_stats(points, edges):
     adjacency = {}
     for i0, i1 in edges:
@@ -1692,6 +1758,7 @@ def _edge_graph_stats(points, edges):
     return components, max_degree
 
 
+# Order polygons in an OGR file and write the result.
 def order_ogr_file(input_file, output_file):
     print(f'Reading {input_file}')
     polygons = read_ogr(input_file)
@@ -1704,6 +1771,7 @@ def order_ogr_file(input_file, output_file):
     return output_file
 
 
+# Order a list of OGR polygons into connected blocks.
 def order_ogr_polygons(polygons, verbose=False):
     ordered = []
     for i, poly in enumerate(polygons, start=1):
@@ -1727,12 +1795,14 @@ def order_ogr_polygons(polygons, verbose=False):
     return ordered
 
 
+# Test whether separate R,Z arrays represent a closed curve.
 def _points_are_closed(r, z, tolerance=1e-12):
     if r.size < 2:
         return False
     return np.hypot(r[0] - r[-1], z[0] - z[-1]) <= tolerance
 
 
+# Append the first point to an OGR polygon if it is not already closed.
 def close_ogr_polygon(poly, block_id=None, verbose=False, tolerance=1e-12):
     r = np.asarray(poly['r'])
     z = np.asarray(poly['z'])
@@ -1754,6 +1824,7 @@ def close_ogr_polygon(poly, block_id=None, verbose=False, tolerance=1e-12):
     }
 
 
+# Close every polygon in a list of OGR polygons.
 def close_ogr_polygons(polygons, verbose=False, tolerance=1e-12):
     return [
         close_ogr_polygon(poly, block_id=i, verbose=verbose, tolerance=tolerance)
@@ -1761,6 +1832,7 @@ def close_ogr_polygons(polygons, verbose=False, tolerance=1e-12):
     ]
 
 
+# Command-line entry point for order_ogr_file.
 def order_ogr_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Order OGR points so each block follows connected polygon/polyline geometry.'
@@ -1773,6 +1845,7 @@ def order_ogr_main(argv=None):
     return 0
 
 
+# Parse an OGR element label of the form N or block.N.
 def _parse_ogr_element_label(label):
     parts = str(label).split('.')
     if len(parts) == 1:
@@ -1782,6 +1855,7 @@ def _parse_ogr_element_label(label):
     raise ValueError('Element label must be N or block.N')
 
 
+# Split one OGR element into equal-length sub-elements.
 def refine_ogr_element(input_file, output_file, element_label, nsections=2):
     if nsections < 2:
         raise ValueError('nsections must be at least 2')
@@ -1825,6 +1899,7 @@ def refine_ogr_element(input_file, output_file, element_label, nsections=2):
     return output_file
 
 
+# Command-line entry point for refine_ogr_element.
 def refine_ogr_elements_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Split one labeled OGR element into multiple equal sections.'
@@ -1855,6 +1930,7 @@ def refine_ogr_elements_main(argv=None):
     return 0
 
 
+# Return a normal offset for placing a segment label.
 def _segment_label_offset(r0, z0, r1, z1, distance):
     dr = r1 - r0
     dz = z1 - z0
@@ -1864,6 +1940,7 @@ def _segment_label_offset(r0, z0, r1, z1, distance):
     return -distance*dz/length, distance*dr/length
 
 
+# Label OGR segment and point indices on a plot axis.
 def _plot_ogr_labels(ax, r, z, block_id, label_segments=True, label_points=False):
     if label_points:
         for i, (ri, zi) in enumerate(zip(r, z), start=1):
@@ -1885,6 +1962,7 @@ def _plot_ogr_labels(ax, r, z, block_id, label_segments=True, label_points=False
             )
 
 
+# Plot one or more OGR polygons on an existing axis.
 def _plot_ogr_polygons(
     ax,
     polygons,
@@ -1913,6 +1991,7 @@ def _plot_ogr_polygons(
             )
 
 
+# Plot structure.dat polylines and optional structure/element labels.
 def _plot_structures(ax, structures, label_elements=True, label_structures=True):
     nonempty = [points for points in structures if points.shape[0] > 0]
     if nonempty:
@@ -1975,6 +2054,7 @@ def _plot_structures(ax, structures, label_elements=True, label_structures=True)
             )
 
 
+# Plot OGR element labels to help choose structure.dat groups.
 def plot_ogr_for_structure_selection(
     ogr_file,
     output_png=None,
@@ -2023,6 +2103,7 @@ def plot_ogr_for_structure_selection(
     return polygons
 
 
+# Plot the source OGR labels beside generated structure.dat groups.
 def plot_ogr_structure_conversion(
     ogr_file,
     polygons,
@@ -2068,6 +2149,7 @@ def plot_ogr_structure_conversion(
         plt.close(fig)
 
 
+# Command-line entry point for convert_ogr_to_structure_dat.
 def convert_ogr_to_structure_dat_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Convert grouped OGR elements to a GOAT/SOLPS structure.dat file.'
@@ -2116,6 +2198,7 @@ def convert_ogr_to_structure_dat_main(argv=None):
     return 0
 
 
+# Command-line entry point for plot_structure_dat.
 def plot_structure_dat_main(argv=None):
     parser = argparse.ArgumentParser(
         description='Plot a GOAT/SOLPS structure.dat file.'
@@ -2152,6 +2235,7 @@ def plot_structure_dat_main(argv=None):
     return 0
 
 
+# Plot a structure.dat file, optionally against the source OGR geometry.
 def plot_structure_dat(
     structure_dat,
     ogr_file=None,
@@ -2204,6 +2288,7 @@ def plot_structure_dat(
     return output
 
 
+# Expand command-line OGR group arguments, including bracketed lists.
 def expand_ogr_group_arguments(texts):
     groups = []
     for text in texts:
@@ -2246,6 +2331,7 @@ def expand_ogr_group_arguments(texts):
     return groups
 
 
+# Parse one OGR element group specification into element indices.
 def parse_ogr_element_group(text):
     text = text.strip()
     if text.startswith('[') and text.endswith(']'):
@@ -2271,6 +2357,7 @@ def parse_ogr_element_group(text):
     return group
 
 
+# Convert selected OGR element groups to a GOAT/SOLPS structure.dat file.
 def convert_ogr_to_structure_dat(
     ogr_file,
     structure_dat,
@@ -2335,16 +2422,19 @@ def convert_ogr_to_structure_dat(
     return structure_dat
 
 
+# Format one OGR element group for status output.
 def format_ogr_element_group(group):
     return ','.join(str(i) for i in group)
 
 
+# Format a list of OGR elements, using none for an empty list.
 def format_ogr_element_list(elements):
     if not elements:
         return 'none'
     return ','.join(str(i) for i in elements)
 
 
+# Convert one OGR element group to an ordered point chain.
 def points_from_element_group(r, z, group):
     points = []
     n_elements = r.size - 1
@@ -2388,6 +2478,7 @@ def points_from_element_group(r, z, group):
     return _dedupe_consecutive_points(np.asarray(points)), nbreaks
 
 
+# Remove adjacent duplicate R,Z points from a point chain.
 def _dedupe_consecutive_points(points, tolerance=1e-12):
     if points.size == 0:
         return points.reshape(0, 2)
@@ -2399,6 +2490,7 @@ def _dedupe_consecutive_points(points, tolerance=1e-12):
     return np.asarray(deduped)
 
 
+# Clean structure.dat points before writing.
 def sanitize_structure_points(points, tolerance=1e-12):
     points = _dedupe_consecutive_points(np.asarray(points), tolerance=tolerance)
     if points.shape[0] >= 2 and np.linalg.norm(points[0] - points[-1]) <= tolerance:
@@ -2406,6 +2498,7 @@ def sanitize_structure_points(points, tolerance=1e-12):
     return points
 
 
+# Write GOAT/SOLPS structure.dat from point chains.
 def write_structure_dat(filename, structures, closed=False):
     with open(filename, 'w') as fid:
         fid.write(f'{len(structures):12d}\n')
@@ -2422,6 +2515,7 @@ def write_structure_dat(filename, structures, closed=False):
         fid.write('$end\n')
 
 
+# Read GOAT/SOLPS structure.dat into point chains.
 def read_structure_dat(filename):
     lines = Path(filename).read_text().splitlines()
     if not lines:
@@ -2449,7 +2543,7 @@ def read_structure_dat(filename):
 # -------------------------------------------------------------------------------------------------------------------------
 # Helper routine to refine psiN for plotting
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Refine a psiN grid for plotting on a denser R-Z mesh.
 def _refine_psi(g,r,z,fac):
     r2 = np.linspace(g['R'][0],g['R'][-1],fac*g['mw'])
     z2 = np.linspace(g['Z'][0],g['Z'][-1],fac*g['mh'])
@@ -2461,7 +2555,7 @@ def _refine_psi(g,r,z,fac):
 # -------------------------------------------------------------------------------------------------------------------------
 # helper routine to refine xpt guess
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Refine an x-point guess by iteratively searching for minimum Bpol.
 def _refine_xpt(g,xptStart,drStart,dzStart,tol):
                                 
     nIterMax = 15    
@@ -2517,7 +2611,7 @@ def _refine_xpt(g,xptStart,drStart,dzStart,tol):
 # Helper routine to find position in table.
 # Points off valid grid region will have ierr = True, ir = iz = 0
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Find bicubic interpolation cell indices and off-grid flags.
 def _calc_interpolation_inds(g,R,Z):
     R, Z = np.broadcast_arrays(
         np.asarray(R, dtype=float),
@@ -2555,7 +2649,7 @@ def _calc_interpolation_inds(g,R,Z):
 #   F = R*Btor
 #  Jtor(Amp/m2) = R*P'(psi) + FF'(psi)/R
 # J.D. Lore
-# -------------------------------------------------------------------------------------------------------------------------
+# Read raw EFIT gfile contents without derived interpolation fields.
 def readg_g3d_simple(filename):
     with open(filename, "r") as f:
         lines = f.readlines()
@@ -2761,7 +2855,7 @@ def readg_g3d_simple(filename):
 # RK4 integration step with parallel distance as integration variable
 #
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Integrate fieldline equations with fixed RK4 steps in parallel distance.
 def _rk4_fixed_step_integrate_dl(y0,x0,dx,nsteps,g):
     yout = np.full((nsteps+1,y0.size),np.nan)
     xout = np.full((nsteps+1,),np.nan)
@@ -2797,7 +2891,7 @@ def _rk4_fixed_step_integrate_dl(y0,x0,dx,nsteps,g):
 # RK4 core fieldline following with parallel distance as integration variable
 #
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Advance one RK4 fieldline step in parallel distance.
 def _rk4_core_dl(y,dydx0,dx,g):    
     d1 = dx*dydx0
     dydx = _fl_derivs_dl_gfile(y + d1/2,g)
@@ -2819,7 +2913,7 @@ def _rk4_core_dl(y,dydx0,dx,g):
 # Derivative function for fieldline following with parallel distance as integration variable
 #
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Evaluate fieldline derivatives dR/dl, dphi/dl, and dZ/dl.
 def _fl_derivs_dl_gfile(RPZ,g):
     b = calc_bfield(g,RPZ[0::3],RPZ[2::3])
     df = np.empty((RPZ.size,))
@@ -2848,7 +2942,7 @@ def _fl_derivs_dl_gfile(RPZ,g):
 # inverted matrix coefficients directly. 
 # 
 # J.D. Lore
-# -------------------------------------------------------------------------------------------------------------------------
+# Build inverse bicubic coefficients for psirz interpolation.
 def _get_psi_bicub_coeffs_inv(g):
 
     nR = g['mw']

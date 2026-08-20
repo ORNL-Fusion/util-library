@@ -14,7 +14,7 @@ import numpy as np
 # If first == true then checking is stopped when first intersection is found. 
 #
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Find intersections between two piecewise-linear curves.
 def int_curve_curve(line1R,line1Z,line2R,line2Z,first=True):
 
     line1R = np.asarray(line1R).reshape(-1)
@@ -64,7 +64,7 @@ def int_curve_curve(line1R,line1Z,line2R,line2Z,first=True):
 # Curve is defined by array of points linearly interpolated to find intersection with line.
 #
 # JDL 
-# -------------------------------------------------------------------------------------------------------------------------
+# Find intersections between one segment and a piecewise-linear curve.
 def int_line_curve(p1,p2,lineR,lineZ,first=True):
 
     p1 = np.asarray(p1).reshape(-1)
@@ -128,7 +128,7 @@ def int_line_curve(p1,p2,lineR,lineZ,first=True):
 # Note the distances can be greater than 1.0, i.e., these are not line segments!
 # 
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Solve for the intersection parameters of two infinite 2D lines.
 def int_two_lines(p1,p2,p3,p4):
     
     tol = 1e-15;
@@ -151,7 +151,7 @@ def int_two_lines(p1,p2,p3,p4):
 # Move a distance L along a curve. 
 #
 # JDL
-# -------------------------------------------------------------------------------------------------------------------------
+# Interpolate the R-Z point at distance L along a curve.
 def move_L_on_C(L,rline,zline):
 
     rline = np.asarray(rline).reshape(-1)

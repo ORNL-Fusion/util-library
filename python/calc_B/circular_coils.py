@@ -8,16 +8,19 @@ import numpy as np
 MU0_OVER_4PI = 1.0e-7
 
 
+# Container for the R,Z location of circular coil windings.
 @dataclass(frozen=True)
 class CircularCoilSet:
     rwind: np.ndarray
     zwind: np.ndarray
 
+    # Check that R and Z winding arrays have matching shapes.
     def __post_init__(self) -> None:
         if self.rwind.shape != self.zwind.shape:
             raise ValueError("rwind and zwind must have the same shape")
 
 
+# Build a rectangular pack of circular coil winding centers.
 def build_circular_coil_jackson(
     r1: float,
     r2: float,
@@ -38,6 +41,7 @@ def build_circular_coil_jackson(
     return CircularCoilSet(rwind=rwind, zwind=zwind)
 
 
+# Evaluate Br and Bz from circular coils at one or more R,Z points.
 def bfield_circular_coils_vectorized(
     coil: CircularCoilSet,
     current: np.ndarray,
