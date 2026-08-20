@@ -37,6 +37,10 @@ and command-line helpers such as:
 
 ```bash
 gfile_vessel
+gfile_update
+gfile_vertical_mirror
+gfile_symmetrize
+plot_gfile_transform_tests
 plot_ogr
 order_ogr
 refine_ogr_elements
@@ -44,8 +48,16 @@ convert_ogr_to_structure_dat
 double_gfile_resolution
 ```
 
-Most commands only need numpy.  Plotting commands, such as `plot_ogr`, also
-need matplotlib.  If matplotlib is not already available:
+`gfile_update` updates selected GEQDSK fields from an EQU file, `rzpsi.dat`, or
+an OGR vessel file. `gfile_vertical_mirror` flips an equilibrium about a
+specified Z plane. `gfile_symmetrize` builds a vertically symmetric gfile from
+the upper or lower side. `plot_gfile_transform_tests` writes before/after PNGs
+for visual inspection of these transformations; add `--symmetrize-vessel` to
+include the limiter/vessel in the symmetrization example plots.
+
+Most commands only need numpy. Plotting commands, such as `plot_ogr` and
+`plot_gfile_transform_tests`, also need matplotlib. If matplotlib is not
+already available:
 
 ```bash
 python -m pip install matplotlib

@@ -8,6 +8,7 @@
 import argparse
 import copy
 from pathlib import Path
+import re
 
 import numpy as np
 
@@ -563,6 +564,742 @@ def gfile_vessel_main(argv=None):
 
     args = parser.parse_args(argv)
     write_gfile_vessel_ogr(args.gfile, args.output)
+    return 0
+
+
+GFILE_PSI_UNITS = ('wb-per-rad', 'wb')
+_EQU_NUMBER_RE = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[EeDd][+-]?\d+)?")
+
+
+def normalize_gfile_psi_units(value):
+    aliases = {
+        'wb-per-rad': 'wb-per-rad',
+        'wb/rad': 'wb-per-rad',
+        'wb': 'wb',
+    }
+    normalized = aliases.get(str(value).strip().lower())
+    if normalized is None:
+        raise ValueError("psi units must be 'wb-per-rad' or 'wb'")
+    return normalized
+
+
+def _psi_unit_factor(source_units, target_units):
+    source_units = normalize_gfile_psi_units(source_units)
+    target_units = normalize_gfile_psi_units(target_units)
+    source_to_wb = 2.0*np.pi if source_units == 'wb-per-rad' else 1.0
+    target_to_wb = 2.0*np.pi if target_units == 'wb-per-rad' else 1.0
+    return source_to_wb/target_to_wb
+
+
+def _read_free_values(lines, iline, count, dtype=float):
+    values = []
+    while len(values) < count and iline < len(lines):
+        values.extend(lines[iline].split())
+        iline += 1
+    if len(values) < count:
+        raise ValueError(f'Expected {count} values, found {len(values)}')
+    return np.asarray(values[:count], dtype=dtype), iline
+
+
+def read_rzpsi_dat(filename):
+    with open(filename, 'r') as fid:
+        lines = fid.readlines()
+
+    def find_marker(pattern, start=0):
+        marker_re = re.compile(pattern, re.IGNORECASE)
+        for iline in range(start, len(lines)):
+            if marker_re.search(lines[iline]):
+                return iline
+        raise ValueError(f'Could not find marker {pattern!r} in {filename}')
+
+    iline = 0
+    while iline < len(lines) and not lines[iline].strip():
+        iline += 1
+    if iline == len(lines):
+        raise ValueError(f'{filename}: empty rzpsi.dat file')
+
+    dims = lines[iline].split()
+    if len(dims) < 2:
+        raise ValueError(f'{filename}: could not read rzpsi dimensions')
+    nR, nZ = int(dims[0]), int(dims[1])
+
+    r_marker = find_marker(r'^\s*\$r\b', iline + 1)
+    nr_line = find_marker(r'^\s*nr\s*=', r_marker + 1)
+    match = _EQU_NUMBER_RE.search(lines[nr_line])
+    if match is None:
+        raise ValueError(f'{filename}: could not read nr')
+    nR0 = int(match.group(0))
+    if nR != nR0:
+        raise ValueError(f'readrzpsi: inconsistent specification of nR: {nR}, {nR0}')
+    r, iline = _read_free_values(lines, nr_line + 1, nR)
+
+    z_marker = find_marker(r'^\s*\$z\b', iline)
+    nz_line = find_marker(r'^\s*nz\s*=', z_marker + 1)
+    match = _EQU_NUMBER_RE.search(lines[nz_line])
+    if match is None:
+        raise ValueError(f'{filename}: could not read nz')
+    nZ0 = int(match.group(0))
+    if nZ != nZ0:
+        raise ValueError(f'readrzpsi: inconsistent specification of nZ: {nZ}, {nZ0}')
+    z, iline = _read_free_values(lines, nz_line + 1, nZ)
+
+    psi_marker = find_marker(r'^\s*\$psi\b', iline)
+    psi, iline = _read_free_values(lines, psi_marker + 1, nR*nZ)
+    psi = np.reshape(psi, (nR, nZ), order='F')
+    return r, z, psi
+
+
+def _parse_equ_float(value):
+    return float(value.replace('D', 'E').replace('d', 'e'))
+
+
+def _find_equ_scalar(lines, name):
+    pattern = re.compile(rf"^\s*{name}\s*=\s*({_EQU_NUMBER_RE.pattern})", re.IGNORECASE)
+    for iline, line in enumerate(lines):
+        match = pattern.search(line)
+        if match:
+            return _parse_equ_float(match.group(1)), iline
+    raise ValueError(f"Could not find EQU scalar {name!r}")
+
+
+def _find_equ_marker(lines, start, pattern, description):
+    marker_re = re.compile(pattern, re.IGNORECASE)
+    for iline in range(start, len(lines)):
+        if marker_re.search(lines[iline]):
+            return iline
+    raise ValueError(f"Could not find EQU {description} block")
+
+
+def _read_equ_values(lines, start, count, description):
+    values = []
+    iline = start
+    while len(values) < count and iline < len(lines):
+        values.extend(_parse_equ_float(value) for value in _EQU_NUMBER_RE.findall(lines[iline]))
+        iline += 1
+    if len(values) < count:
+        raise ValueError(f"EQU {description} block ended after {len(values)} values, expected {count}")
+    return np.asarray(values[:count]), iline
+
+
+def read_equ_file(filename):
+    with open(filename, 'r') as fid:
+        lines = fid.readlines()
+
+    jm, jm_line = _find_equ_scalar(lines, 'jm')
+    km, km_line = _find_equ_scalar(lines, 'km')
+    psib, psib_line = _find_equ_scalar(lines, 'psib')
+    btf, btf_line = _find_equ_scalar(lines, 'btf')
+    rtf, rtf_line = _find_equ_scalar(lines, 'rtf')
+
+    jm = int(jm)
+    km = int(km)
+    start = max(jm_line, km_line, psib_line, btf_line, rtf_line) + 1
+
+    r_marker = _find_equ_marker(lines, start, r"^\s*r\s*\(", 'r')
+    r, iline = _read_equ_values(lines, r_marker + 1, jm, 'r')
+
+    z_marker = _find_equ_marker(lines, iline, r"^\s*z\s*\(", 'z')
+    z, iline = _read_equ_values(lines, z_marker + 1, km, 'z')
+
+    psi_marker = _find_equ_marker(lines, iline, r"^\s*\(*\s*psi\b", 'psi')
+    psi_values, _ = _read_equ_values(lines, psi_marker + 1, jm*km, 'psi')
+    psi = np.reshape(psi_values, (jm, km), order='F') + psib
+    print(f'Read EQU psib = {psib:.16e} Wb/rad from {filename}')
+
+    return {
+        'jm': jm,
+        'km': km,
+        'psib': psib,
+        'btf': btf,
+        'rtf': rtf,
+        'r': r,
+        'z': z,
+        'psi': psi,
+    }
+
+
+def _sync_gfile_boundary_aliases(g):
+    if 'bdry' in g and np.asarray(g['bdry']).size:
+        g['rbdry'] = np.asarray(g['bdry'])[0, :]
+        g['zbdry'] = np.asarray(g['bdry'])[1, :]
+    if 'lim' in g and np.asarray(g['lim']).size:
+        g['rlim'] = np.asarray(g['lim'])[0, :]
+        g['zlim'] = np.asarray(g['lim'])[1, :]
+    return g
+
+
+def _resize_gfile_profiles(g, n_old, n_new):
+    if n_old == n_new:
+        return g
+
+    x_new = np.linspace(0.0, 1.0, n_new)
+    for field in ['fpol', 'pres', 'ffprim', 'pprime', 'qpsi']:
+        values = np.asarray(g.get(field, []), dtype=float).reshape(-1)
+        if values.size == 0:
+            continue
+        if values.size == n_new:
+            g[field] = values
+        else:
+            field_x_old = np.linspace(0.0, 1.0, values.size)
+            g[field] = np.interp(x_new, field_x_old, values)
+    return g
+
+
+def _update_gfile_grid(g, r, z, psi, source_psi_units, gfile_psi_units):
+    r = np.asarray(r, dtype=float).reshape(-1)
+    z = np.asarray(z, dtype=float).reshape(-1)
+    psi = np.asarray(psi, dtype=float)
+    if r.size < 2 or z.size < 2:
+        raise ValueError('R and Z grids must each contain at least two points')
+    if np.any(np.diff(r) <= 0.0) or np.any(np.diff(z) <= 0.0):
+        raise ValueError('R and Z grids must be strictly increasing')
+    if psi.shape != (r.size, z.size):
+        raise ValueError('psi must have shape (len(r), len(z))')
+
+    gNew = copy.deepcopy(g)
+    n_old = int(gNew['mw'])
+    gNew['mw'] = int(r.size)
+    gNew['mh'] = int(z.size)
+    gNew['xdim'] = float(r[-1] - r[0])
+    gNew['zdim'] = float(z[-1] - z[0])
+    gNew['rgrid1'] = float(r[0])
+    gNew['zmid'] = float(0.5*(z[0] + z[-1]))
+    gNew['psirz'] = psi*_psi_unit_factor(source_psi_units, gfile_psi_units)
+    _resize_gfile_profiles(gNew, n_old, gNew['mw'])
+    return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
+
+
+def update_gfile_from_rzpsi(g, rzpsi_file, rzpsi_psi_units='wb', gfile_psi_units='wb-per-rad'):
+    r, z, psi = read_rzpsi_dat(rzpsi_file)
+    return _update_gfile_grid(g, r, z, psi, rzpsi_psi_units, gfile_psi_units)
+
+
+def update_gfile_from_equ(g, equ_file, gfile_psi_units='wb-per-rad'):
+    equ = read_equ_file(equ_file)
+    gNew = _update_gfile_grid(
+        g,
+        equ['r'],
+        equ['z'],
+        equ['psi'],
+        'wb-per-rad',
+        gfile_psi_units,
+    )
+    gNew['rzero'] = float(equ['rtf'])
+    gNew['bcentr'] = float(equ['btf'])
+    gNew['ssibry'] = float(equ['psib'])*_psi_unit_factor('wb-per-rad', gfile_psi_units)
+    return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
+
+
+def update_gfile_vessel(g, vessel_file):
+    polygons = read_ogr(vessel_file)
+    if not polygons:
+        raise ValueError(f'No OGR polygons found in {vessel_file}')
+    if len(polygons) != 1:
+        raise ValueError('gfile limiter data must be one OGR polygon')
+
+    poly = close_ogr_polygon(polygons[0], block_id=1, verbose=False)
+    lim = np.vstack((np.asarray(poly['r'], dtype=float), np.asarray(poly['z'], dtype=float)))
+
+    gNew = copy.deepcopy(g)
+    gNew['lim'] = lim
+    gNew['limitr'] = int(lim.shape[1])
+    return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
+
+
+def gfile_update(
+    gfile_name,
+    output_file,
+    equ=None,
+    rzpsi=None,
+    vessel=None,
+    rzpsi_psi_units='wb',
+    gfile_psi_units='wb-per-rad',
+):
+    if equ is not None and rzpsi is not None:
+        raise ValueError('Use only one of equ or rzpsi')
+    if equ is None and rzpsi is None and vessel is None:
+        raise ValueError('Nothing to update; provide equ, rzpsi, and/or vessel')
+
+    print(f'Reading {gfile_name}')
+    g = readg_g3d(gfile_name)
+
+    if equ is not None:
+        print(f'Updating rectangular grid from EQU file: {equ}')
+        g = update_gfile_from_equ(g, equ, gfile_psi_units=gfile_psi_units)
+    if rzpsi is not None:
+        print(f'Updating rectangular grid from rzpsi.dat file: {rzpsi}')
+        g = update_gfile_from_rzpsi(
+            g,
+            rzpsi,
+            rzpsi_psi_units=rzpsi_psi_units,
+            gfile_psi_units=gfile_psi_units,
+        )
+    if vessel is not None:
+        print(f'Updating limiter from OGR file: {vessel}')
+        g = update_gfile_vessel(g, vessel)
+
+    print(f'Writing {output_file}')
+    write_gfile(g, output_file)
+    return output_file
+
+
+def gfile_update_main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Update selected fields in an EFIT gfile/geqdsk.'
+    )
+    parser.add_argument('gfile', help='Input EFIT gfile/geqdsk path')
+    parser.add_argument('-o', '--output', required=True, help='Output gfile path')
+    grid_group = parser.add_mutually_exclusive_group()
+    grid_group.add_argument('--equ', help='Replace the rectangular flux grid from an EQU file')
+    grid_group.add_argument('--rzpsi', help='Replace the rectangular flux grid from rzpsi.dat')
+    parser.add_argument('--vessel', help='Replace limiter points from one OGR polygon')
+    parser.add_argument(
+        '--rzpsi-psi-units',
+        choices=GFILE_PSI_UNITS,
+        default='wb',
+        help="Units of psi in --rzpsi input (default: wb)",
+    )
+    parser.add_argument(
+        '--gfile-psi-units',
+        choices=GFILE_PSI_UNITS,
+        default='wb-per-rad',
+        help="Units to store in the output gfile psirz field (default: wb-per-rad)",
+    )
+    args = parser.parse_args(argv)
+    if args.equ is None and args.rzpsi is None and args.vessel is None:
+        parser.error('provide at least one of --equ, --rzpsi, or --vessel')
+
+    gfile_update(
+        args.gfile,
+        args.output,
+        equ=args.equ,
+        rzpsi=args.rzpsi,
+        vessel=args.vessel,
+        rzpsi_psi_units=args.rzpsi_psi_units,
+        gfile_psi_units=args.gfile_psi_units,
+    )
+    return 0
+
+
+def vertical_mirror_gfile(g, symmetry_point_z=0.0, reverse_curves=True):
+    z0 = float(symmetry_point_z)
+    gNew = copy.deepcopy(g)
+    gNew['zmid'] = 2.0*z0 - float(g['zmid'])
+    gNew['zmaxis'] = 2.0*z0 - float(g['zmaxis'])
+    gNew['psirz'] = np.asarray(g['psirz'])[:, ::-1].copy()
+
+    for field in ['bdry', 'lim']:
+        values = np.asarray(gNew.get(field, []), dtype=float)
+        if values.size == 0:
+            continue
+        values = values.copy()
+        values[1, :] = 2.0*z0 - values[1, :]
+        if reverse_curves:
+            values = values[:, ::-1]
+        gNew[field] = values
+
+    return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
+
+
+def gfile_vertical_mirror(
+    gfile_name,
+    output_file,
+    symmetry_point_z=0.0,
+    reverse_curves=True,
+):
+    print(f'Reading {gfile_name}')
+    g = readg_g3d(gfile_name)
+    gNew = vertical_mirror_gfile(
+        g,
+        symmetry_point_z=symmetry_point_z,
+        reverse_curves=reverse_curves,
+    )
+    print(f'Writing {output_file}')
+    write_gfile(gNew, output_file)
+    return output_file
+
+
+def gfile_vertical_mirror_main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Mirror an EFIT gfile/geqdsk vertically about a Z location.'
+    )
+    parser.add_argument('gfile', help='Input EFIT gfile/geqdsk path')
+    parser.add_argument('-o', '--output', required=True, help='Output gfile path')
+    parser.add_argument(
+        '--symmetry-point-z',
+        type=float,
+        default=0.0,
+        help='Z coordinate of the mirror plane in meters (default: 0.0)',
+    )
+    parser.add_argument(
+        '--keep-curve-order',
+        action='store_true',
+        help='Do not reverse boundary/limiter point order after reflection',
+    )
+    args = parser.parse_args(argv)
+    gfile_vertical_mirror(
+        args.gfile,
+        args.output,
+        symmetry_point_z=args.symmetry_point_z,
+        reverse_curves=not args.keep_curve_order,
+    )
+    return 0
+
+
+def _interp_psirz_on_z(g, z_values):
+    z_values = np.asarray(z_values, dtype=float)
+    psirz = np.empty((int(g['mw']), z_values.size))
+    for i in range(int(g['mw'])):
+        psirz[i, :] = np.interp(z_values, g['Z'], g['psirz'][i, :])
+    return psirz
+
+
+def _dedupe_curve_points(points, tol=1.0e-12):
+    if points.size == 0:
+        return points
+    keep = [0]
+    for i in range(1, points.shape[0]):
+        if np.linalg.norm(points[i, :] - points[keep[-1], :]) > tol:
+            keep.append(i)
+    return points[keep, :]
+
+
+def _path_between_indices(points, i0, i1):
+    if i0 <= i1:
+        return points[i0:i1 + 1, :]
+    return np.vstack((points[i0:, :], points[:i1 + 1, :]))
+
+
+def _symmetrize_closed_curve_from_side(r, z, keep_side, symmetry_point_z, tol=1.0e-10):
+    points = np.column_stack((np.asarray(r, dtype=float), np.asarray(z, dtype=float)))
+    if points.shape[0] < 4:
+        return points[:, 0], points[:, 1]
+    if np.linalg.norm(points[0, :] - points[-1, :]) <= tol:
+        points = points[:-1, :]
+
+    z0 = float(symmetry_point_z)
+    augmented = []
+    npts = points.shape[0]
+    for i in range(npts):
+        p0 = points[i, :]
+        p1 = points[(i + 1) % npts, :]
+        augmented.append(p0)
+        zlo = min(p0[1], p1[1])
+        zhi = max(p0[1], p1[1])
+        if zlo < z0 < zhi:
+            frac = (z0 - p0[1])/(p1[1] - p0[1])
+            augmented.append(p0 + frac*(p1 - p0))
+
+    augmented = _dedupe_curve_points(np.asarray(augmented), tol=tol)
+    crossing = np.where(np.abs(augmented[:, 1] - z0) <= tol)[0]
+    if crossing.size < 2:
+        return points[:, 0], points[:, 1]
+
+    want_upper = keep_side == 'upper'
+    best = None
+    for i, i0 in enumerate(crossing):
+        i1 = crossing[(i + 1) % crossing.size]
+        path = _path_between_indices(augmented, int(i0), int(i1))
+        if path.shape[0] < 2:
+            continue
+        interior = path[1:-1, 1] if path.shape[0] > 2 else path[:, 1]
+        score = float(np.mean(interior - z0)) if interior.size else 0.0
+        if (want_upper and score >= -tol) or ((not want_upper) and score <= tol):
+            length = float(np.sum(np.linalg.norm(np.diff(path, axis=0), axis=1)))
+            if best is None or length > best[0]:
+                best = (length, path)
+
+    if best is None:
+        return points[:, 0], points[:, 1]
+
+    kept = best[1]
+    mirrored = kept[-2:0:-1, :].copy()
+    mirrored[:, 1] = 2.0*z0 - mirrored[:, 1]
+    combined = np.vstack((kept, mirrored, kept[0:1, :]))
+    return combined[:, 0], combined[:, 1]
+
+
+def symmetrize_gfile_from_side(
+    g,
+    keep_side='upper',
+    symmetry_point_z=0.0,
+    symmetrize_boundary=True,
+    symmetrize_limiter=False,
+):
+    keep_side = keep_side.lower()
+    if keep_side not in ('upper', 'lower'):
+        raise ValueError("keep_side must be 'upper' or 'lower'")
+
+    z0 = float(symmetry_point_z)
+    z_old = np.asarray(g['Z'], dtype=float)
+    half_span = min(float(z_old[-1] - z0), float(z0 - z_old[0]))
+    if half_span <= 0.0:
+        raise ValueError('symmetry point must lie inside the gfile Z grid')
+
+    gNew = copy.deepcopy(g)
+    z_new = np.linspace(z0 - half_span, z0 + half_span, int(g['mh']))
+    if keep_side == 'upper':
+        source_z = np.where(z_new >= z0, z_new, 2.0*z0 - z_new)
+    else:
+        source_z = np.where(z_new <= z0, z_new, 2.0*z0 - z_new)
+
+    gNew['zdim'] = float(2.0*half_span)
+    gNew['zmid'] = z0
+    gNew['zmaxis'] = z0
+    gNew['psirz'] = _interp_psirz_on_z(g, source_z)
+
+    if symmetrize_boundary and np.asarray(gNew.get('bdry', [])).size:
+        r, z = _symmetrize_closed_curve_from_side(
+            gNew['bdry'][0, :],
+            gNew['bdry'][1, :],
+            keep_side,
+            z0,
+        )
+        gNew['bdry'] = np.vstack((r, z))
+        gNew['nbdry'] = int(gNew['bdry'].shape[1])
+
+    if symmetrize_limiter and np.asarray(gNew.get('lim', [])).size:
+        r, z = _symmetrize_closed_curve_from_side(
+            gNew['lim'][0, :],
+            gNew['lim'][1, :],
+            keep_side,
+            z0,
+        )
+        gNew['lim'] = np.vstack((r, z))
+        gNew['limitr'] = int(gNew['lim'].shape[1])
+
+    return postprocess_gfile(_sync_gfile_boundary_aliases(gNew))
+
+
+def gfile_symmetrize(
+    gfile_name,
+    output_file,
+    keep_side='upper',
+    symmetry_point_z=0.0,
+    symmetrize_boundary=True,
+    symmetrize_limiter=False,
+):
+    print(f'Reading {gfile_name}')
+    g = readg_g3d(gfile_name)
+    gNew = symmetrize_gfile_from_side(
+        g,
+        keep_side=keep_side,
+        symmetry_point_z=symmetry_point_z,
+        symmetrize_boundary=symmetrize_boundary,
+        symmetrize_limiter=symmetrize_limiter,
+    )
+    print(f'Writing {output_file}')
+    write_gfile(gNew, output_file)
+    return output_file
+
+
+def gfile_symmetrize_main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Create a vertically symmetric EFIT gfile/geqdsk from one side.'
+    )
+    parser.add_argument('gfile', help='Input EFIT gfile/geqdsk path')
+    parser.add_argument('-o', '--output', required=True, help='Output gfile path')
+    parser.add_argument(
+        '--keep-side',
+        choices=('upper', 'lower'),
+        required=True,
+        help='Side of the equilibrium to retain and mirror',
+    )
+    parser.add_argument(
+        '--symmetry-point-z',
+        type=float,
+        default=0.0,
+        help='Z coordinate of the symmetry plane in meters (default: 0.0)',
+    )
+    parser.add_argument(
+        '--keep-boundary-as-is',
+        action='store_true',
+        help='Do not symmetrize the plasma boundary point list',
+    )
+    parser.add_argument(
+        '--symmetrize-vessel',
+        action='store_true',
+        help='Also symmetrize the gfile limiter/vessel point list',
+    )
+    args = parser.parse_args(argv)
+    gfile_symmetrize(
+        args.gfile,
+        args.output,
+        keep_side=args.keep_side,
+        symmetry_point_z=args.symmetry_point_z,
+        symmetrize_boundary=not args.keep_boundary_as_is,
+        symmetrize_limiter=args.symmetrize_vessel,
+    )
+    return 0
+
+
+def _plot_gfile_panel(ax, g, title, levels=48):
+    r = np.asarray(g['R'])
+    z = np.asarray(g['Z'])
+    rr, zz = np.meshgrid(r, z, indexing='ij')
+    psi = np.asarray(g['psirz'])
+    pmin = float(np.nanmin(psi))
+    pmax = float(np.nanmax(psi))
+    if np.isfinite(pmin) and np.isfinite(pmax) and pmin < pmax:
+        ax.contour(rr, zz, psi, levels=np.linspace(pmin, pmax, levels), colors='#667085', linewidths=0.35)
+
+    if np.asarray(g.get('lim', [])).size:
+        ax.plot(g['lim'][0, :], g['lim'][1, :], color='#111827', linewidth=1.2, label='lim')
+    if np.asarray(g.get('bdry', [])).size:
+        ax.plot(g['bdry'][0, :], g['bdry'][1, :], color='#2563eb', linewidth=1.2, label='bdry')
+    ax.plot(float(g['rmaxis']), float(g['zmaxis']), marker='x', color='#dc2626', markersize=6, label='axis')
+    ax.set_title(title)
+    ax.set_xlabel('R [m]')
+    ax.set_ylabel('Z [m]')
+    ax.set_aspect('equal', adjustable='box')
+    ax.grid(True, linewidth=0.35, alpha=0.5)
+
+
+def plot_gfile_comparison(input_gfile, output_gfile, output_plot, title=None, levels=48, show=False):
+    import matplotlib.pyplot as plt
+
+    g0 = readg_g3d(input_gfile)
+    g1 = readg_g3d(output_gfile)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5), constrained_layout=True)
+    _plot_gfile_panel(axes[0], g0, Path(input_gfile).name, levels=levels)
+    _plot_gfile_panel(axes[1], g1, Path(output_gfile).name, levels=levels)
+    if title:
+        fig.suptitle(title)
+    handles, labels = axes[1].get_legend_handles_labels()
+    if handles:
+        fig.legend(handles, labels, loc='lower center', ncol=len(handles))
+    fig.savefig(output_plot, dpi=220)
+    print(f'Wrote {output_plot}')
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+    return output_plot
+
+
+def plot_gfile_transform_tests(
+    gfile_name,
+    output_dir='gfile_transform_tests',
+    equ=None,
+    rzpsi=None,
+    vessel=None,
+    keep_side='both',
+    symmetry_point_z=0.0,
+    symmetrize_vessel=False,
+    rzpsi_psi_units='wb',
+    gfile_psi_units='wb-per-rad',
+    levels=48,
+    show=False,
+):
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    gfile_path = Path(gfile_name)
+    outputs = []
+
+    mirror_file = output_dir / f'{gfile_path.name}.vertical_mirror'
+    mirror_plot = output_dir / 'vertical_mirror.png'
+    gfile_vertical_mirror(gfile_name, mirror_file, symmetry_point_z=symmetry_point_z)
+    plot_gfile_comparison(gfile_name, mirror_file, mirror_plot, title='vertical mirror', levels=levels, show=show)
+    outputs.append(mirror_plot)
+
+    sides = ('upper', 'lower') if keep_side == 'both' else (keep_side,)
+    for side in sides:
+        suffix = f'symmetrize_{side}_vessel' if symmetrize_vessel else f'symmetrize_{side}'
+        sym_file = output_dir / f'{gfile_path.name}.{suffix}'
+        sym_plot = output_dir / f'{suffix}.png'
+        gfile_symmetrize(
+            gfile_name,
+            sym_file,
+            keep_side=side,
+            symmetry_point_z=symmetry_point_z,
+            symmetrize_limiter=symmetrize_vessel,
+        )
+        title = f'symmetrize {side}'
+        if symmetrize_vessel:
+            title += ' with vessel'
+        plot_gfile_comparison(gfile_name, sym_file, sym_plot, title=title, levels=levels, show=show)
+        outputs.append(sym_plot)
+
+    if equ is not None or rzpsi is not None or vessel is not None:
+        update_file = output_dir / f'{gfile_path.name}.update'
+        update_plot = output_dir / 'update.png'
+        gfile_update(
+            gfile_name,
+            update_file,
+            equ=equ,
+            rzpsi=rzpsi,
+            vessel=vessel,
+            rzpsi_psi_units=rzpsi_psi_units,
+            gfile_psi_units=gfile_psi_units,
+        )
+        plot_gfile_comparison(gfile_name, update_file, update_plot, title='gfile update', levels=levels, show=show)
+        outputs.append(update_plot)
+
+    return outputs
+
+
+def plot_gfile_transform_tests_main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Generate gfile transform outputs and before/after plots for visual inspection.'
+    )
+    parser.add_argument('gfile', help='Input EFIT gfile/geqdsk path')
+    parser.add_argument(
+        '-o',
+        '--output-dir',
+        default='gfile_transform_tests',
+        help='Directory for generated gfiles and PNGs (default: gfile_transform_tests)',
+    )
+    grid_group = parser.add_mutually_exclusive_group()
+    grid_group.add_argument('--equ', help='Also test gfile_update using this EQU file')
+    grid_group.add_argument('--rzpsi', help='Also test gfile_update using this rzpsi.dat file')
+    parser.add_argument('--vessel', help='Also test gfile_update using this OGR vessel file')
+    parser.add_argument(
+        '--keep-side',
+        choices=('upper', 'lower', 'both'),
+        default='both',
+        help='Symmetrize side(s) to test (default: both)',
+    )
+    parser.add_argument(
+        '--symmetry-point-z',
+        type=float,
+        default=0.0,
+        help='Z coordinate of the mirror/symmetry plane in meters (default: 0.0)',
+    )
+    parser.add_argument(
+        '--symmetrize-vessel',
+        action='store_true',
+        help='Also symmetrize the gfile limiter/vessel in symmetrize plots',
+    )
+    parser.add_argument(
+        '--rzpsi-psi-units',
+        choices=GFILE_PSI_UNITS,
+        default='wb',
+        help="Units of psi in --rzpsi input (default: wb)",
+    )
+    parser.add_argument(
+        '--gfile-psi-units',
+        choices=GFILE_PSI_UNITS,
+        default='wb-per-rad',
+        help="Units to store in generated gfiles (default: wb-per-rad)",
+    )
+    parser.add_argument('--levels', type=int, default=48, help='Number of contour levels')
+    parser.add_argument('--show', action='store_true', help='Show plots interactively')
+    args = parser.parse_args(argv)
+
+    plot_gfile_transform_tests(
+        args.gfile,
+        output_dir=args.output_dir,
+        equ=args.equ,
+        rzpsi=args.rzpsi,
+        vessel=args.vessel,
+        keep_side=args.keep_side,
+        symmetry_point_z=args.symmetry_point_z,
+        symmetrize_vessel=args.symmetrize_vessel,
+        rzpsi_psi_units=args.rzpsi_psi_units,
+        gfile_psi_units=args.gfile_psi_units,
+        levels=args.levels,
+        show=args.show,
+    )
     return 0
 
 
@@ -1820,8 +2557,8 @@ def _calc_interpolation_inds(g,R,Z):
 # J.D. Lore
 # -------------------------------------------------------------------------------------------------------------------------
 def readg_g3d_simple(filename):
-    f = open(filename, "r")
-    lines = f.readlines()        
+    with open(filename, "r") as f:
+        lines = f.readlines()
     g = {}
     
     ## Line 1

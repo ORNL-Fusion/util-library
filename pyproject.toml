@@ -31,6 +31,10 @@ packages = [
 
 [project.scripts]
 double_gfile_resolution = "EFITutils:double_gfile_resolution_main"
+gfile_update = "EFITutils:gfile_update_main"
+gfile_vertical_mirror = "EFITutils:gfile_vertical_mirror_main"
+gfile_symmetrize = "EFITutils:gfile_symmetrize_main"
+plot_gfile_transform_tests = "EFITutils:plot_gfile_transform_tests_main"
 gfile_vessel = "EFITutils:gfile_vessel_main"
 plot_ogr = "EFITutils:plot_ogr_main"
 simplify_ogr_file = "EFITutils:simplify_ogr_file_main"
