@@ -1,5 +1,6 @@
 function g = readg_g3d(filename,force_rewrite,quiet)
 % Simple reading of gfile with postprocessing for psi and bfield interpolation
+% g.psiUnitsDiagnostic reports an advisory Wb versus Wb/rad comparison.
 
 if nargin < 2
     force_rewrite = 0;
@@ -9,7 +10,7 @@ if nargin < 3
 end
 
 % Version identifies changes to routine that may require re-creating .mat file
-version_ = 9;
+version_ = 10;
 % v3: Changed outputs to row vectors and added bicub inverse
 % v4: Added aminor and nGW
 % v5: More robust processing of incomplete eqdsk files, remove spline fits
@@ -17,6 +18,7 @@ version_ = 9;
 % v7: Add tri calculation
 % v8: Add better shape metrics
 % v9: Add Bpol_est estimate from Ip filament at magnetic axis
+% v10: Add advisory gfile psi-unit diagnostic
 
 if isempty(filename)
     g = [];
@@ -45,6 +47,7 @@ if strcmp(action,'mat')
 
     if isfield(g,'version')
         if g.version == version_
+            warn_if_gfile_psi_may_be_wb(g);
             return;
         end
     else
@@ -70,6 +73,7 @@ catch ME
         S = load(fname_mat);
         g = S.g;
         g.filename = filename;
+        warn_if_gfile_psi_may_be_wb(g);
         return
     elseif rawFileAccessError && ~force_rewrite
         if ~quiet
@@ -96,6 +100,7 @@ catch
 end
 
 g.version = version_;
+warn_if_gfile_psi_may_be_wb(g);
 
 if ~quiet
     disp('>>> Saving .mat version of gfile')
@@ -108,4 +113,24 @@ catch
     end
 end
 
+end
+
+function warn_if_gfile_psi_may_be_wb(G)
+% Report a substantial 2*pi discrepancy on every read, including cached reads.
+if ~isfield(G,'psiUnitsDiagnostic') || ~G.psiUnitsDiagnostic.available
+    return
+end
+Diagnostic = G.psiUnitsDiagnostic;
+if ~strcmp(Diagnostic.inferredUnits,'Wb')
+    return
+end
+scoreWbPerRad = abs(log(Diagnostic.bpolWbPerRad/Diagnostic.bpolEstimate));
+scoreWb = abs(log(Diagnostic.bpolWb/Diagnostic.bpolEstimate));
+if scoreWbPerRad-scoreWb < log(2)
+    return
+end
+fprintf(2,'WARNING: gfile %s: psirz may be in Wb rather than Wb/rad.\n',G.filename);
+fprintf(2,'  |Ip|-based Bpol estimate at the outboard LCFS = %.6g T.\n',Diagnostic.bpolEstimate);
+fprintf(2,'  Gfile gradient gives Bpol = %.6g T as Wb/rad, or %.6g T as Wb.\n',Diagnostic.bpolWbPerRad,Diagnostic.bpolWb);
+fprintf(2,'  No flux conversion was applied; derived B fields assume Wb/rad. Verify the source convention.\n');
 end

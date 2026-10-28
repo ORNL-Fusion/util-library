@@ -45,6 +45,7 @@ dist/
 *.egg-info/
 
 .DS_Store
+/.vscode/
 
 *.codex
 .codex/

@@ -59,6 +59,10 @@ end
 %% Flux interpolation coefficients
 g.bicub_coeffs_inv = get_psi_bicub_coeffs_inv(g);
 
+% Compare possible raw gfile flux units after interpolation coefficients are
+% available, without changing psirz or flux profiles.
+g.psiUnitsDiagnostic = diagnose_gfile_psi_units(g);
+
 %% Fit F
 g.fpol_coeffs = polyfit(g.pn,g.fpol,7);
 

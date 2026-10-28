@@ -9,6 +9,7 @@ import argparse
 import copy
 from pathlib import Path
 import re
+import sys
 
 import numpy as np
 
@@ -285,7 +286,9 @@ def diagnose_gfile_psi_units(g):
         ratio_wb = bpol_wb/bpol_estimate
         score_wb_per_rad = abs(np.log(ratio_wb_per_rad))
         score_wb = abs(np.log(ratio_wb))
-        suggested_units = 'wb-per-rad' if score_wb_per_rad < score_wb else 'wb'
+        inferred_units = 'wb-per-rad' if score_wb_per_rad <= score_wb else 'wb'
+        # A warning needs stronger evidence than a small difference in scores.
+        suspect_wb = inferred_units == 'wb' and score_wb_per_rad - score_wb >= np.log(2.0)
 
         return {
             'available': True,
@@ -300,7 +303,8 @@ def diagnose_gfile_psi_units(g):
             'ratio_wb': ratio_wb,
             'score_wb_per_rad': score_wb_per_rad,
             'score_wb': score_wb,
-            'suggested_units': suggested_units,
+            'inferred_units': inferred_units,
+            'suspect_wb': suspect_wb,
         }
     except (KeyError, TypeError, ValueError) as exc:
         return {'available': False, 'reason': str(exc)}
@@ -392,8 +396,33 @@ def readg_g3d(filename):
 
     g = readg_g3d_simple(filename)
     g = postprocess_gfile(g)
+    _warn_if_gfile_psi_may_be_wb(g, filename)
     
     return g
+
+
+# Report a substantial 2*pi discrepancy without changing the gfile flux.
+def _warn_if_gfile_psi_may_be_wb(g, filename):
+    diagnostic = g.get('psi_units_diagnostic', {})
+    if not diagnostic.get('available') or not diagnostic.get('suspect_wb'):
+        return
+
+    print(f'WARNING: gfile {filename}: psirz may be in Wb rather than Wb/rad.', file=sys.stderr)
+    print(
+        f"  Outboard LCFS (R,Z) = ({diagnostic['r']:.6g}, {diagnostic['z']:.6g}) m; "
+        f"|Ip|-based Bpol estimate = {diagnostic['bpol_estimate']:.6g} T.",
+        file=sys.stderr,
+    )
+    print(
+        f"  Gfile gradient gives Bpol = {diagnostic['bpol_wb_per_rad']:.6g} T as Wb/rad, "
+        f"or {diagnostic['bpol_wb']:.6g} T as Wb.",
+        file=sys.stderr,
+    )
+    print(
+        '  No flux conversion was applied; derived B fields assume Wb/rad. '
+        'Verify the source convention.',
+        file=sys.stderr,
+    )
 
 
 # Add derived gfile quantities needed for psi and bfield interpolation.
@@ -414,8 +443,47 @@ def postprocess_gfile(g):
 
     g['fpol_coeffs'] = np.polyfit(g['pn'],g['fpol'],7)
     g['psi_bicub_coeffs_inv'] = _get_psi_bicub_coeffs_inv(g)
+    # Compare possible raw flux units after interpolation coefficients are available.
+    g['psi_units_diagnostic'] = diagnose_gfile_psi_units(g)
     
     return g
+
+
+# Convert a confirmed Wb-based gfile to the Wb/rad convention used below.
+def correct_gfile_wb_to_wb_per_radian(g):
+    """Return a postprocessed Wb/rad copy of a gfile known to use Wb."""
+    if 'two_pi_corrected' in g:
+        raise ValueError('This gfile has already been marked as two_pi_corrected')
+
+    # The grid, header fluxes, and flux derivatives must be converted together.
+    if np.shape(g['psirz']) != (g['mw'], g['mh']):
+        raise ValueError('Gfile flux grid has an unexpected shape')
+    if any(np.size(g[field]) != g['mw'] for field in ('ffprim', 'pprime')):
+        raise ValueError('Gfile derivative profiles have unexpected sizes')
+    if any(np.size(g[field]) != 1 for field in ('ssimag', 'ssibry')) or g['ssimag'] == g['ssibry']:
+        raise ValueError('Gfile axis and boundary flux values must be distinct scalars')
+    if any(not np.all(np.isfinite(g[field])) for field in ('psirz', 'ssimag', 'ssibry', 'ffprim', 'pprime')):
+        raise ValueError('Gfile flux values and derivative profiles must be finite')
+
+    corrected = copy.deepcopy(g)
+    if 'psi_bicub_coeffs_inv' not in corrected:
+        corrected = postprocess_gfile(corrected)
+    diagnostic = diagnose_gfile_psi_units(corrected)
+    if not diagnostic['available']:
+        print(f"WARNING: Could not check gfile flux units before conversion: {diagnostic['reason']}. Converting anyway.", file=sys.stderr)
+    elif diagnostic['inferred_units'] == 'wb-per-rad':
+        print('WARNING: Bpol diagnostic favors Wb/rad over Wb; converting anyway as requested.', file=sys.stderr)
+
+    # Divide flux values by 2*pi and multiply derivatives with respect to flux.
+    two_pi = 2.0*np.pi
+    for field in ('psirz', 'ssimag', 'ssibry'):
+        corrected[field] = corrected[field]/two_pi
+    for field in ('ffprim', 'pprime'):
+        corrected[field] = corrected[field]*two_pi
+    corrected['two_pi_corrected'] = True
+
+    # Refresh interpolation coefficients and the diagnostic for the new units.
+    return postprocess_gfile(corrected)
 
 
 # Refine the R,Z resolution of an in-memory gfile by interpolation.
