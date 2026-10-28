@@ -133,4 +133,5 @@ fprintf(2,'WARNING: gfile %s: psirz may be in Wb rather than Wb/rad.\n',G.filena
 fprintf(2,'  |Ip|-based Bpol estimate at the outboard LCFS = %.6g T.\n',Diagnostic.bpolEstimate);
 fprintf(2,'  Gfile gradient gives Bpol = %.6g T as Wb/rad, or %.6g T as Wb.\n',Diagnostic.bpolWbPerRad,Diagnostic.bpolWb);
 fprintf(2,'  No flux conversion was applied; derived B fields assume Wb/rad. Verify the source convention.\n');
+fprintf(2,'  If Wb is confirmed, call g = correct_gfile_wb_to_wb_per_radian(g);\n');
 end
