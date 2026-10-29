@@ -3,6 +3,11 @@ function g = flip_g(g)
 % Only flip about Z=0 implemented so far
 % JD Lore 2025
 
+% The old surface contours and OMP map no longer describe the flipped grid.
+if isfield(g,'fluxSurfaceGeometry')
+    g = rmfield(g,'fluxSurfaceGeometry');
+end
+
 method = 'flip_at_z0';
 
 switch lower(method)

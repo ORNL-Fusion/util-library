@@ -1,4 +1,4 @@
-function Diagnostic = diagnose_gfile_psi_units(G)
+function Diagnostic = diagnose_gfile_psi_units(g)
 % Compare the two common gfile psi conventions with a rough Ip-based Bpol estimate.
 % The circular-current estimate is only a diagnostic: shaping and external
 % fields can change Bpol enough that its preferred units are not definitive.
@@ -6,23 +6,23 @@ function Diagnostic = diagnose_gfile_psi_units(G)
 Diagnostic = struct('available',false,'reason','','inferredUnits','','bpolEstimate',nan,'bpolWbPerRad',nan,'bpolWb',nan);
 
 % A missing or zero plasma current cannot provide an independent field scale.
-if isempty(G.cpasma) || ~isscalar(G.cpasma) || ~isfinite(G.cpasma) || abs(G.cpasma) < 1e-6
+if isempty(g.cpasma) || ~isscalar(g.cpasma) || ~isfinite(g.cpasma) || abs(g.cpasma) < 1e-6
     Diagnostic.reason = 'Gfile does not contain a usable nonzero plasma current';
     return
 end
-if ~isscalar(G.rmaxis) || ~isscalar(G.zmaxis) || ~all(isfinite([G.rmaxis,G.zmaxis]))
+if ~isscalar(g.rmaxis) || ~isscalar(g.zmaxis) || ~all(isfinite([g.rmaxis,g.zmaxis]))
     Diagnostic.reason = 'Gfile does not contain a usable magnetic axis';
     return
 end
-if ~isnumeric(G.bdry) || size(G.bdry,1) ~= 2 || size(G.bdry,2) < 2 || any(~isfinite(G.bdry(:)))
+if ~isnumeric(g.bdry) || size(g.bdry,1) ~= 2 || size(g.bdry,2) < 2 || any(~isfinite(g.bdry(:)))
     Diagnostic.reason = 'Gfile does not contain a usable plasma boundary';
     return
 end
 
 % Find the outboard LCFS crossing at the magnetic-axis height. If the contour
 % has no such crossing, use its largest-R point as in the SOLPS-routines logic.
-[r,z] = outboard_boundary_at_axis(G.bdry,G.zmaxis);
-rminor = hypot(r-G.rmaxis,z-G.zmaxis);
+[r,z] = outboard_boundary_at_axis(g.bdry,g.zmaxis);
+rminor = hypot(r-g.rmaxis,z-g.zmaxis);
 if r <= 0 || rminor <= 0
     Diagnostic.reason = 'Outboard boundary point is not usable';
     return
@@ -31,7 +31,7 @@ end
 % Raw gfile psi is unscaled here. A Wb grid gives a field smaller by 2*pi
 % than the same numerical gradient interpreted as Wb/rad.
 try
-    [dpsidr,dpsidz,ierr] = calc_psi_derivs(G,r,z,1);
+    [dpsidr,dpsidz,ierr] = calc_psi_derivs(g,r,z,1);
 catch ME
     Diagnostic.reason = ['Could not evaluate psi derivatives: ',ME.message];
     return
@@ -44,7 +44,7 @@ gradPsi = hypot(dpsidr,dpsidz);
 bpolWbPerRad = gradPsi/r;
 bpolWb = bpolWbPerRad/(2*pi);
 mu0 = 4*pi*1e-7;
-bpolEstimate = mu0*abs(G.cpasma)/(2*pi*rminor);
+bpolEstimate = mu0*abs(g.cpasma)/(2*pi*rminor);
 if ~all(isfinite([bpolWbPerRad,bpolWb,bpolEstimate])) || min([bpolWbPerRad,bpolWb,bpolEstimate]) <= 0
     Diagnostic.reason = 'Could not evaluate finite positive Bpol values';
     return

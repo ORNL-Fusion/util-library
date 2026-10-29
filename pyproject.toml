@@ -9,6 +9,8 @@ description = "General EFIT, geometry, bfield, and plotting utilities"
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
+    "contourpy",
+    "scipy",
 ]
 
 [project.optional-dependencies]

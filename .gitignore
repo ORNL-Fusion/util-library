@@ -25,6 +25,7 @@ fortran/bfield_library_jdl/tests/*.out
 *.mex*
 
 # python
+*.geometry.npz
 __pycache__/
 *.py[cod]
 *$py.class

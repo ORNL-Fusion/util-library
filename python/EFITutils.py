@@ -7,11 +7,13 @@
 
 import argparse
 import copy
+import hashlib
 from pathlib import Path
 import re
 import sys
 
 import numpy as np
+from scipy.interpolate import PchipInterpolator
 
 
 # Lightweight object wrapper for reading, plotting, and locating gfile x-points.
@@ -199,7 +201,8 @@ def calc_bfield(g,R,Z):
     Br = np.where(inds['ierr'], np.nan, -psiDerivs['dpsidz']/R)
     Bz = np.where(inds['ierr'], np.nan,  psiDerivs['dpsidr']/R)
 
-    fpol = np.polyval(g['fpol_coeffs'],psiN)
+    # Match the shape-preserving interpolation used by MATLAB.
+    fpol = g['fpol_pp'](psiN)
     Bt  = np.where(psiN <= 1, fpol/R, g['bcentr']*g['rzero']/R)
 
     Bpol = np.sqrt(Br**2 + Bz**2)
@@ -321,6 +324,541 @@ def calc_psiN(g,R,Z):
     psiN = (g['ip_sign']*psi - g['ssimag'])/(g['ssibry'] - g['ssimag'])    
     return psiN
 
+# Compute the R-Z area and toroidal volume of core flux surfaces.
+def compute_flux_surface_geometry(g, R, Z, refinement=None, z_omp=None):
+    """Return geometry arrays for paired R, Z points on closed core surfaces.
+
+    R and Z must have matching shapes, or one may be scalar. Each result
+    field has that shape; scalar inputs return scalar fields. z_omp selects
+    the plane defining x=R_out(psiN,z_omp)-R_out(1,z_omp); it defaults to
+    the magnetic-axis height. A failed point has iErr=1, a short errorId,
+    NaN geometry, and empty contour arrays.
+    """
+    try:
+        r = np.asarray(R)
+        z = np.asarray(Z)
+    except (TypeError, ValueError) as exc:
+        raise ValueError('R and Z must be real numeric arrays') from exc
+    if r.size == 0 or z.size == 0 or r.dtype.kind not in 'iuf' or z.dtype.kind not in 'iuf':
+        raise ValueError('R and Z must be real numeric arrays')
+    r = r.astype(float, copy=False)
+    z = z.astype(float, copy=False)
+    if r.ndim == 0 and z.ndim != 0:
+        r = np.full(z.shape, float(r))
+    elif z.ndim == 0 and r.ndim != 0:
+        z = np.full(r.shape, float(z))
+    elif r.shape != z.shape:
+        raise ValueError('R and Z must have matching shapes, or one must be scalar')
+
+    required = {'R', 'Z', 'psirz', 'mw', 'mh', 'dR', 'dZ', 'rmaxis',
+                'zmaxis', 'ssimag', 'ssibry', 'ip_sign', 'psi_bicub_coeffs_inv'}
+    if not isinstance(g, dict) or not required.issubset(g):
+        raise ValueError('g must be a postprocessed gfile')
+    r_grid = np.asarray(g['R'])
+    z_grid = np.asarray(g['Z'])
+    if (r_grid.ndim != 1 or z_grid.ndim != 1 or r_grid.size < 2
+            or z_grid.size < 2 or np.shape(g['psirz']) != (r_grid.size, z_grid.size)
+            or not np.all(np.isfinite(r_grid)) or not np.all(np.isfinite(z_grid))
+            or not np.all(np.diff(r_grid) > 0) or not np.all(np.diff(z_grid) > 0)
+            or np.size(g['ssimag']) != 1 or np.size(g['ssibry']) != 1
+            or g['ssimag'] == g['ssibry']):
+        raise ValueError('g must have a valid postprocessed flux grid')
+    if z_omp is None:
+        z_omp = float(g['zmaxis'])
+    if not np.isscalar(z_omp) or not np.isfinite(z_omp) or not z_grid[0] <= z_omp <= z_grid[-1]:
+        raise ValueError('z_omp must be a finite height inside the gfile grid')
+
+    # Match the MATLAB sampling rule while allowing an explicit factor.
+    nr, nz = r_grid.size, z_grid.size
+    if refinement is None:
+        refinement = max(1, int(np.ceil(256/max(nr, nz))))
+        r_extent = r_grid[-1] - r_grid[0]
+        z_extent = z_grid[-1] - z_grid[0]
+        while max(r_extent/(refinement*nr - 1), z_extent/(refinement*nz - 1)) >= 0.05:
+            refinement += 1
+    elif (isinstance(refinement, (bool, np.bool_))
+            or not isinstance(refinement, (int, float, np.integer, np.floating))
+            or not np.isfinite(refinement) or refinement < 1
+            or refinement != int(refinement)):
+        raise ValueError('refinement must be a positive integer')
+    refinement = int(refinement)
+
+    shape = r.shape
+    n_points = r.size
+    geo = {
+        'psiN': np.full(shape, np.nan),
+        'areaRZ': np.full(shape, np.nan),
+        'volume': np.full(shape, np.nan),
+        'x': np.full(shape, np.nan),
+        'dVdx': np.full(shape, np.nan),
+        'gradXSqAvg': np.full(shape, np.nan),
+        'dpsiNdx': np.full(shape, np.nan),
+        'transportMetric': np.full(shape, np.nan),
+        'centroidR': np.full(shape, np.nan),
+        'contourR': np.empty(shape, dtype=object),
+        'contourZ': np.empty(shape, dtype=object),
+        'refinement': np.full(shape, refinement, dtype=int),
+        'zOMP': np.full(shape, z_omp),
+        'xDefinition': np.full(shape, 'R_out(psiN,zOMP) - R_out(1,zOMP)', dtype=object),
+        'iErr': np.ones(shape, dtype=int),
+        'errorId': np.full(shape, '', dtype=object),
+    }
+    for i in range(n_points):
+        geo['contourR'].flat[i] = np.empty(0)
+        geo['contourZ'].flat[i] = np.empty(0)
+
+    # Interpolate only finite points. calc_psiN marks off-grid values NaN.
+    r_points = r.reshape(-1)
+    z_points = z.reshape(-1)
+    finite = np.isfinite(r_points) & np.isfinite(z_points)
+    psi_n = np.full(n_points, np.nan)
+    if np.any(finite):
+        psi_n[finite] = calc_psiN(g, r_points[finite], z_points[finite])
+    geo['psiN'] = psi_n.reshape(shape)
+    outside_grid = finite & ~np.isfinite(psi_n)
+    axis = finite & ~outside_grid & (r_points == g['rmaxis']) & (z_points == g['zmaxis'])
+    interior = finite & ~outside_grid & ~axis & (psi_n > 0) & (psi_n < 1)
+    omp = _outboard_flux_map(g, z_omp, refinement) if np.any(interior | axis) else None
+
+    # The refined psiN grid and contour generator are shared by all points.
+    if np.any(interior):
+        from contourpy import contour_generator
+
+        r_fine = np.linspace(r_grid[0], r_grid[-1], refinement*nr)
+        z_fine = np.linspace(z_grid[0], z_grid[-1], refinement*nz)
+        psi_grid = np.empty((z_fine.size, r_fine.size))
+        for iz, z_value in enumerate(z_fine):
+            psi_grid[iz, :] = calc_psiN(g, r_fine, np.full(r_fine.shape, z_value))
+        generator = contour_generator(x=r_fine, y=z_fine, z=psi_grid,
+                                      name='serial', line_type='Separate')
+        grid_spacing = np.hypot(r_fine[1] - r_fine[0], z_fine[1] - z_fine[0])
+
+    for i in range(n_points):
+        if not finite[i]:
+            geo['errorId'].flat[i] = 'InvalidPoint'
+        elif outside_grid[i]:
+            geo['errorId'].flat[i] = 'OutsideGrid'
+        elif axis[i]:
+            if omp is None:
+                geo['errorId'].flat[i] = 'NoOmpSeparatrix'
+                continue
+            geo['areaRZ'].flat[i] = 0.0
+            geo['volume'].flat[i] = 0.0
+            if z_omp == g['zmaxis']:
+                geo['x'].flat[i] = r_points[i] - omp['r_sep']
+                geo['dVdx'].flat[i] = 0.0
+                geo['dpsiNdx'].flat[i] = 0.0
+                geo['transportMetric'].flat[i] = 0.0
+            geo['centroidR'].flat[i] = r_points[i]
+            geo['contourR'].flat[i] = np.array([r_points[i]])
+            geo['contourZ'].flat[i] = np.array([z_points[i]])
+            geo['iErr'].flat[i] = 0
+        elif not interior[i]:
+            geo['errorId'].flat[i] = 'OutsideCore'
+        else:
+            contour, error_id = _core_flux_contour(
+                generator, psi_n[i], r_points[i], z_points[i],
+                g['rmaxis'], g['zmaxis'], grid_spacing)
+            if error_id:
+                geo['errorId'].flat[i] = error_id
+                continue
+            geometry = _flux_contour_area_volume(contour)
+            if geometry is None:
+                geo['errorId'].flat[i] = 'InvalidContour'
+                continue
+            area, volume, centroid_r = geometry
+            if omp is None:
+                geo['errorId'].flat[i] = 'NoOmpSeparatrix'
+                continue
+            r_omp, dpsi_dx = _outboard_radius_and_gradient(g, psi_n[i], omp)
+            if not np.isfinite(r_omp):
+                geo['errorId'].flat[i] = 'NoOmpIntersection'
+                continue
+            if not np.isfinite(dpsi_dx) or dpsi_dx <= 0 or r_omp >= omp['r_sep']:
+                geo['errorId'].flat[i] = 'InvalidOmpMap'
+                continue
+            segment_length = np.hypot(np.diff(contour[:, 0]), np.diff(contour[:, 1]))
+            nonzero = segment_length > 0
+            if not np.any(nonzero):
+                geo['errorId'].flat[i] = 'InvalidContour'
+                continue
+            r_mid = (contour[:-1, 0] + contour[1:, 0])[nonzero]/2
+            z_mid = (contour[:-1, 1] + contour[1:, 1])[nonzero]/2
+            segment_length = segment_length[nonzero]
+            derivs = calc_psi_derivs(g, r_mid, z_mid)
+            grad_psi_n = np.hypot(derivs['dpsidr'], derivs['dpsidz'])/abs(g['ssibry'] - g['ssimag'])
+            if np.any(~np.isfinite(grad_psi_n) | (grad_psi_n <= 0)):
+                geo['errorId'].flat[i] = 'InvalidFluxGradient'
+                continue
+            integral_inverse = np.sum(r_mid*segment_length/grad_psi_n)
+            integral_direct = np.sum(r_mid*segment_length*grad_psi_n)
+            dv_dx = 2*np.pi*dpsi_dx*integral_inverse
+            grad_x_sq_avg = integral_direct/(dpsi_dx**2*integral_inverse)
+            transport_metric = 2*np.pi*integral_direct/dpsi_dx
+            if not np.all(np.isfinite([dv_dx, grad_x_sq_avg, transport_metric])) or min(dv_dx, grad_x_sq_avg, transport_metric) <= 0:
+                geo['errorId'].flat[i] = 'InvalidFluxGradient'
+                continue
+            geo['x'].flat[i] = r_omp - omp['r_sep']
+            geo['areaRZ'].flat[i] = area
+            geo['volume'].flat[i] = volume
+            geo['dVdx'].flat[i] = dv_dx
+            geo['gradXSqAvg'].flat[i] = grad_x_sq_avg
+            geo['dpsiNdx'].flat[i] = dpsi_dx
+            geo['transportMetric'].flat[i] = transport_metric
+            geo['centroidR'].flat[i] = centroid_r
+            geo['contourR'].flat[i] = contour[:, 0]
+            geo['contourZ'].flat[i] = contour[:, 1]
+            geo['iErr'].flat[i] = 0
+
+    if shape == ():
+        return {name: value.item() for name, value in geo.items()}
+    return geo
+
+
+def _bisect_flux_radius(g, psi_n, z_value, r_left, r_right):
+    """Resolve a bracketed outward crossing without a SciPy dependency."""
+    for _ in range(45):
+        r_mid = (r_left + r_right)/2
+        if calc_psiN(g, r_mid, z_value) < psi_n:
+            r_left = r_mid
+        else:
+            r_right = r_mid
+    return (r_left + r_right)/2
+
+
+def _outboard_flux_map(g, z_omp, refinement):
+    """Find the first outward psiN=1 crossing on a horizontal line."""
+    r_line = np.linspace(g['rmaxis'], g['R'][-1], max(256, refinement*len(g['R'])))
+    psi_line = calc_psiN(g, r_line, z_omp)
+    crossings = np.flatnonzero((psi_line[:-1] < 1) & (psi_line[1:] >= 1))
+    if not crossings.size:
+        return None
+    i_sep = int(crossings[0])
+    r_sep = _bisect_flux_radius(g, 1.0, z_omp, r_line[i_sep], r_line[i_sep + 1])
+    return {'z': z_omp, 'r_line': r_line, 'psi_line': psi_line, 'i_sep': i_sep, 'r_sep': r_sep}
+
+
+def _outboard_radius_and_gradient(g, psi_n, omp):
+    """Return the outboard radius and dpsiN/dR at an interior level."""
+    p = omp['psi_line'][:omp['i_sep'] + 2]
+    crossings = np.flatnonzero((p[:-1] <= psi_n) & (p[1:] >= psi_n))
+    if not crossings.size:
+        return np.nan, np.nan
+    i_cross = int(crossings[-1])
+    r_line = omp['r_line']
+    radius = _bisect_flux_radius(g, psi_n, omp['z'], r_line[i_cross], r_line[i_cross + 1])
+    derivs = calc_psi_derivs(g, radius, omp['z'])
+    derivative = g['ip_sign']*derivs['dpsidr']/(g['ssibry'] - g['ssimag'])
+    return float(radius), float(derivative)
+
+
+def _geometry_flux_hash(g):
+    """Identify the flux grid and axis data used to build a geometry table."""
+    digest = hashlib.sha256()
+    for name in ('psirz', 'ssimag', 'ssibry', 'rmaxis', 'zmaxis', 'R', 'Z', 'ip_sign'):
+        values = np.asarray(g[name], dtype=np.float64)
+        digest.update(np.asarray(values.shape, dtype=np.int64).tobytes())
+        digest.update(values.tobytes())
+    return digest.hexdigest()
+
+
+def _geometry_levels(psi_n_levels):
+    if psi_n_levels is None:
+        psi_n_levels = np.r_[np.linspace(0.02, 0.9, 24), 1 - np.logspace(-1, -4, 20)]
+    levels = np.asarray(psi_n_levels, dtype=float)
+    if levels.ndim != 1 or levels.size < 2 or not np.all(np.isfinite(levels)) or np.any((levels <= 0) | (levels >= 1)):
+        raise ValueError('psi_n_levels must contain at least two finite interior levels')
+    return np.unique(levels)
+
+
+def _geometry_table_matches(table, g, refinement, levels):
+    required = {'version', 'requestedRefinement', 'requestedPsiNLevels', 'sourceHash',
+                'psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'gradXSqAvg',
+                'dpsiNdx', 'transportMetric', 'centroidR', 'contourR', 'contourZ'}
+    return (isinstance(table, dict) and required.issubset(table)
+            and table['version'] == 1 and table['requestedRefinement'] == refinement
+            and np.array_equal(table['requestedPsiNLevels'], levels)
+            and table['sourceHash'] == _geometry_flux_hash(g)
+            and len(table['psiN']) >= 2 and np.all(np.diff(table['psiN']) > 0))
+
+
+def _load_geometry_cache(g, refinement, levels):
+    """Read the optional numeric sidecar; malformed or stale files are ignored."""
+    filename = g.get('filename')
+    if not filename:
+        return None
+    path = Path(str(filename) + '.geometry.npz')
+    if not path.is_file():
+        return None
+    try:
+        with np.load(path, allow_pickle=False) as data:
+            offsets = data['contourOffsets']
+            names = ('psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'dVdxFromVolume',
+                     'gradXSqAvg', 'dpsiNdx', 'transportMetric', 'centroidR')
+            table = {name: data[name] for name in names}
+            table.update(version=int(data['version']),
+                         requestedRefinement=None if int(data['requestedRefinement']) < 0 else int(data['requestedRefinement']),
+                         requestedPsiNLevels=data['requestedPsiNLevels'],
+                         sourceHash=str(data['sourceHash'].item()), refinement=int(data['refinement']),
+                         zSampling=float(data['zSampling']), zOMP=0.0,
+                         xDefinition='R_out(psiN,Z=0) - R_out(1,Z=0)')
+            table['contourR'] = [data['contourR'][offsets[i]:offsets[i + 1]] for i in range(len(offsets) - 1)]
+            table['contourZ'] = [data['contourZ'][offsets[i]:offsets[i + 1]] for i in range(len(offsets) - 1)]
+            table['nRequested'] = len(table['requestedPsiNLevels'])
+            table['nComputed'] = len(table['psiN'])
+        if _geometry_table_matches(table, g, refinement, levels):
+            return table
+    except (OSError, ValueError, KeyError, IndexError):
+        pass
+    return None
+
+
+def _save_geometry_cache(g, table):
+    """Persist geometry only for the unchanged gfile read from this path."""
+    filename = g.get('filename')
+    path = Path(str(filename) + '.geometry.npz') if filename else None
+    if path is None or not Path(filename).is_file() or g.get('source_flux_hash') != table['sourceHash']:
+        return
+    source_stat = Path(filename).stat()
+    if (source_stat.st_mtime_ns, source_stat.st_size) != g.get('source_file_stat'):
+        return
+    lengths = [len(contour) for contour in table['contourR']]
+    offsets = np.r_[0, np.cumsum(lengths)]
+    fields = ('psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'dVdxFromVolume',
+              'gradXSqAvg', 'dpsiNdx', 'transportMetric', 'centroidR')
+    arrays = {name: table[name] for name in fields}
+    arrays.update(version=table['version'], refinement=table['refinement'],
+                  requestedRefinement=-1 if table['requestedRefinement'] is None else table['requestedRefinement'],
+                  requestedPsiNLevels=table['requestedPsiNLevels'], sourceHash=table['sourceHash'],
+                  zSampling=table['zSampling'], contourOffsets=offsets,
+                  contourR=np.concatenate(table['contourR']), contourZ=np.concatenate(table['contourZ']))
+    try:
+        np.savez_compressed(path, **arrays)
+    except OSError as exc:
+        print(f'Info: Could not save gfile geometry cache {path}: {exc}', file=sys.stderr)
+
+
+def postprocess_gfile_geometry(g, make_plots=False, refinement=None, psi_n_levels=None):
+    """Add or reuse a closed-core geometry table, with x defined at Z=0."""
+    if not isinstance(g, dict) or not {'R', 'Z', 'rmaxis', 'zmaxis', 'psi_bicub_coeffs_inv'}.issubset(g):
+        raise ValueError('g must be a postprocessed gfile')
+    if not g['Z'][0] <= 0 <= g['Z'][-1]:
+        raise ValueError('the gfile grid must include Z=0')
+    levels = _geometry_levels(psi_n_levels)
+    if refinement is not None and (isinstance(refinement, (bool, np.bool_))
+                                   or not isinstance(refinement, (int, float, np.integer, np.floating))
+                                   or not np.isfinite(refinement) or refinement < 1
+                                   or refinement != int(refinement)):
+        raise ValueError('refinement must be a positive integer')
+    if refinement is not None:
+        refinement = int(refinement)
+    table = g.get('fluxSurfaceGeometry')
+    if not _geometry_table_matches(table, g, refinement, levels):
+        table = _load_geometry_cache(g, refinement, levels)
+    if table is not None and _geometry_table_matches(table, g, refinement, levels):
+        g['fluxSurfaceGeometry'] = table
+        if make_plots:
+            plot_flux_surface_geometry(g)
+        return g
+
+    # Select flux levels on the outboard line through the magnetic axis.
+    r_line = np.linspace(g['rmaxis'], g['R'][-1], max(512, 2*len(g['R'])))
+    psi_line = calc_psiN(g, r_line, g['zmaxis'])
+    crossings = np.flatnonzero((psi_line[:-1] < 1) & (psi_line[1:] >= 1))
+    if not crossings.size:
+        raise ValueError('no outboard separatrix crossing was found at the axis height')
+    i_sep = int(crossings[0])
+    radii = []
+    for level in levels:
+        p = psi_line[:i_sep + 2]
+        matches = np.flatnonzero((p[:-1] <= level) & (p[1:] >= level))
+        if matches.size:
+            i = int(matches[0])
+            radii.append(_bisect_flux_radius(g, level, g['zmaxis'], r_line[i], r_line[i + 1]))
+    if len(radii) < 2:
+        raise ValueError('too few requested core levels intersect the axis-height line')
+
+    # Contours determine area and volume; their Z=0 intersections define x.
+    geo = compute_flux_surface_geometry(g, np.asarray(radii), g['zmaxis'], refinement, z_omp=0.0)
+    good = geo['iErr'] == 0
+    if np.count_nonzero(good) < 2:
+        raise ValueError('too few levels have closed-core geometry at Z=0')
+    names = ('psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'gradXSqAvg',
+             'dpsiNdx', 'transportMetric', 'centroidR')
+    table = {name: np.asarray(geo[name][good], dtype=float) for name in names}
+    if np.any(np.diff(table['x']) <= 0) or np.any(np.diff(table['volume']) <= 0):
+        raise ValueError('x or volume is not monotonic; adjust refinement or levels')
+    table.update(version=1, requestedRefinement=refinement, requestedPsiNLevels=levels,
+                 sourceHash=_geometry_flux_hash(g), refinement=int(geo['refinement'][0]),
+                 zSampling=float(g['zmaxis']), zOMP=0.0,
+                 xDefinition='R_out(psiN,Z=0) - R_out(1,Z=0)',
+                 contourR=list(geo['contourR'][good]), contourZ=list(geo['contourZ'][good]),
+                 nRequested=len(levels), nComputed=int(np.count_nonzero(good)))
+    table['dVdxFromVolume'] = np.gradient(table['volume'], table['x'])
+    if table['nComputed'] < table['nRequested']:
+        print(f"WARNING: Retained {table['nComputed']} of {table['nRequested']} requested geometry levels", file=sys.stderr)
+    g['fluxSurfaceGeometry'] = table
+    _save_geometry_cache(g, table)
+    if make_plots:
+        plot_flux_surface_geometry(g)
+    return g
+
+
+def lookup_flux_surface_geometry(g, R, Z):
+    """Interpolate table geometry after checking the closed-core branch."""
+    table = g.get('fluxSurfaceGeometry')
+    if not isinstance(table, dict) or len(table.get('psiN', [])) < 2:
+        raise ValueError('run postprocess_gfile_geometry before lookup')
+    # Build each profile once for this lookup call.
+    fields = ('x', 'areaRZ', 'volume', 'dVdx', 'dpsiNdx', 'transportMetric', 'centroidR')
+    profiles = {name: PchipInterpolator(table['psiN'], table[name], extrapolate=False) for name in fields}
+    r = np.asarray(R, dtype=float)
+    z = np.asarray(Z, dtype=float)
+    if r.size == 0 or z.size == 0 or (r.ndim and z.ndim and r.shape != z.shape):
+        raise ValueError('R and Z must have matching shapes, or one must be scalar')
+    r, z = np.broadcast_arrays(r, z)
+    shape = r.shape
+    geo = {name: np.full(shape, np.nan) for name in ('psiN', 'x', 'areaRZ', 'volume', 'dVdx',
+            'gradXSqAvg', 'dpsiNdx', 'transportMetric', 'centroidR')}
+    geo.update(refinement=np.full(shape, table['refinement'], dtype=int),
+               zOMP=np.full(shape, 0.0),
+               xDefinition=np.full(shape, table['xDefinition'], dtype=object),
+               iErr=np.ones(shape, dtype=int), errorId=np.full(shape, '', dtype=object),
+               contourR=np.empty(shape, dtype=object), contourZ=np.empty(shape, dtype=object))
+    r_points = r.reshape(-1)
+    z_points = z.reshape(-1)
+    finite = np.isfinite(r_points) & np.isfinite(z_points)
+    psi_n_values = np.full(r.size, np.nan)
+    if np.any(finite):
+        psi_n_values[finite] = calc_psiN(g, r_points[finite], z_points[finite])
+    geo['psiN'] = psi_n_values.reshape(shape)
+    for i in range(r.size):
+        geo['contourR'].flat[i] = np.empty(0)
+        geo['contourZ'].flat[i] = np.empty(0)
+        rv, zv = r_points[i], z_points[i]
+        psi_n = psi_n_values[i]
+        if not finite[i]:
+            error_id = 'InvalidPoint'
+        else:
+            if not np.isfinite(psi_n):
+                error_id = 'OutsideGrid'
+            elif not table['psiN'][0] < psi_n < table['psiN'][-1]:
+                error_id = 'OutsideTable'
+            else:
+                inner = np.searchsorted(table['psiN'], psi_n, side='left') - 1
+                outer = np.searchsorted(table['psiN'], psi_n, side='right')
+                inside_outer = _point_inside_flux_contour(rv, zv, np.column_stack((table['contourR'][outer], table['contourZ'][outer])))
+                inside_inner = _point_inside_flux_contour(rv, zv, np.column_stack((table['contourR'][inner], table['contourZ'][inner])))
+                error_id = 'WrongBranch' if not inside_outer or inside_inner else ''
+        geo['errorId'].flat[i] = error_id
+        if error_id:
+            continue
+        geo['iErr'].flat[i] = 0
+        for name in fields:
+            geo[name].flat[i] = profiles[name](psi_n)
+        geo['gradXSqAvg'].flat[i] = geo['transportMetric'].flat[i]/geo['dVdx'].flat[i]
+    if shape == ():
+        return {name: value.item() for name, value in geo.items()}
+    return geo
+
+
+def plot_flux_surface_geometry(g):
+    """Plot cached profiles and core contours with the gfile limiter."""
+    import matplotlib.pyplot as plt
+
+    table = g['fluxSurfaceGeometry']
+    fig, axes = plt.subplots(2, 4, figsize=(15, 7), constrained_layout=True)
+    profiles = (('psiN', 'x', 'x (m)'), ('x', 'areaRZ', 'R-Z area (m²)'),
+                ('x', 'volume', 'V (m³)'), ('x', 'dVdx', 'dV/dx (m²)'),
+                ('x', 'gradXSqAvg', '<|grad x|²>'),
+                ('x', 'transportMetric', "V' <|grad x|²> (m²)"),
+                ('x', 'dpsiNdx', 'dpsiN/dx (m⁻¹)'), ('x', 'centroidR', 'R centroid (m)'))
+    for ax, (abscissa, ordinate, label) in zip(axes.flat, profiles):
+        ax.plot(table[abscissa], table[ordinate], '.-')
+        ax.set(xlabel=abscissa, ylabel=label)
+        ax.grid(True)
+    axes[0, 3].plot(table['x'], table['dVdxFromVolume'], '--', label='Slope of V(x)')
+    axes[0, 3].legend()
+    fig_contours, ax = plt.subplots()
+    colors = plt.get_cmap('viridis')(np.linspace(0, 1, len(table['psiN'])))
+    for radius, height, color in zip(table['contourR'], table['contourZ'], colors):
+        ax.plot(radius, height, color=color)
+    lim = np.asarray(g.get('lim', []))
+    if lim.ndim == 2 and lim.shape[0] == 2:
+        valid = np.isfinite(lim).all(axis=0) & (lim[0] > 0)
+        ax.plot(lim[0, valid], lim[1, valid], 'k-', linewidth=1.5)
+    ax.plot(g['rmaxis'], g['zmaxis'], 'ko')
+    ax.axhline(0, color='k', linestyle=':')
+    ax.set(xlabel='R (m)', ylabel='Z (m)', title='Sampled closed-core contours and limiter')
+    ax.set_aspect('equal')
+    ax.grid(True)
+    return fig, fig_contours
+
+
+def _core_flux_contour(generator, psi_n, R, Z, r_axis, z_axis, grid_spacing):
+    """Select the nearest contour and require a closed loop around the axis."""
+    contours = generator.lines(float(psi_n))
+    if not contours:
+        return None, 'NoContour'
+
+    best_contour = None
+    best_distance = np.inf
+    for contour in contours:
+        if len(contour) < 2 or not np.all(np.isfinite(contour)):
+            continue
+        distance = _point_to_flux_contour_distance(R, Z, contour)
+        if distance < best_distance:
+            best_contour = contour
+            best_distance = distance
+    if best_contour is None or best_distance > 0.25*grid_spacing:
+        return None, 'NoMatchingContour'
+    gap = np.hypot(*(best_contour[0] - best_contour[-1]))
+    if len(best_contour) < 4 or gap > 1e-6*grid_spacing:
+        return None, 'OpenContour'
+
+    best_contour = best_contour.copy()
+    best_contour[-1] = best_contour[0]
+    if not _point_inside_flux_contour(r_axis, z_axis, best_contour):
+        return None, 'WrongBranch'
+    return best_contour, ''
+
+
+def _point_to_flux_contour_distance(R, Z, contour):
+    """Shortest distance from a point to the contour's line segments."""
+    start = contour[:-1]
+    segments = np.diff(contour, axis=0)
+    lengths_squared = np.sum(segments**2, axis=1)
+    projection = (R - start[:, 0])*segments[:, 0] + (Z - start[:, 1])*segments[:, 1]
+    fraction = np.divide(projection, lengths_squared, out=np.zeros_like(projection),
+                         where=lengths_squared > 0)
+    closest = start + np.clip(fraction, 0, 1)[:, None]*segments
+    return float(np.min(np.hypot(R - closest[:, 0], Z - closest[:, 1])))
+
+
+def _point_inside_flux_contour(R, Z, contour):
+    """Use ray crossings to test whether the magnetic axis lies inside."""
+    r0, z0 = contour[:-1].T
+    r1, z1 = contour[1:].T
+    crosses = (z0 > Z) != (z1 > Z)
+    r_cross = r0[crosses] + (Z - z0[crosses])*(r1[crosses] - r0[crosses])/(z1[crosses] - z0[crosses])
+    return bool(np.count_nonzero(r_cross > R) % 2)
+
+
+def _flux_contour_area_volume(contour):
+    """Shoelace area and radial first moment give the volume of revolution."""
+    r0, z0 = contour[:-1].T
+    r1, z1 = contour[1:].T
+    cross_products = r0*z1 - r1*z0
+    signed_area = np.sum(cross_products)/2
+    if signed_area == 0 or not np.isfinite(signed_area):
+        return None
+    area = abs(signed_area)
+    centroid_r = np.sum((r0 + r1)*cross_products)/(6*signed_area)
+    if not np.isfinite(centroid_r) or centroid_r <= 0:
+        return None
+    return float(area), float(2*np.pi*area*centroid_r), float(centroid_r)
+
+
 # -------------------------------------------------------------------------------------------------------------------------
 # Get psi at a point from a gfile
 # psi = -sign(Ip)*psirz(R,Z), where psirz is the value in the gfile
@@ -396,6 +934,10 @@ def readg_g3d(filename):
 
     g = readg_g3d_simple(filename)
     g = postprocess_gfile(g)
+    g['filename'] = str(filename)
+    g['source_flux_hash'] = _geometry_flux_hash(g)
+    source_stat = Path(filename).stat()
+    g['source_file_stat'] = (source_stat.st_mtime_ns, source_stat.st_size)
     _warn_if_gfile_psi_may_be_wb(g, filename)
     
     return g
@@ -420,13 +962,16 @@ def _warn_if_gfile_psi_may_be_wb(g, filename):
     )
     print(
         '  No flux conversion was applied; derived B fields assume Wb/rad. '
-        'Verify the source convention.',
+        'Verify the source convention. If Wb is confirmed, call '
+        'g = correct_gfile_wb_to_wb_per_radian(g).',
         file=sys.stderr,
     )
 
 
 # Add derived gfile quantities needed for psi and bfield interpolation.
 def postprocess_gfile(g):
+    # A changed flux grid or axis invalidates any attached surface table.
+    g.pop('fluxSurfaceGeometry', None)
     nR = g['mw']
     nZ = g['mh']
 
@@ -441,7 +986,9 @@ def postprocess_gfile(g):
     else:
         g['ip_sign'] = -np.sign(g['cpasma'])
 
-    g['fpol_coeffs'] = np.polyfit(g['pn'],g['fpol'],7)
+    # Match MATLAB's PCHIP interpolation of the tabulated F profile.
+    g['fpol_pp'] = PchipInterpolator(g['pn'],g['fpol'],extrapolate=True)
+    g.pop('fpol_coeffs', None)
     g['psi_bicub_coeffs_inv'] = _get_psi_bicub_coeffs_inv(g)
     # Compare possible raw flux units after interpolation coefficients are available.
     g['psi_units_diagnostic'] = diagnose_gfile_psi_units(g)

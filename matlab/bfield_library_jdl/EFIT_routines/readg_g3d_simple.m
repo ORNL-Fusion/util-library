@@ -23,6 +23,9 @@ end
 % format (6a8,3i4)
 
 line = fgetl(fid);
+if line == -1
+    error('File is empty: %s',filename)
+end
 if length(line) < 60
     % strict formatting not followed
     % Try getting two integers from the end

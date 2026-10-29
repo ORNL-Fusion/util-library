@@ -2,6 +2,11 @@ function g = postprocess_gfile(g)
 %
 % Postprocessing
 %
+% A changed flux grid or axis invalidates any previously sampled geometry.
+if isfield(g,'fluxSurfaceGeometry')
+    g = rmfield(g,'fluxSurfaceGeometry');
+end
+
 g.dR = g.xdim/(g.mw-1);
 g.dZ = g.zdim/(g.mh-1);
 
@@ -63,7 +68,10 @@ g.bicub_coeffs_inv = get_psi_bicub_coeffs_inv(g);
 % available, without changing psirz or flux profiles.
 g.psiUnitsDiagnostic = diagnose_gfile_psi_units(g);
 
-%% Fit F
-g.fpol_coeffs = polyfit(g.pn,g.fpol,7);
+%% Cache the local F interpolant for repeated magnetic-field evaluations
+g.fpol_pp = pchip(g.pn,g.fpol);
+if isfield(g,'fpol_coeffs')
+    g = rmfield(g,'fpol_coeffs');
+end
 
 end

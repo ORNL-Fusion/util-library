@@ -42,14 +42,12 @@ psiN = (g.ip_sign*psi-g.ssimag)/(g.ssibry-g.ssimag);
 %     error('PsiN out of bounds for fpol interpolation')
 % end
 
-fpol = polyval(g.fpol_coeffs,psiN);
-% fpol = interp1(g.pn,g.fpol,psiN,'pchip','extrap');
-
-% toroidal field
+% Use the tabulated current function on the core branch and vacuum field outside.
 bt1 = g.bcentr*g.rzero.*R1_inv;
-ic = find(psiN <= 1.0 | psiN < 0);
+ic = find(psiN <= 1.0);
 if ~isempty(ic)
-    bt1(ic) = fpol(ic).*R1_inv(ic);
+    fpol = ppval(g.fpol_pp,psiN(ic));
+    bt1(ic) = fpol.*R1_inv(ic);
 end
 
 Bout.br = br1;

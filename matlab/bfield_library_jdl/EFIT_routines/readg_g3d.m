@@ -47,6 +47,7 @@ if strcmp(action,'mat')
 
     if isfield(g,'version')
         if g.version == version_
+            g = refresh_fpol_pchip(g);
             warn_if_gfile_psi_may_be_wb(g);
             return;
         end
@@ -73,6 +74,7 @@ catch ME
         S = load(fname_mat);
         g = S.g;
         g.filename = filename;
+        g = refresh_fpol_pchip(g);
         warn_if_gfile_psi_may_be_wb(g);
         return
     elseif rawFileAccessError && ~force_rewrite
@@ -115,12 +117,12 @@ end
 
 end
 
-function warn_if_gfile_psi_may_be_wb(G)
+function warn_if_gfile_psi_may_be_wb(g)
 % Report a substantial 2*pi discrepancy on every read, including cached reads.
-if ~isfield(G,'psiUnitsDiagnostic') || ~G.psiUnitsDiagnostic.available
+if ~isfield(g,'psiUnitsDiagnostic') || ~g.psiUnitsDiagnostic.available
     return
 end
-Diagnostic = G.psiUnitsDiagnostic;
+Diagnostic = g.psiUnitsDiagnostic;
 if ~strcmp(Diagnostic.inferredUnits,'Wb')
     return
 end
@@ -129,8 +131,17 @@ scoreWb = abs(log(Diagnostic.bpolWb/Diagnostic.bpolEstimate));
 if scoreWbPerRad-scoreWb < log(2)
     return
 end
-fprintf(2,'WARNING: gfile %s: psirz may be in Wb rather than Wb/rad.\n',G.filename);
+fprintf(2,'WARNING: gfile %s: psirz may be in Wb rather than Wb/rad.\n',g.filename);
 fprintf(2,'  |Ip|-based Bpol estimate at the outboard LCFS = %.6g T.\n',Diagnostic.bpolEstimate);
 fprintf(2,'  Gfile gradient gives Bpol = %.6g T as Wb/rad, or %.6g T as Wb.\n',Diagnostic.bpolWbPerRad,Diagnostic.bpolWb);
-fprintf(2,'  No flux conversion was applied; derived B fields assume Wb/rad. Verify the source convention.\n');
+fprintf(2,'  No flux conversion was applied; derived B fields assume Wb/rad.\n');
+fprintf(2,'  If Wb is confirmed, call g = correct_gfile_wb_to_wb_per_radian(g).\n');
+end
+
+function g = refresh_fpol_pchip(g)
+% Upgrade an in-memory v10 cache without rebuilding the flux grid.
+g.fpol_pp = pchip(g.pn,g.fpol);
+if isfield(g,'fpol_coeffs')
+    g = rmfield(g,'fpol_coeffs');
+end
 end
