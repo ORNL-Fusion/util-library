@@ -1,12 +1,13 @@
 function cf = colorflipper(num_colors,cmap)
 % cf = colorflipper(num_colors,cmap)
-% cf(num_colors,3)
+% Return a num_colors-by-3 RGB colormap. Omitted or empty num_colors gives 256.
 % Available options for cmap:
 %'jet'
+%'turbo'
 %'jet_to_white'
-%'jet_white_last'
+%'jet_white_first'
 %'rainbow_to_white'
-%'rainbow_white_last'
+%'rainbow_white_first'
 %'parula'
 %'hsv'
 %'cw'  -- cool warm
@@ -25,36 +26,28 @@ function cf = colorflipper(num_colors,cmap)
 %'greens'
 %'devon'
 
-if nargin < 1
-    num_colors = 64;
+if nargin < 1 || isempty(num_colors)
+    num_colors = 256;
 end
 if nargin < 2
     cmap = 'jet';
 end
+validateattributes(num_colors,{'numeric'},{'scalar','integer','positive'},mfilename,'num_colors',1)
 
 switch lower(cmap)
-    case {'jet'}
-        if isempty(num_colors)
-            num_colors = 64;
-        end
-        cf = jet(num_colors);
+    case {'jet','turbo','parula','hsv'}
+        cf = feval(lower(cmap),num_colors);
         return;
     case {'jet_to_white'}
         cf = cmap_jet_to_white(num_colors);
         return;
-    case {'jet_white_last'}
+    case {'jet_white_first'}
         cf = cmap_jet_to_white(num_colors,1);
         return;        
     case {'rainbow_to_white'}
         cf = cmap_rainbow_to_white(16);
-    case {'rainbow_white_last'}
+    case {'rainbow_white_first'}
         cf = cmap_rainbow_to_white(1);        
-    case {'parula'}
-        cf = parula(num_colors);
-        return;
-    case {'hsv'}
-        cf = hsv(num_colors);
-        return;
     case {'cw'}
         cf = cmap_cw;
     case {'rb'}
@@ -74,7 +67,7 @@ switch lower(cmap)
     case {'plasma'}
         cf = cmap_plasma;
     case {'matlab_lines'}
-        cf = matlab_lines(num_colors);
+        cf = lines(num_colors);
         return;
     case {'tab20'}
         cf = cmap_tab20;                
@@ -84,17 +77,15 @@ switch lower(cmap)
     case {'batloww'}
         cf = batlowW;
     case {'greens'}
-        cf = Greens(num_colors);
+        cf = cmap_greens(num_colors);
+        return;
     case {'devon'}
         cf = devon();
     otherwise
-        cf = matlab_lines(num_colors);
-        return;
+        error('colorflipper:UnknownColormap','Unknown colormap: %s',cmap)
 end
 
-if ~isempty(num_colors)
-    cf = interpolate_cf(cf,num_colors);
-end
+cf = interpolate_cf(cf,num_colors);
 
 end
 
@@ -361,37 +352,15 @@ cmap = [0.171032 0.100402 0.299782
 end
 
 
-function cmap = Greens(n)
-    if nargin < 1
-        n = 256; 
-    end   
-    x = linspace(0,1,n)';              
-    % cmap = [ (1-x), ones(n,1), (1-x)]; 
-        g = 1 - 0.7*x;                     
-    cmap = [1-x, g, 1-x];               
-end
-
-
-function cmap = matlab_lines(num_colors)
-cmap = [...
-                   0   0.447000000000000   0.741000000000000
-   0.850000000000000   0.325000000000000   0.098000000000000
-   0.929000000000000   0.694000000000000   0.125000000000000
-   0.494000000000000   0.184000000000000   0.556000000000000
-   0.466000000000000   0.674000000000000   0.188000000000000
-   0.301000000000000   0.745000000000000   0.933000000000000
-   0.635000000000000   0.078000000000000   0.184000000000000
-];
-nrep = ceil(num_colors/size(cmap,1));
-cmap = repmat(cmap,nrep,1);
+function cmap = cmap_greens(n)
+x = linspace(0,1,n)';
+g = 1 - 0.7*x;
+cmap = [1-x, g, 1-x];
 end
 
 function cf2 = interpolate_cf(cf,n)
 index = linspace(1,size(cf,1),n);
-cf2 = zeros(n,3);
-cf2(:,1) = interp1(1:size(cf,1),cf(:,1),index);
-cf2(:,2) = interp1(1:size(cf,1),cf(:,2),index);
-cf2(:,3) = interp1(1:size(cf,1),cf(:,3),index);
+cf2 = interp1(1:size(cf,1),cf,index);
 end
 
 function cmap = batlowW
@@ -2064,19 +2033,23 @@ cmap = [95 0 0
 end
 
 
-function cmap = cmap_jet_to_white(num_colors,only_last)
+function cmap = cmap_jet_to_white(num_colors,white_first)
 if nargin < 2
-    only_last = 0;
+    white_first = false;
 end
-        
+
 cmap = jet(num_colors);
-if only_last
-    cmap(1,1:3) = [1 1 1];
+if white_first
+    cmap(1,:) = [1 1 1];
 else
-    iblue = find(ismember(cmap, [0 0 1], 'rows'));
-    cmap(1:iblue,1) = linspace(1,0,iblue);
-    cmap(1:iblue,2) = linspace(1,0,iblue);
-    cmap(1:iblue,3) = 1;
+    iBlue = find(ismember(cmap,[0 0 1],'rows'),1,'last');
+    if isempty(iBlue) || iBlue == 1
+        cmap(1,:) = [1 1 1];
+    else
+        cmap(1:iBlue,1) = linspace(1,0,iBlue);
+        cmap(1:iBlue,2) = linspace(1,0,iBlue);
+        cmap(1:iBlue,3) = 1;
+    end
 end
 end
 
