@@ -51,7 +51,7 @@ for i = 1:npts
         
         ir = floor( (R(i) - Bgrid.R(1))/dr_grid ) + 1;
         iz = floor( (Z(i) - Bgrid.Z(1))/dz_grid ) + 1;
-        iphi = floor( (P_rad_tmp(i) - Bgrid.phi(1)) / dphi_grid ) + 1;
+        iphi = floor( (P_rad_tmp - Bgrid.phi(1)) / dphi_grid ) + 1;
         if ir < 1 || ir >= Bgrid.nr || iz < 1 || iz >= Bgrid.nz
             if ~nowarn && ~already_warned
                 warning('Point(s) off grid in bfield_grid --> returning toroidal field = 1 there')

@@ -8,26 +8,77 @@ BFIELD = 0;  %-1
 
 
 switch BFIELD
+    case -2
+        poincare_out = 'low_iota_90_vac_poincare_0deg_50surf_100pt.mat';
+
+
+        gridDir = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID';
+        gridFName = 'Bgrid_w7x_low_iota_90_1MA_90x82x65';
+        grid_file = fullfile(gridDir,strcat(gridFName,'.mat'));
+
+
+        fName = fullfile(gridDir,strcat(gridFName,'_layout.dat'));
+
+        data = dlmread(fName);
+        Bgrid.nr = data(1);
+        Bgrid.nz = data(2);
+        Bgrid.nphi = data(3) + 1; % Will add in last plane below
+        Bgrid.nsym = data(4);
+        Bgrid.Rmin = data(5);
+        Bgrid.Rmax = data(6);
+        Bgrid.Zmin = data(7);
+        Bgrid.Zmax = data(8);
+        Bgrid.R = linspace(Bgrid.Rmin,Bgrid.Rmax,Bgrid.nr);
+        Bgrid.Z = linspace(Bgrid.Zmin,Bgrid.Zmax,Bgrid.nz);
+
+        Bgrid.dR = (Bgrid.Rmax - Bgrid.Rmin)/(Bgrid.nr-1);
+        Bgrid.dZ = (Bgrid.Zmax - Bgrid.Zmin)/(Bgrid.nz-1);
+        Bgrid.dphi = (2*pi/Bgrid.nsym)/(Bgrid.nphi - 1);
+        Bgrid.phi = linspace(0,2*pi/Bgrid.nsym,Bgrid.nphi);
+
+        fName = fullfile(gridDir,strcat(gridFName,'_phi.dat'));
+        data = dlmread(fName);
+        Bgrid.Bphi = reshape(data, [Bgrid.nphi-1, Bgrid.nz, Bgrid.nr]);
+        Bgrid.Bphi = permute(Bgrid.Bphi, [3, 2, 1]);
+        Bgrid.Bphi(:,:,end+1) = Bgrid.Bphi(:,:,1);
+
+        fName = fullfile(gridDir,strcat(gridFName,'_r.dat'));
+        data = dlmread(fName);
+        Bgrid.Br = reshape(data, [Bgrid.nphi-1, Bgrid.nz, Bgrid.nr]);
+        Bgrid.Br = permute(Bgrid.Br, [3, 2, 1]);
+        Bgrid.Br(:,:,end+1) = Bgrid.Br(:,:,1);
+
+        fName = fullfile(gridDir,strcat(gridFName,'_z.dat'));
+        data = dlmread(fName);
+        Bgrid.Bz = reshape(data, [Bgrid.nphi-1, Bgrid.nz, Bgrid.nr]);
+        Bgrid.Bz = permute(Bgrid.Bz, [3, 2, 1]);
+        Bgrid.Bz(:,:,end+1) = Bgrid.Bz(:,:,1);
+
+
+
+      bfield.type = 'Bgrid';
+        bfield.Bgrid = Bgrid;
+        bfield.nsym  = Bgrid.nsym;
     case -1
         poincare_out = 'low_iota_90_vac_poincare_0deg_50surf_100pt.mat';
-        
+
         grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_w7x_low_iota_90_1MA_90x82x65.mat';
-        
+
 %         grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_vac_0kA_mimic_90x82x65.mat';
 %             grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_vac_43kA_mimic_90x82x65.mat';
         bdata = load(grid_file);
         bfield.type = 'Bgrid';
         bfield.Bgrid = bdata.Bgrid;
         bfield.nsym  = bdata.Bgrid.nsym;
-        
-        
+
+
     case 0
         poincare_out = 'delete_me_22kA_ref_coils_poincare_0deg_101surf_100pt.mat';
-        
+
         coils_file = 'C:\Work_archive\RUN_ARCHIVE\VMEC_RUNS\W7X_mark_coils_and_input\coils.w7x';
         coil = load_vmec_coils_file(coils_file);
         winding_array = [108,108,108,108,108,36,36,8,8];
-        
+
         if 1
 %         taper = [12022	11897	12148	13399	13524	8219	-3005  2500 -2500]; out_file = 'Bgrid_vac_0kA_mimic_90x82x65';  % 0kA mimic, run in OP1.2a EES+252
 %         taper = [12129	12002	12255	13519	13645	7391	-3980  2500 -2500]; out_file = 'Bgrid_vac_11kA_mimic_90x82x65'; % 11kA mimic, run in OP1.2a EFS+252
@@ -47,14 +98,14 @@ switch BFIELD
         taper = Inorm*taper_norm./winding_array;
         end
         coil = set_w7x_current(coil,taper); % taper = [I1,I2,I3,I4,I5,IA,IB,IS1,IS2];
-        
+
         bfield.type = 'just_coils';
         bfield.coil = coil.coil;
         bfield.current = coil.current;
         bfield.nsym = coil.num_periods;
     case 1
         poincare_out = '22kA_ref_bmw_poincare_0deg_101surf_100pt.mat';
-        
+
         if 0
             grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\VMEC_RUNS\W7X_2016\OP2_SE_ref\22kA\Bgrid_bmw_90x82x65.mat';
             %         grid_file = 'C:\Work\FLARE\coils\Bgrid_vac_22kA_mimic_90x82x65_v2.mat';
@@ -74,7 +125,7 @@ switch BFIELD
             bmw.Bphi{1}(:,:,bmw.nphi) = bmw.Bphi{1}(:,:,1);
             bfield.type = 'Bgrid';
             bfield.Bgrid = bmw;
-            bfield.nsym  = bmw.nsym;            
+            bfield.nsym  = bmw.nsym;
         elseif 0
             [Arcoeff,Azcoeff,Aphicoeff,spline_info] = prepare_Agrid_splines(bmw);
             bfield.type       = 'Aspline';
@@ -87,18 +138,18 @@ switch BFIELD
             bfield.type       = 'Bspline';
             bfield.Brcoeff    = Brcoeff;
             bfield.Bzcoeff    = Bzcoeff;
-            bfield.Bphicoeff  = Bphicoeff;            
+            bfield.Bphicoeff  = Bphicoeff;
             bfield.spline_info = spline_info;
         end
         Rax = 5.915735; Zax = 0.000000; % 22kA OP2
-        
+
         case 2
 
 %             grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_xdr_altern_22kA_90x82x65.mat';
 %             grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_xdr_altern_OP2_00kA_90x82x65.mat';
 %             poincare_out = 'poincare_xdr_altern_OP2_00kA_90x82x65_100s.out';
             grid_file = 'C:\Work\Stellarator\W7X EMC3 modeling\BGRID\Bgrid_xdr_altern_OP2_43kA_90x82x65.mat';
-            poincare_out = 'poincare_xdr_altern_OP2_43kA_90x82x65_100s.out';            
+            poincare_out = 'poincare_xdr_altern_OP2_43kA_90x82x65_100s.out';
             temp = load(grid_file);
             bfield.Bgrid = temp.Bgrid;
             bfield.type = 'Bgrid';
@@ -140,7 +191,7 @@ elseif 1
     Rstart = linspace(Rstart,Rend,nsurf);
     Zstart = linspace(Zstart,Zend,nsurf);
 end
-    
+
 poincare_out_dir = 'C:\Work\Stellarator\W7X EMC3 modeling\Poincare_data\';
 
 poincare_save_name = fullfile(poincare_out_dir,poincare_out);

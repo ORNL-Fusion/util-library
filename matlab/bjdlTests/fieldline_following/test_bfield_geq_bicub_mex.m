@@ -1,6 +1,6 @@
 clearvars;
 
-gfile_name = '/Users/jjl/ORNL Dropbox/Jeremy Lore/DIII-D/Haskey/g179447.02280';
+gfile_name = 'C:\Work\SOLPS\runs\mastu\cd-51685-400ms\baserun\gfile';
 g = readg_g3d(gfile_name);
 
 compile_calc_psi_mex();

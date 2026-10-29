@@ -1,9 +1,10 @@
 clearvars;
 
-gfile_name = '/Users/jjl/ORNL Dropbox/Jeremy Lore/DIII-D/Haskey/g179447.02280';
+% gfile_name = '/Users/jjl/ORNL Dropbox/Jeremy Lore/DIII-D/Haskey/g179447.02280';
+gfile_name = 'C:\Work\SOLPS\runs\mastu\cd-51685-400ms\baserun\gfile';
 g = readg_g3d(gfile_name);
 
-PLOTIT = 0;
+PLOTIT = 1;
 TIMEIT = 1;
 NPTS = 100000;
 RNG_SEED = 1;
@@ -26,11 +27,12 @@ is_inside = is_valid & psiN <= 1;
 psiN_inside = psiN(is_inside);
 R_inside = R(is_inside);
 
-fpol_poly_inside = polyval(g.fpol_coeffs,psiN_inside);
+fpol_poly_coeffs = polyfit(g.pn,g.fpol,7); % Legacy comparison only
+fpol_poly_inside = polyval(fpol_poly_coeffs,psiN_inside);
 
 fpol_linear_inside = interp1(g.pn,g.fpol,psiN_inside,'linear','extrap');
 
-fpol_pchip_inside = interp1(g.pn,g.fpol,psiN_inside,'pchip','extrap');
+fpol_pchip_inside = ppval(g.fpol_pp,psiN_inside);
 
 fpol_uniform_inside = interp_uniform_linear(g.pn,g.fpol,psiN_inside);
 
@@ -45,6 +47,8 @@ fprintf('gfile: %s\n',gfile_name)
 fprintf('random points sampled : %d\n',NPTS)
 fprintf('valid in-grid points  : %d\n',nnz(is_valid))
 fprintf('inside separatrix     : %d\n',nnz(is_inside))
+fprintf('PCHIP node error [T m]: %.6e\n',max(abs(ppval(g.fpol_pp,g.pn(:)) - g.fpol(:))))
+fprintf('F edge - vacuum [T m]: %.6e\n',g.fpol(end) - g.bcentr*g.rzero)
 
 print_diff_stats('polyfit(7) vs linear interp: fpol inside sep', ...
     fpol_poly_inside,fpol_linear_inside)
@@ -65,9 +69,10 @@ if TIMEIT
     fprintf('Timing on inside-separatrix psiN sample\n')
 
     time_eval_method('polyfit(7) / polyval', ...
-        @() polyval(g.fpol_coeffs,psiN_inside),numel(psiN_inside))
+        @() polyval(fpol_poly_coeffs,psiN_inside),numel(psiN_inside))
     time_eval_method('interp1 linear', ...
         @() interp1(g.pn,g.fpol,psiN_inside,'linear','extrap'),numel(psiN_inside))
+    time_eval_method('pchip / ppval',@() ppval(g.fpol_pp,psiN_inside),numel(psiN_inside))
     time_eval_method('interp1 pchip', ...
         @() interp1(g.pn,g.fpol,psiN_inside,'pchip','extrap'),numel(psiN_inside))
     time_eval_method('uniform linear', ...
