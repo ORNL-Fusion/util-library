@@ -966,7 +966,6 @@ def _warn_if_gfile_psi_may_be_wb(g, filename):
         'g = correct_gfile_wb_to_wb_per_radian(g).',
         file=sys.stderr,
     )
-    print('  If Wb is confirmed, call g = correct_gfile_wb_to_wb_per_radian(g)', file=sys.stderr)
 
 
 # Add derived gfile quantities needed for psi and bfield interpolation.

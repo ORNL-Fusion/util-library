@@ -144,5 +144,4 @@ g.fpol_pp = pchip(g.pn,g.fpol);
 if isfield(g,'fpol_coeffs')
     g = rmfield(g,'fpol_coeffs');
 end
-fprintf(2,'  If Wb is confirmed, call g = correct_gfile_wb_to_wb_per_radian(g);\n');
 end
