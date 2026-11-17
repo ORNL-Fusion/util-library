@@ -10,7 +10,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from EFITutils import calc_bfield, compute_flux_surface_geometry, lookup_flux_surface_geometry, postprocess_gfile, postprocess_gfile_geometry
-from EFITutils import _geometry_flux_hash
+from EFITutils import _geometry_flux_hash, calc_flux_surface_labels, lookup_flux_surface_labels
 
 
 def make_elliptical_gfile(zdim=2.0):
@@ -23,7 +23,7 @@ def make_elliptical_gfile(zdim=2.0):
         'mw': n, 'mh': n, 'xdim': 2.0, 'zdim': zdim,
         'rgrid1': 1.0, 'zmid': 0.0, 'rmaxis': r_axis,
         'zmaxis': 0.0, 'ssimag': 0.0, 'ssibry': 1.0,
-        'cpasma': [], 'fpol': np.ones(n),
+        'cpasma': [], 'fpol': np.ones(n), 'rzero': r_axis, 'bcentr': 1/r_axis,
         'psirz': ((rr - r_axis)/a)**2 + (zz/b)**2,
     }
     return postprocess_gfile(g)
@@ -151,6 +151,117 @@ class FluxSurfaceGeometryTests(unittest.TestCase):
         self.assertEqual(compute_flux_surface_geometry(island, point, 0.0)['errorId'], 'WrongBranch')
         postprocess_gfile_geometry(island, refinement=4, psi_n_levels=[0.1, 0.25, 0.5, 0.75, 0.9])
         self.assertEqual(lookup_flux_surface_geometry(island, point, 0.0)['errorId'], 'WrongBranch')
+
+    def test_flux_radii_and_metric_transforms(self):
+        g = make_elliptical_gfile()
+        for p in (0.25, 0.8, 0.98):
+            geo = compute_flux_surface_geometry(g, 2+0.5*np.sqrt(p), 0)
+            phi = 2*np.pi*(0.7/0.5)*(2-np.sqrt(4-0.25*p))
+            radius = np.sqrt(2*phi/np.pi)
+            dphi = np.pi*0.5*0.7/np.sqrt(4-0.25*p)
+            drdx = 2*dphi*geo['dpsiNdx']/(2*np.pi*radius)
+            self.assertEqual(geo['iErr'], 0)
+            for name, expected in (('phiTor', phi), ('rTor', radius), ('rSaarelma', radius),
+                                   ('dPhiTorDpsiN', dphi), ('drTorDx', drdx)):
+                self.assertLess(abs(geo[name]/expected-1), 0.005)
+            for suffix, slope, volume in (('RTor', 'drTorDx', 'dVdrTor'),
+                                          ('RSaarelma', 'drSaarelmaDx', 'dVdrSaarelma')):
+                self.assertAlmostEqual(geo[volume]*geo[slope]/geo['dVdx'], 1)
+                self.assertAlmostEqual(geo['grad'+suffix+'SqAvg']/(geo['gradXSqAvg']*geo[slope]**2), 1)
+                self.assertAlmostEqual(geo['transportMetric'+suffix]/(geo['transportMetric']*geo[slope]), 1)
+        axis = compute_flux_surface_geometry(g, 2, 0)
+        self.assertEqual(axis['rTor'], 0)
+        self.assertTrue(np.isnan(axis['drTorDx']))
+
+        # Reversing the toroidal field changes sign metadata, not flux magnitudes.
+        reversed_g = dict(g, fpol=-g['fpol'], bcentr=-g['bcentr'])
+        reverse = compute_flux_surface_geometry(reversed_g, 2+0.5*np.sqrt(0.98), 0)
+        self.assertEqual(reverse['toroidalFieldSign'], -1)
+        self.assertAlmostEqual(reverse['phiTor'], geo['phiTor'])
+        self.assertAlmostEqual(reverse['rTor'], geo['rTor'])
+
+    def test_varying_fpol_and_concave_area_integrals(self):
+        from scipy.integrate import quad
+        from scipy.interpolate import PchipInterpolator
+        from EFITutils import _enclosed_radial_integrals
+
+        # Elliptical area elements integrate analytically in poloidal angle.
+        # F=1+0.2*p distinguishes toroidal flux from the geometric Saarelma radius.
+        g = make_elliptical_gfile()
+        g['fpol'] = 1+0.2*g['pn']
+        p = 0.8
+        geo = compute_flux_surface_geometry(g, 2+0.5*np.sqrt(p), 0)
+        expected = np.pi*0.5*0.7*quad(lambda q: (1+0.2*q)/np.sqrt(4-0.25*q), 0, p)[0]
+        self.assertEqual(geo['iErr'], 0)
+        self.assertLess(abs(geo['phiTor']/expected-1), 0.005)
+        self.assertGreater(geo['rTor'], geo['rSaarelma'])
+
+        # A U-shaped polygon is not star-shaped about the selected axis.
+        # Three rectangular pieces give an independent integral of 1/R.
+        g['rmaxis'] = 1.25
+        contour = np.array([[1, -1], [3, -1], [3, 1], [2.5, 1], [2.5, -0.5],
+                            [1.5, -0.5], [1.5, 1], [1, 1], [1, -1]], dtype=float)
+        fpol = PchipInterpolator(g['pn'], np.ones_like(g['pn']))
+        expected = 0.5*np.log(3)+1.5*np.log(1.5)+1.5*np.log(3/2.5)
+        for points in (contour, contour[::-1]):
+            phi, integral, error_id = _enclosed_radial_integrals(g, points, fpol)
+            self.assertEqual(error_id, '')
+            self.assertLess(abs(integral/expected-1), 1e-6)
+            self.assertAlmostEqual(phi, integral)
+
+    def test_label_lookup_derivatives_shapes_and_status(self):
+        g = make_elliptical_gfile()
+        postprocess_gfile_geometry(g, refinement=4, psi_n_levels=[0.1, 0.25, 0.5, 0.75, 0.95])
+        p = np.array([[0.25, 0.4], [0.6, 0.75]])
+        labels = lookup_flux_surface_labels(g, p)
+        spatial = calc_flux_surface_labels(g, 2+0.5*np.sqrt(p), 0)
+        self.assertEqual(labels['rTor'].shape, p.shape)
+        np.testing.assert_array_equal(labels['iErr'], 0)
+        np.testing.assert_array_equal(spatial['iErr'], 0)
+        np.testing.assert_allclose(labels['rTor'], spatial['rTor'], atol=1e-8)
+        np.testing.assert_allclose(labels['rTor'], labels['rSaarelma'], rtol=1e-12)
+        center = lookup_flux_surface_labels(g, 0.6)
+        plus = lookup_flux_surface_labels(g, 0.600001)
+        minus = lookup_flux_surface_labels(g, 0.599999)
+        for radius, slope in (('rTor', 'drTorDx'), ('rSaarelma', 'drSaarelmaDx')):
+            finite_difference = (plus[radius]-minus[radius])/(plus['x']-minus['x'])
+            self.assertLess(abs(finite_difference/center[slope]-1), 1e-7)
+        self.assertLess(abs((plus['phiTor']-minus['phiTor'])/2e-6/center['dPhiTorDpsiN']-1), 1e-7)
+        p = np.r_[np.nan, 0, 1, g['fluxSurfaceGeometry']['psiN'][[0, -1]]]
+        rejected = lookup_flux_surface_labels(g, p)
+        self.assertTrue(np.all(rejected['iErr'] == 1))
+        self.assertTrue(np.all(np.isnan(rejected['rTor'])))
+        self.assertEqual(rejected['errorId'].tolist(), ['InvalidPoint']+['OutsideTable']*4)
+        for key in ('bcentr', 'rzero', 'fpol'):
+            changed = dict(g)
+            changed[key] = 1.01*g[key]
+            with self.assertRaisesRegex(ValueError, 'stale'):
+                lookup_flux_surface_labels(changed, 0.6)
+        for value in ([1+2j], [], ['0.6']):
+            with self.assertRaises(ValueError):
+                lookup_flux_surface_labels(g, value)
+
+    def test_close_contours_and_version_upgrade(self):
+        from EFITutils import _point_inside_flux_contour
+
+        g = make_elliptical_gfile()
+        levels = [0.79, 0.8, 0.800001, 0.81]
+        postprocess_gfile_geometry(g, refinement=4, psi_n_levels=levels)
+        p = 0.8000005
+        radius = 2+0.5*np.sqrt(p)
+        table = g['fluxSurfaceGeometry']
+        i = np.searchsorted(table['psiN'], p)
+        contour = np.column_stack((table['contourR'][i], table['contourZ'][i]))
+        self.assertFalse(_point_inside_flux_contour(radius, 0, contour))
+        geo = lookup_flux_surface_geometry(g, radius, 0)
+        labels = lookup_flux_surface_labels(g, p)
+        self.assertEqual(geo['iErr'], 0)
+        self.assertAlmostEqual(geo['rTor'], labels['rTor'])
+        table['version'] = 1
+        with self.assertRaisesRegex(ValueError, 'rebuild'):
+            lookup_flux_surface_labels(g, p)
+        postprocess_gfile_geometry(g, refinement=4, psi_n_levels=levels)
+        self.assertEqual(g['fluxSurfaceGeometry']['version'], 2)
 
     def test_call_wide_validation(self):
         g = make_elliptical_gfile()

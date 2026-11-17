@@ -324,6 +324,140 @@ def calc_psiN(g,R,Z):
     psiN = (g['ip_sign']*psi - g['ssimag'])/(g['ssibry'] - g['ssimag'])    
     return psiN
 
+# Geometry quantities share names with the MATLAB table and query outputs.
+_RADIAL_FIELDS = ('phiTor', 'rTor', 'rSaarelma', 'dPhiTorDpsiN', 'drTorDx',
+                  'drSaarelmaDx', 'dVdrTor', 'dVdrSaarelma', 'gradRTorSqAvg',
+                  'gradRSaarelmaSqAvg', 'transportMetricRTor', 'transportMetricRSaarelma')
+_GEOMETRY_FIELDS = ('psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'gradXSqAvg',
+                    'dpsiNdx', 'transportMetric', 'centroidR') + _RADIAL_FIELDS
+_REFERENCE_FIELDS = ('b0Reference', 'r0Reference', 'toroidalFieldSign')
+_RADIUS_DEFINITIONS = {
+    'phiTorDefinition': 'Positive magnitude of enclosed total toroidal flux in Wb',
+    'rTorDefinition': 'sqrt(phiTor/(pi*b0Reference))',
+    'rSaarelmaDefinition': 'sqrt(r0Reference/pi * integral dR dZ/R over enclosed poloidal area)',
+}
+
+
+def _radial_reference(g):
+    """Use the vacuum toroidal field at the magnetic-axis major radius."""
+    for name in ('rmaxis', 'rzero', 'bcentr'):
+        value = np.asarray(g[name])
+        if value.ndim or value.dtype.kind not in 'iuf' or not np.isfinite(value):
+            raise ValueError('rmaxis, rzero and bcentr must be finite real scalars')
+    if g['rmaxis'] <= 0 or g['rzero'] <= 0 or g['bcentr'] == 0:
+        raise ValueError('reference radii must be positive and bcentr nonzero')
+    pn, fpol = np.asarray(g['pn']), np.asarray(g['fpol'])
+    if (pn.ndim != 1 or fpol.shape != pn.shape or pn.size < 2
+            or pn.dtype.kind not in 'iuf' or fpol.dtype.kind not in 'iuf'
+            or not np.all(np.isfinite(pn)) or not np.all(np.isfinite(fpol))
+            or pn[0] != 0 or pn[-1] != 1 or np.any(np.diff(pn) <= 0)
+            or not (np.all(fpol > 0) or np.all(fpol < 0))):
+        raise ValueError('pn must span 0 to 1 and fpol must have one finite nonzero sign')
+    b0 = abs(float(g['bcentr'])*float(g['rzero'])/float(g['rmaxis']))
+    if not np.isfinite(b0) or b0 <= 0:
+        raise ValueError('the vacuum reference field must be finite and nonzero')
+    return {'b0Reference': b0, 'r0Reference': float(g['rmaxis']),
+            'toroidalFieldSign': float(np.sign(fpol[0]))}
+
+
+def _geometry_arrays(shape, refinement, z_omp, reference, x_definition):
+    """Initialize physical values as unavailable, retaining coordinate metadata."""
+    geo = {name: np.full(shape, np.nan) for name in _GEOMETRY_FIELDS}
+    geo.update(refinement=np.full(shape, refinement, dtype=int),
+               zOMP=np.full(shape, z_omp), xDefinition=np.full(shape, x_definition, dtype=object),
+               iErr=np.ones(shape, dtype=int), errorId=np.full(shape, '', dtype=object),
+               contourR=np.empty(shape, dtype=object), contourZ=np.empty(shape, dtype=object))
+    for name in _REFERENCE_FIELDS:
+        geo[name] = np.full(shape, reference[name])
+    for name, value in _RADIUS_DEFINITIONS.items():
+        geo[name] = np.full(shape, value, dtype=object)
+    for i in range(geo['psiN'].size):
+        geo['contourR'].flat[i] = np.empty(0)
+        geo['contourZ'].flat[i] = np.empty(0)
+    return geo
+
+
+def _flux_contour_generator(g, refinement):
+    """Share a refined bicubic flux grid between contour queries."""
+    from contourpy import contour_generator
+
+    r_fine = np.linspace(g['R'][0], g['R'][-1], refinement*len(g['R']))
+    z_fine = np.linspace(g['Z'][0], g['Z'][-1], refinement*len(g['Z']))
+    psi_grid = np.empty((z_fine.size, r_fine.size))
+    for iz, height in enumerate(z_fine):
+        psi_grid[iz] = calc_psiN(g, r_fine, np.full(r_fine.shape, height))
+    generator = contour_generator(x=r_fine, y=z_fine, z=psi_grid, name='serial', line_type='Separate')
+    return generator, np.hypot(r_fine[1]-r_fine[0], z_fine[1]-z_fine[0])
+
+
+def _radial_triangle_integrals(g, a, b, c, fpol):
+    """Degree-two quadrature of |F|/R and 1/R on oriented triangles."""
+    signed_area = ((b[:, 0]-a[:, 0])*(c[:, 1]-a[:, 1])
+                   - (c[:, 0]-a[:, 0])*(b[:, 1]-a[:, 1]))/2
+    values = np.zeros((len(a), 2))
+    for weights in ((2/3, 1/6, 1/6), (1/6, 2/3, 1/6), (1/6, 1/6, 2/3)):
+        points = weights[0]*a + weights[1]*b + weights[2]*c
+        pn = calc_psiN(g, points[:, 0], points[:, 1])
+        if np.any(~np.isfinite(pn)) or np.any(points[:, 0] <= 0):
+            return np.full_like(values, np.nan)
+        # A common bounded extension of F outside the core cancels between
+        # overlapping signed triangles of a non-star-shaped contour.
+        values[:, 0] += fpol(np.clip(pn, 0, 1))/points[:, 0]/3
+        values[:, 1] += 1/points[:, 0]/3
+    return values*signed_area[:, None]
+
+
+def _enclosed_radial_integrals(g, contour, fpol):
+    """Integrate the entire enclosed area, including the unsampled axis region.
+
+    Oriented triangles join the axis to every polygon edge. For concave,
+    non-star-shaped surfaces, outside overlaps cancel by their signs; no
+    assumption that the axis sees every boundary point is required. Each
+    triangle is refined adaptively. Tightening the local tolerance by the
+    cancellation factor controls the error of the signed sum.
+    """
+    invalid = (np.nan, np.nan, 'InvalidRadialIntegral')
+    if np.any(contour[:, 0] <= 0):
+        return invalid
+    b, c = contour[:-1].copy(), contour[1:].copy()
+    a = np.tile([g['rmaxis'], g['zmaxis']], (len(b), 1))
+    signed_area = np.sum((b[:, 0]-a[:, 0])*(c[:, 1]-a[:, 1])
+                         - (c[:, 0]-a[:, 0])*(b[:, 1]-a[:, 1]))/2
+    if signed_area < 0:
+        b, c = c, b
+    coarse = _radial_triangle_integrals(g, a, b, c, fpol)
+    total_coarse = np.sum(coarse, axis=0)
+    if np.any(~np.isfinite(coarse)) or np.any(total_coarse <= 0):
+        return invalid
+    cancellation = np.max(np.sum(abs(coarse), axis=0)/total_coarse)
+    tolerance = 0.5e-6/max(1.0, cancellation)
+    total = np.zeros(2)
+    error_estimate = np.zeros(2)
+    for depth in range(8):
+        if len(a) > 250000:
+            break
+        ab, bc, ca = (a+b)/2, (b+c)/2, (c+a)/2
+        child_a = np.concatenate((a, ab, ca, ab))
+        child_b = np.concatenate((ab, b, bc, bc))
+        child_c = np.concatenate((ca, bc, c, ca))
+        children = _radial_triangle_integrals(g, child_a, child_b, child_c, fpol)
+        if np.any(~np.isfinite(children)):
+            return invalid
+        fine = children.reshape(4, len(a), 2).sum(axis=0)
+        error = abs(fine-coarse)
+        accepted = np.all(error <= tolerance*np.maximum(abs(fine), np.finfo(float).tiny), axis=1)
+        total += fine[accepted].sum(axis=0)
+        error_estimate += error[accepted].sum(axis=0)
+        if np.all(accepted):
+            if np.all(np.isfinite(total)) and np.all(total > 0) and np.all(error_estimate <= 1e-6*total):
+                return float(total[0]), float(total[1]), ''
+            break
+        unresolved = np.tile(~accepted, 4)
+        a, b, c = child_a[unresolved], child_b[unresolved], child_c[unresolved]
+        coarse = children[unresolved]
+    return np.nan, np.nan, 'RadialIntegralNotConverged'
+
+
 # Compute the R-Z area and toroidal volume of core flux surfaces.
 def compute_flux_surface_geometry(g, R, Z, refinement=None, z_omp=None):
     """Return geometry arrays for paired R, Z points on closed core surfaces.
@@ -332,7 +466,12 @@ def compute_flux_surface_geometry(g, R, Z, refinement=None, z_omp=None):
     field has that shape; scalar inputs return scalar fields. z_omp selects
     the plane defining x=R_out(psiN,z_omp)-R_out(1,z_omp); it defaults to
     the magnetic-axis height. A failed point has iErr=1, a short errorId,
-    NaN geometry, and empty contour arrays.
+    NaN geometry, and empty contour arrays. phiTor is positive enclosed
+    total toroidal flux (Wb). rTor=sqrt(phiTor/(pi*B0)), using the vacuum
+    field B0=abs(bcentr*rzero/rmaxis). rSaarelma is defined by
+    rSaarelma**2=rmaxis/pi*integral(dR*dZ/R). Both integrals include the
+    entire core. Their coordinate derivatives transform Vprime, the
+    squared-gradient averages and their products from the OMP label.
     """
     try:
         r = np.asarray(R)
@@ -351,9 +490,12 @@ def compute_flux_surface_geometry(g, R, Z, refinement=None, z_omp=None):
         raise ValueError('R and Z must have matching shapes, or one must be scalar')
 
     required = {'R', 'Z', 'psirz', 'mw', 'mh', 'dR', 'dZ', 'rmaxis',
-                'zmaxis', 'ssimag', 'ssibry', 'ip_sign', 'psi_bicub_coeffs_inv'}
+                'zmaxis', 'ssimag', 'ssibry', 'ip_sign', 'psi_bicub_coeffs_inv',
+                'pn', 'fpol', 'rzero', 'bcentr'}
     if not isinstance(g, dict) or not required.issubset(g):
         raise ValueError('g must be a postprocessed gfile')
+    reference = _radial_reference(g)
+    fpol = PchipInterpolator(g['pn'], np.abs(g['fpol']), extrapolate=False)
     r_grid = np.asarray(g['R'])
     z_grid = np.asarray(g['Z'])
     if (r_grid.ndim != 1 or z_grid.ndim != 1 or r_grid.size < 2
@@ -385,27 +527,7 @@ def compute_flux_surface_geometry(g, R, Z, refinement=None, z_omp=None):
 
     shape = r.shape
     n_points = r.size
-    geo = {
-        'psiN': np.full(shape, np.nan),
-        'areaRZ': np.full(shape, np.nan),
-        'volume': np.full(shape, np.nan),
-        'x': np.full(shape, np.nan),
-        'dVdx': np.full(shape, np.nan),
-        'gradXSqAvg': np.full(shape, np.nan),
-        'dpsiNdx': np.full(shape, np.nan),
-        'transportMetric': np.full(shape, np.nan),
-        'centroidR': np.full(shape, np.nan),
-        'contourR': np.empty(shape, dtype=object),
-        'contourZ': np.empty(shape, dtype=object),
-        'refinement': np.full(shape, refinement, dtype=int),
-        'zOMP': np.full(shape, z_omp),
-        'xDefinition': np.full(shape, 'R_out(psiN,zOMP) - R_out(1,zOMP)', dtype=object),
-        'iErr': np.ones(shape, dtype=int),
-        'errorId': np.full(shape, '', dtype=object),
-    }
-    for i in range(n_points):
-        geo['contourR'].flat[i] = np.empty(0)
-        geo['contourZ'].flat[i] = np.empty(0)
+    geo = _geometry_arrays(shape, refinement, z_omp, reference, 'R_out(psiN,zOMP) - R_out(1,zOMP)')
 
     # Interpolate only finite points. calc_psiN marks off-grid values NaN.
     r_points = r.reshape(-1)
@@ -422,16 +544,7 @@ def compute_flux_surface_geometry(g, R, Z, refinement=None, z_omp=None):
 
     # The refined psiN grid and contour generator are shared by all points.
     if np.any(interior):
-        from contourpy import contour_generator
-
-        r_fine = np.linspace(r_grid[0], r_grid[-1], refinement*nr)
-        z_fine = np.linspace(z_grid[0], z_grid[-1], refinement*nz)
-        psi_grid = np.empty((z_fine.size, r_fine.size))
-        for iz, z_value in enumerate(z_fine):
-            psi_grid[iz, :] = calc_psiN(g, r_fine, np.full(r_fine.shape, z_value))
-        generator = contour_generator(x=r_fine, y=z_fine, z=psi_grid,
-                                      name='serial', line_type='Separate')
-        grid_spacing = np.hypot(r_fine[1] - r_fine[0], z_fine[1] - z_fine[0])
+        generator, grid_spacing = _flux_contour_generator(g, refinement)
 
     for i in range(n_points):
         if not finite[i]:
@@ -442,6 +555,9 @@ def compute_flux_surface_geometry(g, R, Z, refinement=None, z_omp=None):
             if omp is None:
                 geo['errorId'].flat[i] = 'NoOmpSeparatrix'
                 continue
+            for name in ('phiTor', 'rTor', 'rSaarelma', 'dVdrTor', 'dVdrSaarelma',
+                         'transportMetricRTor', 'transportMetricRSaarelma'):
+                geo[name].flat[i] = 0.0
             geo['areaRZ'].flat[i] = 0.0
             geo['volume'].flat[i] = 0.0
             if z_omp == g['zmaxis']:
@@ -498,6 +614,31 @@ def compute_flux_surface_geometry(g, R, Z, refinement=None, z_omp=None):
             if not np.all(np.isfinite([dv_dx, grad_x_sq_avg, transport_metric])) or min(dv_dx, grad_x_sq_avg, transport_metric) <= 0:
                 geo['errorId'].flat[i] = 'InvalidFluxGradient'
                 continue
+            # Enclosed-area integrals set the absolute radii. Boundary
+            # integrals supply their slopes without an axis extrapolation.
+            phi_tor, inverse_r_area, error_id = _enclosed_radial_integrals(g, contour, fpol)
+            if error_id:
+                geo['errorId'].flat[i] = error_id
+                continue
+            r_tor = np.sqrt(phi_tor/(np.pi*reference['b0Reference']))
+            r_saarelma = np.sqrt(reference['r0Reference']*inverse_r_area/np.pi)
+            integral_toroidal = np.sum(segment_length/(r_mid*grad_psi_n))
+            dphi = float(fpol(psi_n[i]))*integral_toroidal
+            dr_tor_dx = dphi*dpsi_dx/(2*np.pi*reference['b0Reference']*r_tor)
+            dr_saarelma_dx = reference['r0Reference']*integral_toroidal*dpsi_dx/(2*np.pi*r_saarelma)
+            radial_values = (r_tor, r_saarelma, dphi, dr_tor_dx, dr_saarelma_dx)
+            if not np.all(np.isfinite(radial_values)) or min(radial_values) <= 0:
+                geo['errorId'].flat[i] = 'InvalidRadialMap'
+                continue
+            radial = dict(phiTor=phi_tor, rTor=r_tor, rSaarelma=r_saarelma,
+                          dPhiTorDpsiN=dphi, drTorDx=dr_tor_dx, drSaarelmaDx=dr_saarelma_dx,
+                          dVdrTor=dv_dx/dr_tor_dx, dVdrSaarelma=dv_dx/dr_saarelma_dx,
+                          gradRTorSqAvg=grad_x_sq_avg*dr_tor_dx**2,
+                          gradRSaarelmaSqAvg=grad_x_sq_avg*dr_saarelma_dx**2,
+                          transportMetricRTor=transport_metric*dr_tor_dx,
+                          transportMetricRSaarelma=transport_metric*dr_saarelma_dx)
+            for name, value in radial.items():
+                geo[name].flat[i] = value
             geo['x'].flat[i] = r_omp - omp['r_sep']
             geo['areaRZ'].flat[i] = area
             geo['volume'].flat[i] = volume
@@ -553,9 +694,10 @@ def _outboard_radius_and_gradient(g, psi_n, omp):
 
 
 def _geometry_flux_hash(g):
-    """Identify the flux grid and axis data used to build a geometry table."""
+    """Identify geometry, toroidal-field profile and vacuum reference inputs."""
     digest = hashlib.sha256()
-    for name in ('psirz', 'ssimag', 'ssibry', 'rmaxis', 'zmaxis', 'R', 'Z', 'ip_sign'):
+    for name in ('psirz', 'ssimag', 'ssibry', 'rmaxis', 'zmaxis', 'R', 'Z', 'ip_sign',
+                 'pn', 'fpol', 'rzero', 'bcentr'):
         values = np.asarray(g[name], dtype=np.float64)
         digest.update(np.asarray(values.shape, dtype=np.int64).tobytes())
         digest.update(values.tobytes())
@@ -574,9 +716,11 @@ def _geometry_levels(psi_n_levels):
 def _geometry_table_matches(table, g, refinement, levels):
     required = {'version', 'requestedRefinement', 'requestedPsiNLevels', 'sourceHash',
                 'psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'gradXSqAvg',
-                'dpsiNdx', 'transportMetric', 'centroidR', 'contourR', 'contourZ'}
+                'dpsiNdx', 'transportMetric', 'centroidR', 'contourR', 'contourZ',
+                'zOMP', 'zSampling', 'xDefinition', 'refinement'}
+    required.update(_RADIAL_FIELDS + _REFERENCE_FIELDS + tuple(_RADIUS_DEFINITIONS))
     return (isinstance(table, dict) and required.issubset(table)
-            and table['version'] == 1 and table['requestedRefinement'] == refinement
+            and table['version'] == 2 and table['requestedRefinement'] == refinement
             and np.array_equal(table['requestedPsiNLevels'], levels)
             and table['sourceHash'] == _geometry_flux_hash(g)
             and len(table['psiN']) >= 2 and np.all(np.diff(table['psiN']) > 0))
@@ -593,8 +737,7 @@ def _load_geometry_cache(g, refinement, levels):
     try:
         with np.load(path, allow_pickle=False) as data:
             offsets = data['contourOffsets']
-            names = ('psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'dVdxFromVolume',
-                     'gradXSqAvg', 'dpsiNdx', 'transportMetric', 'centroidR')
+            names = _GEOMETRY_FIELDS + ('dVdxFromVolume',)
             table = {name: data[name] for name in names}
             table.update(version=int(data['version']),
                          requestedRefinement=None if int(data['requestedRefinement']) < 0 else int(data['requestedRefinement']),
@@ -602,6 +745,8 @@ def _load_geometry_cache(g, refinement, levels):
                          sourceHash=str(data['sourceHash'].item()), refinement=int(data['refinement']),
                          zSampling=float(data['zSampling']), zOMP=0.0,
                          xDefinition='R_out(psiN,Z=0) - R_out(1,Z=0)')
+            table.update({name: float(data[name]) for name in _REFERENCE_FIELDS})
+            table.update(_RADIUS_DEFINITIONS)
             table['contourR'] = [data['contourR'][offsets[i]:offsets[i + 1]] for i in range(len(offsets) - 1)]
             table['contourZ'] = [data['contourZ'][offsets[i]:offsets[i + 1]] for i in range(len(offsets) - 1)]
             table['nRequested'] = len(table['requestedPsiNLevels'])
@@ -624,8 +769,7 @@ def _save_geometry_cache(g, table):
         return
     lengths = [len(contour) for contour in table['contourR']]
     offsets = np.r_[0, np.cumsum(lengths)]
-    fields = ('psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'dVdxFromVolume',
-              'gradXSqAvg', 'dpsiNdx', 'transportMetric', 'centroidR')
+    fields = _GEOMETRY_FIELDS + _REFERENCE_FIELDS + ('dVdxFromVolume',)
     arrays = {name: table[name] for name in fields}
     arrays.update(version=table['version'], refinement=table['refinement'],
                   requestedRefinement=-1 if table['requestedRefinement'] is None else table['requestedRefinement'],
@@ -639,7 +783,14 @@ def _save_geometry_cache(g, table):
 
 
 def postprocess_gfile_geometry(g, make_plots=False, refinement=None, psi_n_levels=None):
-    """Add or reuse a closed-core geometry table, with x defined at Z=0."""
+    """Add or reuse a version-2 core geometry table, with x defined at Z=0.
+
+    Includes phiTor, rTor, rSaarelma, their derivatives, volume derivatives,
+    squared-gradient averages and transport products. Enclosed integrals
+    include the axis region. No separatrix radius or normalized radius is
+    inferred from the last interior sample. Existing version-1 caches are
+    rebuilt; source hashes include the toroidal-field profile and reference.
+    """
     if not isinstance(g, dict) or not {'R', 'Z', 'rmaxis', 'zmaxis', 'psi_bicub_coeffs_inv'}.issubset(g):
         raise ValueError('g must be a postprocessed gfile')
     if not g['Z'][0] <= 0 <= g['Z'][-1]:
@@ -683,17 +834,18 @@ def postprocess_gfile_geometry(g, make_plots=False, refinement=None, psi_n_level
     good = geo['iErr'] == 0
     if np.count_nonzero(good) < 2:
         raise ValueError('too few levels have closed-core geometry at Z=0')
-    names = ('psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'gradXSqAvg',
-             'dpsiNdx', 'transportMetric', 'centroidR')
+    names = _GEOMETRY_FIELDS
     table = {name: np.asarray(geo[name][good], dtype=float) for name in names}
-    if np.any(np.diff(table['x']) <= 0) or np.any(np.diff(table['volume']) <= 0):
-        raise ValueError('x or volume is not monotonic; adjust refinement or levels')
-    table.update(version=1, requestedRefinement=refinement, requestedPsiNLevels=levels,
+    if any(np.any(np.diff(table[name]) <= 0) for name in ('x', 'volume', 'phiTor', 'rSaarelma')):
+        raise ValueError('x, volume or a flux radius is not monotonic; adjust refinement or levels')
+    table.update(version=2, requestedRefinement=refinement, requestedPsiNLevels=levels,
                  sourceHash=_geometry_flux_hash(g), refinement=int(geo['refinement'][0]),
                  zSampling=float(g['zmaxis']), zOMP=0.0,
                  xDefinition='R_out(psiN,Z=0) - R_out(1,Z=0)',
                  contourR=list(geo['contourR'][good]), contourZ=list(geo['contourZ'][good]),
                  nRequested=len(levels), nComputed=int(np.count_nonzero(good)))
+    table.update({name: float(geo[name][good][0]) for name in _REFERENCE_FIELDS})
+    table.update(_RADIUS_DEFINITIONS)
     table['dVdxFromVolume'] = np.gradient(table['volume'], table['x'])
     if table['nComputed'] < table['nRequested']:
         print(f"WARNING: Retained {table['nComputed']} of {table['nRequested']} requested geometry levels", file=sys.stderr)
@@ -704,62 +856,185 @@ def postprocess_gfile_geometry(g, make_plots=False, refinement=None, psi_n_level
     return g
 
 
-def lookup_flux_surface_geometry(g, R, Z):
-    """Interpolate table geometry after checking the closed-core branch."""
-    table = g.get('fluxSurfaceGeometry')
-    if not isinstance(table, dict) or len(table.get('psiN', [])) < 2:
-        raise ValueError('run postprocess_gfile_geometry before lookup')
-    # Build each profile once for this lookup call.
-    fields = ('x', 'areaRZ', 'volume', 'dVdx', 'dpsiNdx', 'transportMetric', 'centroidR')
-    profiles = {name: PchipInterpolator(table['psiN'], table[name], extrapolate=False) for name in fields}
-    r = np.asarray(R, dtype=float)
-    z = np.asarray(Z, dtype=float)
-    if r.size == 0 or z.size == 0 or (r.ndim and z.ndim and r.shape != z.shape):
-        raise ValueError('R and Z must have matching shapes, or one must be scalar')
-    r, z = np.broadcast_arrays(r, z)
-    shape = r.shape
-    geo = {name: np.full(shape, np.nan) for name in ('psiN', 'x', 'areaRZ', 'volume', 'dVdx',
-            'gradXSqAvg', 'dpsiNdx', 'transportMetric', 'centroidR')}
-    geo.update(refinement=np.full(shape, table['refinement'], dtype=int),
-               zOMP=np.full(shape, 0.0),
-               xDefinition=np.full(shape, table['xDefinition'], dtype=object),
-               iErr=np.ones(shape, dtype=int), errorId=np.full(shape, '', dtype=object),
-               contourR=np.empty(shape, dtype=object), contourZ=np.empty(shape, dtype=object))
-    r_points = r.reshape(-1)
-    z_points = z.reshape(-1)
-    finite = np.isfinite(r_points) & np.isfinite(z_points)
-    psi_n_values = np.full(r.size, np.nan)
-    if np.any(finite):
-        psi_n_values[finite] = calc_psiN(g, r_points[finite], z_points[finite])
-    geo['psiN'] = psi_n_values.reshape(shape)
-    for i in range(r.size):
-        geo['contourR'].flat[i] = np.empty(0)
-        geo['contourZ'].flat[i] = np.empty(0)
-        rv, zv = r_points[i], z_points[i]
-        psi_n = psi_n_values[i]
-        if not finite[i]:
-            error_id = 'InvalidPoint'
-        else:
-            if not np.isfinite(psi_n):
-                error_id = 'OutsideGrid'
-            elif not table['psiN'][0] < psi_n < table['psiN'][-1]:
-                error_id = 'OutsideTable'
-            else:
-                inner = np.searchsorted(table['psiN'], psi_n, side='left') - 1
-                outer = np.searchsorted(table['psiN'], psi_n, side='right')
-                inside_outer = _point_inside_flux_contour(rv, zv, np.column_stack((table['contourR'][outer], table['contourZ'][outer])))
-                inside_inner = _point_inside_flux_contour(rv, zv, np.column_stack((table['contourR'][inner], table['contourZ'][inner])))
-                error_id = 'WrongBranch' if not inside_outer or inside_inner else ''
-        geo['errorId'].flat[i] = error_id
-        if error_id:
-            continue
-        geo['iErr'].flat[i] = 0
-        for name in fields:
-            geo[name].flat[i] = profiles[name](psi_n)
-        geo['gradXSqAvg'].flat[i] = geo['transportMetric'].flat[i]/geo['dVdx'].flat[i]
-    if shape == ():
+def _validated_geometry_table(g):
+    """Reject obsolete tables and changes in raw equilibrium inputs."""
+    table = g.get('fluxSurfaceGeometry') if isinstance(g, dict) else None
+    required = set(_GEOMETRY_FIELDS + _REFERENCE_FIELDS) | set(_RADIUS_DEFINITIONS)
+    required |= {'version', 'sourceHash', 'contourR', 'contourZ', 'refinement', 'zOMP', 'xDefinition'}
+    if not isinstance(table, dict) or not required.issubset(table) or table['version'] != 2:
+        raise ValueError('rebuild the geometry table with postprocess_gfile_geometry')
+    if table['sourceHash'] != _geometry_flux_hash(g):
+        raise ValueError('stale geometry table: equilibrium inputs changed; run postprocess_gfile_geometry again')
+    p = np.asarray(table['psiN'])
+    if (p.ndim != 1 or len(p) < 2 or np.any(~np.isfinite(p)) or np.any(np.diff(p) <= 0)
+            or np.any((p <= 0) | (p >= 1))):
+        raise ValueError('the table must contain ordered interior flux surfaces')
+    for name in _GEOMETRY_FIELDS:
+        values = np.asarray(table[name])
+        if values.shape != p.shape or values.dtype.kind not in 'iuf' or not np.all(np.isfinite(values)):
+            raise ValueError(f'invalid geometry samples for {name}')
+    for name in ('dVdx', 'dpsiNdx', 'transportMetric', 'phiTor', 'rTor', 'rSaarelma',
+                 'dPhiTorDpsiN', 'drTorDx', 'drSaarelmaDx'):
+        if np.any(np.asarray(table[name]) <= 0):
+            raise ValueError(f'nonpositive geometry samples for {name}')
+    for name in ('x', 'phiTor', 'rSaarelma'):
+        if np.any(np.diff(table[name]) <= 0):
+            raise ValueError(f'nonmonotonic radial mapping for {name}')
+    if any(np.ndim(table[name]) or not np.isfinite(table[name]) or table[name] <= 0
+           for name in ('b0Reference', 'r0Reference')):
+        raise ValueError('invalid geometry reference field or radius')
+    if any(len(table[name]) != len(p) for name in ('contourR', 'contourZ')):
+        raise ValueError('the cached contours are incomplete')
+    return table
+
+
+def _lookup_flux_surface_table(g, psi_n, table=None):
+    """Interpolate coordinate values and their derivatives consistently.
+
+    Hermite maps use the physical boundary-integral slopes at table nodes.
+    Vp=dV/dp and Kp=Vp*<|grad p|^2>, with p=psiN, are interpolated once,
+    then transformed to each radial coordinate. No extrapolation is used.
+    """
+    from scipy.interpolate import CubicHermiteSpline
+
+    p = np.asarray(psi_n)
+    if p.size == 0 or p.dtype.kind not in 'iuf':
+        raise ValueError('psi_n must be a nonempty real numeric array')
+    p = p.astype(float, copy=False)
+    if table is None:
+        table = _validated_geometry_table(g)
+    geo = _geometry_arrays(p.shape, table['refinement'], table['zOMP'], table, table['xDefinition'])
+    geo['psiN'] = p.copy()
+    valid = np.isfinite(p) & (p > table['psiN'][0]) & (p < table['psiN'][-1])
+    geo['errorId'][~np.isfinite(p)] = 'InvalidPoint'
+    geo['errorId'][np.isfinite(p) & ~valid] = 'OutsideTable'
+    if not np.any(valid):
+        return geo
+    nodes = table['psiN']
+    x_map = CubicHermiteSpline(nodes, table['x'], 1/table['dpsiNdx'], extrapolate=False)
+    flux_map = CubicHermiteSpline(nodes, table['phiTor'], table['dPhiTorDpsiN'], extrapolate=False)
+    square_slopes = 2*table['rSaarelma']*table['drSaarelmaDx']/table['dpsiNdx']
+    square_map = CubicHermiteSpline(nodes, table['rSaarelma']**2, square_slopes, extrapolate=False)
+    q = p[valid]
+    x, dxdp = x_map(q), x_map(q, 1)
+    phi, dphi = flux_map(q), flux_map(q, 1)
+    square, dsquare = square_map(q), square_map(q, 1)
+    vp = PchipInterpolator(nodes, table['dVdx']/table['dpsiNdx'], extrapolate=False)(q)
+    kp = PchipInterpolator(nodes, table['transportMetric']*table['dpsiNdx'], extrapolate=False)(q)
+    values = {name: PchipInterpolator(nodes, table[name], extrapolate=False)(q)
+              for name in ('areaRZ', 'volume', 'centroidR')}
+    good = np.isfinite(x)
+    for value in (dxdp, phi, dphi, square, dsquare, vp, kp, *values.values()):
+        good &= np.isfinite(value) & (value > 0)
+    with np.errstate(invalid='ignore', divide='ignore', over='ignore'):
+        r_tor = np.sqrt(phi/(np.pi*table['b0Reference']))
+        r_saarelma = np.sqrt(square)
+        dr_tor_dp = dphi/(2*np.pi*table['b0Reference']*r_tor)
+        dr_saarelma_dp = dsquare/(2*r_saarelma)
+        values.update(x=x, phiTor=phi, dPhiTorDpsiN=dphi, rTor=r_tor, rSaarelma=r_saarelma,
+                      dpsiNdx=1/dxdp, drTorDx=dr_tor_dp/dxdp, drSaarelmaDx=dr_saarelma_dp/dxdp,
+                      dVdx=vp/dxdp, transportMetric=kp*dxdp,
+                      dVdrTor=vp/dr_tor_dp, dVdrSaarelma=vp/dr_saarelma_dp,
+                      transportMetricRTor=kp*dr_tor_dp, transportMetricRSaarelma=kp*dr_saarelma_dp)
+        values['gradXSqAvg'] = values['transportMetric']/values['dVdx']
+        values['gradRTorSqAvg'] = values['transportMetricRTor']/values['dVdrTor']
+        values['gradRSaarelmaSqAvg'] = values['transportMetricRSaarelma']/values['dVdrSaarelma']
+    for name, value in values.items():
+        good &= np.isfinite(value)
+        if name != 'x':
+            good &= value > 0
+    indices = np.flatnonzero(valid)
+    geo['errorId'].flat[indices[~good]] = 'InvalidInterpolation'
+    for name, value in values.items():
+        geo[name].flat[indices[good]] = value[good]
+    geo['iErr'].flat[indices[good]] = 0
+    return geo
+
+
+def _scalar_geometry(geo):
+    """Keep scalar calls scalar while preserving array-query shapes."""
+    if geo['psiN'].shape == ():
         return {name: value.item() for name, value in geo.items()}
     return geo
+
+
+def lookup_flux_surface_geometry(g, R, Z):
+    """Return cached radii and metrics for paired spatial points.
+
+    R and Z must have matching shapes, or one may be scalar. Only the
+    closed-core branch strictly inside the sampled flux interval is supported.
+    Ambiguous polygon containment triggers a query-level contour branch check.
+    Physical outputs are NaN on failure; inspect iErr and errorId. Incomplete
+    or stale tables raise ValueError. No cache is written by a lookup.
+    """
+    table = _validated_geometry_table(g)
+    r, z = np.asarray(R), np.asarray(Z)
+    if r.size == 0 or z.size == 0 or r.dtype.kind not in 'iuf' or z.dtype.kind not in 'iuf':
+        raise ValueError('R and Z must be nonempty real numeric arrays')
+    if r.ndim and z.ndim and r.shape != z.shape:
+        raise ValueError('R and Z must have matching shapes, or one must be scalar')
+    r, z = np.broadcast_arrays(r.astype(float), z.astype(float))
+    finite = np.isfinite(r) & np.isfinite(z)
+    p = np.full(r.shape, np.nan)
+    if np.any(finite):
+        p[finite] = calc_psiN(g, r[finite], z[finite])
+    geo = _lookup_flux_surface_table(g, p, table)
+    generator = None
+    for i in range(r.size):
+        error_id = ''
+        if not finite.flat[i]:
+            error_id = 'InvalidPoint'
+        elif not np.isfinite(p.flat[i]):
+            error_id = 'OutsideGrid'
+        elif geo['iErr'].flat[i] == 0:
+            level, rv, zv = p.flat[i], r.flat[i], z.flat[i]
+            inner = np.searchsorted(table['psiN'], level, side='left')-1
+            outer = np.searchsorted(table['psiN'], level, side='right')
+            outer_contour = np.column_stack((table['contourR'][outer], table['contourZ'][outer]))
+            inner_contour = np.column_stack((table['contourR'][inner], table['contourZ'][inner]))
+            if not _point_inside_flux_contour(rv, zv, outer_contour) or _point_inside_flux_contour(rv, zv, inner_contour):
+                if generator is None:
+                    generator, spacing = _flux_contour_generator(g, table['refinement'])
+                _, error_id = _core_flux_contour(generator, level, rv, zv, g['rmaxis'], g['zmaxis'], spacing)
+        if error_id:
+            for name in _GEOMETRY_FIELDS:
+                if name != 'psiN':
+                    geo[name].flat[i] = np.nan
+            geo['iErr'].flat[i] = 1
+            geo['errorId'].flat[i] = error_id
+    return _scalar_geometry(geo)
+
+
+def _select_flux_surface_labels(geo):
+    """Keep labels, their derivatives, reference metadata and query status."""
+    fields = ('psiN', 'x', 'phiTor', 'rTor', 'rSaarelma', 'dpsiNdx',
+              'dPhiTorDpsiN', 'drTorDx', 'drSaarelmaDx', 'zOMP',
+              'xDefinition', 'iErr', 'errorId') + _REFERENCE_FIELDS + tuple(_RADIUS_DEFINITIONS)
+    return {name: geo[name] for name in fields}
+
+
+def lookup_flux_surface_labels(g, psi_n):
+    """Map psiN to closed-core x, phiTor, rTor, rSaarelma and derivatives.
+
+    Build g with postprocess_gfile_geometry first. Scalar input returns scalar
+    fields; array inputs retain their shape. phiTor is a positive magnitude in
+    Wb; x and both radii are in m. No normalization to the last table sample
+    is applied. Queries must be strictly inside the sampled interval; axis,
+    separatrix and other unsupported points have iErr=1 and a short errorId.
+    A flux-only query assumes the core branch; use calc_flux_surface_labels
+    when spatial measurements require a branch check.
+    """
+    return _select_flux_surface_labels(_scalar_geometry(_lookup_flux_surface_table(g, psi_n)))
+
+
+def calc_flux_surface_labels(g, R, Z):
+    """Map paired spatial points to the same fields as lookup_flux_surface_labels.
+
+    Supports scalar expansion and checks the closed-core branch. Inspect iErr
+    and errorId before using values. Geometry comes from the existing table;
+    ambiguous branch checks extract a contour without recomputing integrals.
+    """
+    return _select_flux_surface_labels(lookup_flux_surface_geometry(g, R, Z))
 
 
 def plot_flux_surface_geometry(g):

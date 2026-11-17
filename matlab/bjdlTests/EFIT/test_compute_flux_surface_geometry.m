@@ -9,7 +9,8 @@ addpath(fullfile(testDirectory,'..','..','bfield_library_jdl','EFIT_routines'));
 rAxis = 2;
 a = 0.5;
 b = 0.7;
-g = struct('mw',65,'mh',65,'xdim',2,'zdim',2,'rgrid1',1,'zmid',0,'rmaxis',rAxis,'zmaxis',0,'ssimag',0,'ssibry',1,'cpasma',[],'bdry',[],'fpol',ones(1,65));
+% F = 1 T m and Bphi = 1/rAxis set the vacuum reference field at the axis.
+g = struct('mw',65,'mh',65,'xdim',2,'zdim',2,'rgrid1',1,'zmid',0,'rmaxis',rAxis,'zmaxis',0,'ssimag',0,'ssibry',1,'cpasma',[],'bdry',[],'fpol',ones(1,65),'rzero',rAxis,'bcentr',1/rAxis);
 [rGrid,zGrid] = ndgrid(linspace(1,3,g.mw),linspace(-1,1,g.mh));
 corePsi = ((rGrid-rAxis)/a).^2+(zGrid/b).^2;
 g.psirz = corePsi;
@@ -36,6 +37,23 @@ for psiN = [0.25,0.8,0.98]
     assert(abs(Geometry.centroidR-rAxis) < 0.01);
     assert(abs(GeometryFine.areaRZ/Geometry.areaRZ-1) < 0.01);
     assert(GeometryFine.refinement == 6 && Geometry.iErr == 0 && GeometryFine.iErr == 0);
+
+    % For elliptical surfaces R=R0+a*sqrt(p)*cos(theta), the area
+    % integral of 1/R is 2*pi*(b/a)*(R0-sqrt(R0^2-a^2*p)). With F=1
+    % and B0=1/R0, both flux radii must agree, including their derivatives.
+    expectedPhi = 2*pi*(b/a)*(rAxis-sqrt(rAxis^2-a^2*psiN));
+    expectedRadius = sqrt(rAxis*expectedPhi/pi);
+    expectedDPhi = pi*a*b/sqrt(rAxis^2-a^2*psiN);
+    expectedDrDx = rAxis*expectedDPhi*Geometry.dpsiNdx/(2*pi*expectedRadius);
+    assert(abs(Geometry.phiTor/expectedPhi-1) < 0.005);
+    assert(abs(Geometry.rTor/expectedRadius-1) < 0.005);
+    assert(abs(Geometry.dPhiTorDpsiN/expectedDPhi-1) < 0.005);
+    assert(abs(Geometry.drTorDx/expectedDrDx-1) < 0.005);
+    assert(abs(Geometry.rSaarelma/Geometry.rTor-1) < 1e-12);
+    assert(abs(Geometry.drSaarelmaDx/Geometry.drTorDx-1) < 1e-12);
+    assert(abs(Geometry.dVdrTor*Geometry.drTorDx/Geometry.dVdx-1) < 1e-12);
+    assert(abs(Geometry.gradRTorSqAvg/(Geometry.gradXSqAvg*Geometry.drTorDx^2)-1) < 1e-12);
+    assert(abs(Geometry.transportMetricRTor/(Geometry.transportMetric*Geometry.drTorDx)-1) < 1e-12);
 end
 
 % The precomputed table should reproduce smooth analytic geometry while
@@ -56,6 +74,54 @@ assert(GeoSparse.iErr == 0 && abs(GeoSparse.x-a*(sqrt(psiNSparse)-1)) < 0.001);
 GeoLookupMixed = lookup_flux_surface_geometry(gTable,[rAxis+a*sqrt(0.6),rAxis+a*sqrt(0.99)],0);
 assert(GeoLookupMixed(1).iErr == 0 && strcmp(GeoLookupMixed(2).errorId,'OutsideTable'));
 assert_status(lookup_flux_surface_geometry(gTable,rAxis+a*sqrt(0.99),0),'OutsideTable');
+
+% Label lookups preserve array shapes and differentiate the same mappings
+% used to return the labels. Interior nodes and points between nodes both
+% exercise the shared interpolation. Endpoints are intentionally excluded.
+queryPsi = [0.25,0.4;0.6,0.75];
+Labels = lookup_flux_surface_labels(gTable,queryPsi);
+Spatial = calc_flux_surface_labels(gTable,rAxis+a*sqrt(queryPsi),0);
+assert(isequal(size(Labels),size(queryPsi)) && isequal(size(Spatial),size(queryPsi)));
+assert(all([Labels.iErr] == 0) && all([Spatial.iErr] == 0));
+assert(max(abs([Spatial.rTor]-[Labels.rTor])) < 1e-8);
+assert(max(abs([Labels.rTor]./[Labels.rSaarelma]-1)) < 1e-12);
+step = 1e-6;
+Center = lookup_flux_surface_labels(gTable,0.6);
+Plus = lookup_flux_surface_labels(gTable,0.6+step);
+Minus = lookup_flux_surface_labels(gTable,0.6-step);
+assert(abs((Plus.rTor-Minus.rTor)/(Plus.x-Minus.x)/Center.drTorDx-1) < 1e-7);
+assert(abs((Plus.rSaarelma-Minus.rSaarelma)/(Plus.x-Minus.x)/Center.drSaarelmaDx-1) < 1e-7);
+assert(abs((Plus.phiTor-Minus.phiTor)/(2*step)/Center.dPhiTorDpsiN-1) < 1e-7);
+Rejected = lookup_flux_surface_labels(gTable,[NaN,0,1,gTable.fluxSurfaceGeometry.psiN([1,end])]);
+assert(all([Rejected.iErr] == 1) && all(isnan([Rejected.rTor])));
+assert(strcmp(Rejected(1).errorId,'InvalidPoint'));
+assert(all(strcmp({Rejected(2:end).errorId},'OutsideTable')));
+gChanged = gTable;
+gChanged.bcentr = 1.01*gChanged.bcentr;
+assert_error(@() lookup_flux_surface_labels(gChanged,0.6),'lookup_flux_surface_geometry:StaleTable');
+
+% A simultaneous reversal of F and the reference toroidal field changes
+% the sign metadata but not positive enclosed fluxes or physical radii.
+gReversed = g;
+gReversed.fpol = -g.fpol;
+gReversed.bcentr = -g.bcentr;
+Reversed = compute_flux_surface_geometry(gReversed,rAxis+a*sqrt(0.8),0);
+Forward = compute_flux_surface_geometry(g,rAxis+a*sqrt(0.8),0);
+assert(Reversed.iErr == 0 && Reversed.toroidalFieldSign == -1);
+assert(abs(Reversed.phiTor/Forward.phiTor-1) < 1e-12);
+assert(abs(Reversed.rTor/Forward.rTor-1) < 1e-12);
+
+% Closely spaced stored surfaces can be separated by less than the polygon
+% discretization error. A valid point outside the stored outer polygon must
+% be classified using its own contour, without changing the cached values.
+gDense = postprocess_gfile_geometry(g,false,4,[0.79,0.8,0.800001,0.81]);
+densePsi = 0.8000005;
+rDense = rAxis+a*sqrt(densePsi);
+iOuter = find(gDense.fluxSurfaceGeometry.psiN > densePsi,1,'first');
+assert(~inpolygon(rDense,0,gDense.fluxSurfaceGeometry.contourR{iOuter},gDense.fluxSurfaceGeometry.contourZ{iOuter}));
+Dense = lookup_flux_surface_geometry(gDense,rDense,0);
+DenseLabels = lookup_flux_surface_labels(gDense,densePsi);
+assert(Dense.iErr == 0 && abs(Dense.rTor-DenseLabels.rTor) < 1e-8);
 
 % The optional geometry field should be written into, then reused from,
 % the existing version-10 gfile cache without changing its base version.

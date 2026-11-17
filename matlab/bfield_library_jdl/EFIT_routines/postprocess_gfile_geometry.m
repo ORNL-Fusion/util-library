@@ -6,6 +6,13 @@ function g = postprocess_gfile_geometry(g,makePlots,refinement,psiNLevels)
 % makePlots is optional (default false); refinement and psiNLevels are
 % optional overrides. A valid table is reused, including when readg_g3d
 % loaded it from the gfile .mat cache. Newly computed tables update that cache.
+% fluxSurfaceGeometry also contains phiTor (positive Wb), rTor and
+% rSaarelma (m), their derivatives drTorDx and drSaarelmaDx, and the
+% volume derivatives, squared-gradient averages and transport products
+% for both radii. The original x fields always use the OMP coordinate.
+% b0Reference is the vacuum toroidal field magnitude at r0Reference=g.rmaxis.
+% These are interior-surface quantities; no separatrix radius is inferred
+% from the final table entry. Area quadrature includes the whole core.
 
 if nargin < 2 || isempty(makePlots)
     makePlots = false;
@@ -25,7 +32,7 @@ if ~isnumeric(psiNLevels) || ~isvector(psiNLevels) || numel(psiNLevels) < 2 || ~
     error('postprocess_gfile_geometry:InvalidLevels','psiNLevels must contain at least two finite interior levels')
 end
 psiNLevels = unique(psiNLevels(:).');
-if ~isstruct(g) || ~all(isfield(g,{'r','z','rmaxis','zmaxis','bicub_coeffs_inv'})) || g.z(1) > 0 || g.z(end) < 0
+if ~isstruct(g) || ~all(isfield(g,{'r','z','psirz','ssimag','ssibry','ip_sign','rmaxis','zmaxis','bicub_coeffs_inv','pn','fpol','rzero','bcentr'})) || g.z(1) > 0 || g.z(end) < 0
     error('postprocess_gfile_geometry:InvalidGfile','g must be postprocessed and its grid must include Z = 0')
 end
 if isfield(g,'fluxSurfaceGeometry') && valid_geometry_table(g.fluxSurfaceGeometry,g,refinement,psiNLevels)
@@ -64,8 +71,8 @@ if nnz(good) < 2
     error('postprocess_gfile_geometry:NoSamples','Too few levels have valid closed-core geometry at Z = 0')
 end
 GeoSamples = GeoSamples(good);
-if any(diff([GeoSamples.x]) <= 0) || any(diff([GeoSamples.volume]) <= 0)
-    error('postprocess_gfile_geometry:NonmonotonicTable','x or volume is not monotonic; adjust refinement or the sampled levels')
+if any(diff([GeoSamples.x]) <= 0) || any(diff([GeoSamples.volume]) <= 0) || any(diff([GeoSamples.phiTor]) <= 0) || any(diff([GeoSamples.rSaarelma]) <= 0)
+    error('postprocess_gfile_geometry:NonmonotonicTable','x, volume or a flux radius is not monotonic; adjust refinement or the sampled levels')
 end
 if numel(GeoSamples) < numel(psiNLevels)
     warning('postprocess_gfile_geometry:SkippedLevels','Retained %d of %d requested levels with closed contours and a valid Z = 0 OMP intersection',numel(GeoSamples),numel(psiNLevels))
@@ -74,7 +81,8 @@ end
 % Keep contour polygons for the core-branch check during fast lookup.
 % The product V'*<|grad x|^2> is useful directly in transport equations.
 Table = struct();
-Table.version = 1;
+Table.version = 2;
+Table.Source = geometry_source(g);
 Table.requestedRefinement = refinement;
 Table.requestedPsiNLevels = psiNLevels;
 Table.psiN = [GeoSamples.psiN];
@@ -87,6 +95,24 @@ Table.gradXSqAvg = [GeoSamples.gradXSqAvg];
 Table.dpsiNdx = [GeoSamples.dpsiNdx];
 Table.transportMetric = [GeoSamples.transportMetric];
 Table.centroidR = [GeoSamples.centroidR];
+Table.phiTor = [GeoSamples.phiTor];
+Table.rTor = [GeoSamples.rTor];
+Table.rSaarelma = [GeoSamples.rSaarelma];
+Table.dPhiTorDpsiN = [GeoSamples.dPhiTorDpsiN];
+Table.drTorDx = [GeoSamples.drTorDx];
+Table.drSaarelmaDx = [GeoSamples.drSaarelmaDx];
+Table.dVdrTor = [GeoSamples.dVdrTor];
+Table.dVdrSaarelma = [GeoSamples.dVdrSaarelma];
+Table.gradRTorSqAvg = [GeoSamples.gradRTorSqAvg];
+Table.gradRSaarelmaSqAvg = [GeoSamples.gradRSaarelmaSqAvg];
+Table.transportMetricRTor = [GeoSamples.transportMetricRTor];
+Table.transportMetricRSaarelma = [GeoSamples.transportMetricRSaarelma];
+Table.b0Reference = GeoSamples(1).b0Reference;
+Table.r0Reference = GeoSamples(1).r0Reference;
+Table.toroidalFieldSign = GeoSamples(1).toroidalFieldSign;
+Table.phiTorDefinition = 'Positive magnitude of enclosed total toroidal flux in Wb';
+Table.rTorDefinition = 'sqrt(phiTor/(pi*b0Reference))';
+Table.rSaarelmaDefinition = 'sqrt(r0Reference/pi * integral dR dZ/R over enclosed poloidal area)';
 Table.contourR = {GeoSamples.contourR};
 Table.contourZ = {GeoSamples.contourZ};
 Table.refinement = GeoSamples(1).refinement;
@@ -104,11 +130,23 @@ end
 end
 
 function valid = valid_geometry_table(Table,g,refinement,psiNLevels)
-% Keep the base gfile cache version independent of optional geometry data.
-fields = {'version','requestedRefinement','requestedPsiNLevels','psiN','x','areaRZ','volume','dVdx','gradXSqAvg','dpsiNdx','transportMetric','centroidR','contourR','contourZ','zSampling','zOMP'};
-valid = isstruct(Table) && all(isfield(Table,fields));
+% The source snapshot includes both flux geometry and toroidal-field data.
+% The optional geometry-table version is independent of the raw gfile cache.
+fields = {'version','Source','requestedRefinement','requestedPsiNLevels','psiN','x','areaRZ','volume','dVdx','gradXSqAvg','dpsiNdx','transportMetric','centroidR','contourR','contourZ','zSampling','zOMP'};
+radiusFields = {'phiTor','rTor','rSaarelma','dPhiTorDpsiN','drTorDx','drSaarelmaDx','dVdrTor','dVdrSaarelma','gradRTorSqAvg','gradRSaarelmaSqAvg','transportMetricRTor','transportMetricRSaarelma','b0Reference','r0Reference','toroidalFieldSign','phiTorDefinition','rTorDefinition','rSaarelmaDefinition'};
+valid = isstruct(Table) && all(isfield(Table,[fields,radiusFields]));
 if valid
-    valid = Table.version == 1 && isequaln(Table.requestedRefinement,refinement) && isequaln(Table.requestedPsiNLevels,psiNLevels) && Table.zSampling == g.zmaxis && Table.zOMP == 0 && numel(Table.psiN) >= 2 && all(diff(Table.psiN) > 0);
+    valid = Table.version == 2 && isequaln(Table.Source,geometry_source(g)) && isequaln(Table.requestedRefinement,refinement) && isequaln(Table.requestedPsiNLevels,psiNLevels) && Table.zSampling == g.zmaxis && Table.zOMP == 0 && numel(Table.psiN) >= 2 && all(diff(Table.psiN) > 0);
+end
+end
+
+function Source = geometry_source(g)
+% Record the equilibrium inputs determining contours, fluxes and reference field.
+fields = {'psirz','ssimag','ssibry','rmaxis','zmaxis','r','z','ip_sign','pn','fpol','rzero','bcentr'};
+Source = struct();
+for iField = 1:numel(fields)
+    fieldName = fields{iField};
+    Source.(fieldName) = g.(fieldName);
 end
 end
 
@@ -133,7 +171,7 @@ try
     if ~isfield(Cache,'g') || ~isfield(Cache.g,'version') || Cache.g.version ~= 10
         return
     end
-    sourceFields = {'psirz','ssimag','ssibry','rmaxis','zmaxis','r','z','ip_sign'};
+    sourceFields = fieldnames(geometry_source(g));
     if ~all(isfield(Cache.g,sourceFields)) || ~all(isfield(g,sourceFields))
         return
     end

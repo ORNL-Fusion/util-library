@@ -12,6 +12,16 @@ function Geo = compute_flux_surface_geometry(g,R,Z,refinement,zOMP)
 % Geo.transportMetric is their product for conservative transport terms.
 % Geo.dpsiNdx is the OMP derivative. At the axis, gradXSqAvg is NaN;
 % near the separatrix, check convergence with a larger refinement.
+% phiTor is the positive magnitude of enclosed toroidal flux (Wb).
+% rTor = sqrt(phiTor/(pi*b0Reference)); rSaarelma^2 = r0Reference/pi
+% times the enclosed poloidal-area integral of 1/R. Both radii are in m.
+% b0Reference = abs(g.bcentr*g.rzero/g.rmaxis), r0Reference = g.rmaxis.
+% drTorDx and drSaarelmaDx transform the OMP metrics into dVdrTor,
+% dVdrSaarelma, gradRTorSqAvg, gradRSaarelmaSqAvg and the corresponding
+% transportMetricRTor and transportMetricRSaarelma products.
+% At the axis the radii, flux, volume derivatives and transport products
+% are zero; radius derivatives and averaged squared gradients are NaN.
+% Area quadrature uses base-MATLAB polyshape triangulation (R2017b or later).
 
 if ~isnumeric(R) || ~isnumeric(Z) || isempty(R) || isempty(Z) || ~isreal(R) || ~isreal(Z)
     error('compute_flux_surface_geometry:InvalidPoint','R and Z must be real numeric arrays')
@@ -24,13 +34,27 @@ elseif ~isequal(size(R),size(Z))
     error('compute_flux_surface_geometry:InvalidPoint','R and Z must have matching sizes, or one must be scalar')
 end
 
-requiredFields = {'r','z','psirz','rmaxis','zmaxis','ssimag','ssibry','ip_sign','bicub_coeffs_inv'};
+requiredFields = {'r','z','psirz','rmaxis','zmaxis','ssimag','ssibry','ip_sign','bicub_coeffs_inv','pn','fpol','rzero','bcentr'};
 if ~isstruct(g) || ~all(isfield(g,requiredFields))
     error('compute_flux_surface_geometry:InvalidGfile','g must be a postprocessed gfile')
 end
 if g.ssimag == g.ssibry
     error('compute_flux_surface_geometry:InvalidGfile','Axis and boundary flux must differ')
 end
+% The reference field is the vacuum toroidal field at the axis major
+% radius. A single sign of F is required for a monotonic toroidal-flux radius.
+if ~isscalar(g.rmaxis) || ~isfinite(g.rmaxis) || g.rmaxis <= 0 || ~isscalar(g.rzero) || ~isfinite(g.rzero) || g.rzero <= 0 || ~isscalar(g.bcentr) || ~isfinite(g.bcentr) || g.bcentr == 0
+    error('compute_flux_surface_geometry:InvalidReferenceField','rmaxis and rzero must be positive and bcentr must be finite and nonzero')
+end
+if ~isnumeric(g.pn) || ~isreal(g.pn) || ~isvector(g.pn) || numel(g.pn) < 2 || any(~isfinite(g.pn(:))) || any(diff(g.pn(:)) <= 0) || g.pn(1) ~= 0 || g.pn(end) ~= 1 || ~isnumeric(g.fpol) || ~isreal(g.fpol) || ~isvector(g.fpol) || numel(g.fpol) ~= numel(g.pn) || any(~isfinite(g.fpol(:))) || ~(all(g.fpol(:) > 0) || all(g.fpol(:) < 0))
+    error('compute_flux_surface_geometry:InvalidToroidalField','pn must span 0 to 1 and fpol must be finite, nonzero and have a single sign')
+end
+Reference = struct('r0',g.rmaxis,'b0',abs(g.bcentr*g.rzero/g.rmaxis),'fieldSign',sign(g.fpol(1)));
+if ~isfinite(Reference.b0) || Reference.b0 <= 0
+    error('compute_flux_surface_geometry:InvalidReferenceField','The vacuum toroidal field at the axis must be finite and nonzero')
+end
+Fpol = pchip(g.pn,abs(g.fpol));
+
 if nargin < 5
     zOMP = g.zmaxis;
 end
@@ -85,7 +109,7 @@ end
 
 % Each point has an independent status. A rejected point leaves other
 % surfaces intact; malformed call-wide inputs are still errors above.
-Geo = repmat(empty_geometry(NaN,refinement,zOMP),size(R));
+Geo = repmat(empty_geometry(NaN,refinement,zOMP,Reference),size(R));
 for iPoint = 1:numel(rPoints)
     Geo(iPoint).psiN = psiN(iPoint);
     if ~finitePoints(iPoint)
@@ -98,6 +122,13 @@ for iPoint = 1:numel(rPoints)
         else
             Geo(iPoint).areaRZ = 0;
             Geo(iPoint).volume = 0;
+            Geo(iPoint).phiTor = 0;
+            Geo(iPoint).rTor = 0;
+            Geo(iPoint).rSaarelma = 0;
+            Geo(iPoint).dVdrTor = 0;
+            Geo(iPoint).dVdrSaarelma = 0;
+            Geo(iPoint).transportMetricRTor = 0;
+            Geo(iPoint).transportMetricRSaarelma = 0;
             if zOMP == g.zmaxis
                 Geo(iPoint).x = rPoints(iPoint)-Omp.rSep;
                 Geo(iPoint).dVdx = 0;
@@ -112,20 +143,35 @@ for iPoint = 1:numel(rPoints)
     elseif ~interiorPoints(iPoint)
         Geo(iPoint).errorId = 'OutsideCore';
     else
-        Geo(iPoint) = geometry_at_point(g,rPoints(iPoint),zPoints(iPoint),psiN(iPoint),refinement,rFine,zFine,psiNGrid,gridSpacing,Omp);
+        Geo(iPoint) = geometry_at_point(g,rPoints(iPoint),zPoints(iPoint),psiN(iPoint),refinement,rFine,zFine,psiNGrid,gridSpacing,Omp,Reference,Fpol);
     end
 end
 end
 
-function Geo = empty_geometry(psiN,refinement,zOMP)
+function Geo = empty_geometry(psiN,refinement,zOMP,Reference)
 % Use NaN for unavailable scalar geometry and empty arrays for contours.
 Geo = struct('psiN',psiN,'x',NaN,'areaRZ',NaN,'volume',NaN,'dVdx',NaN,'gradXSqAvg',NaN,'dpsiNdx',NaN,'transportMetric',NaN,'centroidR',NaN,'contourR',[],'contourZ',[],'refinement',refinement,'zOMP',zOMP,'xDefinition','R_out(psiN,zOMP) - R_out(1,zOMP)','iErr',1,'errorId','');
+Geo.phiTor = NaN;
+Geo.rTor = NaN;
+Geo.rSaarelma = NaN;
+Geo.dPhiTorDpsiN = NaN;
+Geo.drTorDx = NaN;
+Geo.drSaarelmaDx = NaN;
+Geo.dVdrTor = NaN;
+Geo.dVdrSaarelma = NaN;
+Geo.gradRTorSqAvg = NaN;
+Geo.gradRSaarelmaSqAvg = NaN;
+Geo.transportMetricRTor = NaN;
+Geo.transportMetricRSaarelma = NaN;
+Geo.b0Reference = Reference.b0;
+Geo.r0Reference = Reference.r0;
+Geo.toroidalFieldSign = Reference.fieldSign;
 end
 
-function Geo = geometry_at_point(g,R,Z,psiN,refinement,rFine,zFine,psiNGrid,gridSpacing,Omp)
+function Geo = geometry_at_point(g,R,Z,psiN,refinement,rFine,zFine,psiNGrid,gridSpacing,Omp,Reference,Fpol)
 % Select the component nearest this point, then require a closed core loop.
 % Private-flux and coil contours may share the same psiN as a core contour.
-Geo = empty_geometry(psiN,refinement,Omp.z);
+Geo = empty_geometry(psiN,refinement,Omp.z,Reference);
 contours = contourc(rFine,zFine,psiNGrid,[psiN psiN]);
 if isempty(contours)
     Geo.errorId = 'NoContour';
@@ -224,6 +270,38 @@ if ~isfinite(dVdx) || ~isfinite(gradXSqAvg) || ~isfinite(transportMetric) || dVd
     return
 end
 
+% Integrating each enclosed cross-section includes the axis region even
+% when only pedestal surfaces are requested. The local contour integral
+% gives exact coordinate chain rules up to the contour quadrature accuracy.
+[phiTor,inverseRArea,errorId] = enclosed_radial_integrals(g,bestContour,Fpol);
+if ~isempty(errorId)
+    Geo.errorId = errorId;
+    return
+end
+rTor = sqrt(phiTor/(pi*Reference.b0));
+rSaarelma = sqrt(Reference.r0*inverseRArea/pi);
+integralToroidal = sum(segmentLength./(rMid.*gradPsiN));
+dPhiTorDpsiN = ppval(Fpol,psiN)*integralToroidal;
+drTorDx = dPhiTorDpsiN*dpsiNdx/(2*pi*Reference.b0*rTor);
+drSaarelmaDx = Reference.r0*integralToroidal*dpsiNdx/(2*pi*rSaarelma);
+radiusValues = [rTor,rSaarelma,dPhiTorDpsiN,drTorDx,drSaarelmaDx];
+if any(~isfinite(radiusValues) | radiusValues <= 0)
+    Geo.errorId = 'InvalidRadialMap';
+    return
+end
+
+Geo.phiTor = phiTor;
+Geo.rTor = rTor;
+Geo.rSaarelma = rSaarelma;
+Geo.dPhiTorDpsiN = dPhiTorDpsiN;
+Geo.drTorDx = drTorDx;
+Geo.drSaarelmaDx = drSaarelmaDx;
+Geo.dVdrTor = dVdx/drTorDx;
+Geo.dVdrSaarelma = dVdx/drSaarelmaDx;
+Geo.gradRTorSqAvg = gradXSqAvg*drTorDx^2;
+Geo.gradRSaarelmaSqAvg = gradXSqAvg*drSaarelmaDx^2;
+Geo.transportMetricRTor = transportMetric*drTorDx;
+Geo.transportMetricRSaarelma = transportMetric*drSaarelmaDx;
 Geo.x = rOMP-Omp.rSep;
 Geo.areaRZ = areaRZ;
 Geo.volume = 2*pi*areaRZ*centroidR;
@@ -235,6 +313,96 @@ Geo.centroidR = centroidR;
 Geo.contourR = bestContour(1,:);
 Geo.contourZ = bestContour(2,:);
 Geo.iErr = 0;
+end
+
+function [phiTor,inverseRArea,errorId] = enclosed_radial_integrals(g,contour,Fpol)
+% Integrate |F(psiN)|/R and 1/R over the entire enclosed poloidal area.
+% Triangulation includes concave regions without assuming radial rays from
+% the magnetic axis stay inside the surface. The integrals include no 2*pi:
+% phiTor is total toroidal flux, and rSaarelma^2 = R0*inverseRArea/pi.
+phiTor = NaN;
+inverseRArea = NaN;
+errorId = 'InvalidRadialIntegral';
+if any(contour(1,:) <= 0)
+    return
+end
+Boundary = polyshape(contour(1,1:end-1),contour(2,1:end-1),'Simplify',false);
+if Boundary.NumRegions ~= 1 || Boundary.NumHoles ~= 0
+    return
+end
+Mesh = triangulation(Boundary);
+vertices = Mesh.Points;
+triangles = Mesh.ConnectivityList;
+if isempty(triangles)
+    return
+end
+a = vertices(triangles(:,1),:);
+b = vertices(triangles(:,2),:);
+c = vertices(triangles(:,3),:);
+coarse = radial_triangle_integrals(g,a,b,c,Fpol);
+if isempty(coarse) || any(~isfinite(coarse(:)))
+    return
+end
+
+% Compare a degree-two triangle rule with the sum over four children.
+% Refine only unresolved triangles; positive integrands make the summed
+% local relative-error estimates a relative-error estimate for each integral.
+total = [0,0];
+relativeTolerance = 1e-6;
+for iDepth = 1:8
+    if size(a,1) > 250000
+        break
+    end
+    ab = (a+b)/2;
+    bc = (b+c)/2;
+    ca = (c+a)/2;
+    childA = [a;ab;ca;ab];
+    childB = [ab;b;bc;bc];
+    childC = [ca;bc;c;ca];
+    childValues = radial_triangle_integrals(g,childA,childB,childC,Fpol);
+    if any(~isfinite(childValues(:)))
+        return
+    end
+    nTriangles = size(a,1);
+    fine = childValues(1:nTriangles,:)+childValues(nTriangles+(1:nTriangles),:)+childValues(2*nTriangles+(1:nTriangles),:)+childValues(3*nTriangles+(1:nTriangles),:);
+    accepted = all(abs(fine-coarse) <= relativeTolerance*max(abs(fine),realmin),2);
+    total = total+sum(fine(accepted,:),1);
+    if all(accepted)
+        if all(isfinite(total) & total > 0)
+            phiTor = total(1);
+            inverseRArea = total(2);
+            errorId = '';
+        end
+        return
+    end
+    unresolved = repmat(~accepted,4,1);
+    a = childA(unresolved,:);
+    b = childB(unresolved,:);
+    c = childC(unresolved,:);
+    coarse = childValues(unresolved,:);
+end
+errorId = 'RadialIntegralNotConverged';
+end
+
+function values = radial_triangle_integrals(g,a,b,c,Fpol)
+% Three equal-weight barycentric points integrate quadratic polynomials.
+% Each row contains integrals of |F|/R and 1/R over one physical triangle.
+area = abs((b(:,1)-a(:,1)).*(c(:,2)-a(:,2))-(c(:,1)-a(:,1)).*(b(:,2)-a(:,2)))/2;
+values = zeros(size(a,1),2);
+barycentric = [2/3,1/6,1/6;1/6,2/3,1/6;1/6,1/6,2/3];
+for iPoint = 1:3
+    points = barycentric(iPoint,1)*a+barycentric(iPoint,2)*b+barycentric(iPoint,3)*c;
+    [psiN,~,ierr] = calc_psiN(g,points(:,1).',points(:,2).',1);
+    if any(ierr | ~isfinite(psiN)) || any(points(:,1) <= 0)
+        values(:) = NaN;
+        return
+    end
+    % Endpoint values of F handle flux overshoots from representing a
+    % smooth contour by polygon edges and interpolating the gfile near its axis.
+    fMagnitude = ppval(Fpol,max(0,min(1,psiN))).';
+    values = values+[fMagnitude./points(:,1),1./points(:,1)]/3;
+end
+values = values.*area;
 end
 
 function Omp = outboard_midplane_map(g,refinement,zOMP)
