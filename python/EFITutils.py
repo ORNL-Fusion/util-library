@@ -338,6 +338,86 @@ _RADIUS_DEFINITIONS = {
 }
 
 
+_EDGE_FIELDS = ('phiTorSep', 'rTorSep', 'rSaarelmaSep', 'separatrixRelativeChange',
+                'separatrixRefinement', 'separatrixIErr')
+_SHIFT_FIELDS = ('rhoTor', 'rhoSaarelma', 'xTor', 'xSaarelma')
+
+
+def compute_flux_surface_endpoints(g, refinement=None):
+    """Return finite axis and separatrix flux labels without endpoint metrics.
+
+    The axis flux and radii are zero. Separatrix integrals are limits of
+    closed-core area integrals at p=1-delta, delta=1e-3/2**arange(6).
+    For a regular X point the leading terms are L+a*delta*log(delta)+b*delta.
+    The combination I(delta)-4*I(delta/2)+4*I(delta/4) eliminates both terms;
+    it also applies to a smooth boundary, where a=0. Success requires agreement
+    of adjacent extrapolation windows and of successive doubled contour grids
+    to 1e-4 relative in both phiTor and rSaarelma**2. This is a numerical
+    convergence indicator, not a bound on errors in the supplied equilibrium.
+    Degenerate X points or unresolved topology can fail the convergence check.
+    On failure separatrix values are NaN; inspect separatrixIErr/errorId.
+    No cache is read or written. Refinement has the direct-geometry convention.
+    """
+    result = dict(phiTorAxis=0.0, rTorAxis=0.0, rSaarelmaAxis=0.0,
+                  phiTorSep=np.nan, rTorSep=np.nan, rSaarelmaSep=np.nan,
+                  separatrixRelativeChange=np.nan, separatrixRefinement=np.nan,
+                  separatrixIErr=1, separatrixErrorId='SeparatrixNotConverged')
+    reference = _radial_reference(g)
+    result.update(reference)
+    axis = compute_flux_surface_geometry(g, g['rmaxis'], g['zmaxis'], refinement)
+    factor = int(axis['refinement'])
+    levels = 1-1e-3/2.0**np.arange(6)
+    omp = _outboard_flux_map(g, g['zmaxis'], factor)
+    if omp is None:
+        result['separatrixErrorId'] = 'NoOmpSeparatrix'
+        return result
+    radii = np.array([_outboard_radius_and_gradient(g, p, omp)[0] for p in levels])
+    previous = None
+    for _ in range(3):
+        geo = compute_flux_surface_geometry(g, radii, g['zmaxis'], factor)
+        integrals = np.column_stack((geo['phiTor'], geo['rSaarelma']**2))
+        candidates = []
+        for j in range(len(levels)-3):
+            values = integrals[j:j+4]
+            if np.any(geo['iErr'][j:j+4]) or np.any(~np.isfinite(values)):
+                continue
+            left = values[0]-4*values[1]+4*values[2]
+            right = values[1]-4*values[2]+4*values[3]
+            if np.any(right <= values[-1]) or np.any(np.diff(values, axis=0) <= 0):
+                continue
+            change = float(np.max(abs(right-left)/right))
+            candidates.append((change, right))
+        if candidates:
+            change, estimate = min(candidates, key=lambda item: item[0])
+            if previous is not None:
+                change = max(change, previous[0], float(np.max(abs(estimate-previous[1])/estimate)))
+                result['separatrixRelativeChange'] = change
+                if change <= 1e-4:
+                    result.update(phiTorSep=float(estimate[0]),
+                                  rTorSep=float(np.sqrt(estimate[0]/(np.pi*reference['b0Reference']))),
+                                  rSaarelmaSep=float(np.sqrt(estimate[1])),
+                                  separatrixRefinement=factor, separatrixIErr=0, separatrixErrorId='')
+                    return result
+            previous = (min(candidates, key=lambda item: item[0])[0], estimate)
+        else:
+            previous = None
+        result['separatrixRefinement'] = factor
+        factor *= 2
+    return result
+
+
+def _add_edge_labels(geo, table):
+    """Use independently converged edge radii for normalization and offsets."""
+    for name in _EDGE_FIELDS:
+        geo[name] = np.full(np.shape(geo['psiN']), table[name])
+    geo['separatrixErrorId'] = np.full(np.shape(geo['psiN']), table['separatrixErrorId'], dtype=object)
+    geo['rhoTor'] = geo['rTor']/table['rTorSep']
+    geo['rhoSaarelma'] = geo['rSaarelma']/table['rSaarelmaSep']
+    geo['xTor'] = geo['rTor']-table['rTorSep']
+    geo['xSaarelma'] = geo['rSaarelma']-table['rSaarelmaSep']
+    return geo
+
+
 def _radial_reference(g):
     """Use the vacuum toroidal field at the magnetic-axis major radius."""
     for name in ('rmaxis', 'rzero', 'bcentr'):
@@ -718,9 +798,9 @@ def _geometry_table_matches(table, g, refinement, levels):
                 'psiN', 'x', 'areaRZ', 'volume', 'dVdx', 'gradXSqAvg',
                 'dpsiNdx', 'transportMetric', 'centroidR', 'contourR', 'contourZ',
                 'zOMP', 'zSampling', 'xDefinition', 'refinement'}
-    required.update(_RADIAL_FIELDS + _REFERENCE_FIELDS + tuple(_RADIUS_DEFINITIONS))
+    required.update(_RADIAL_FIELDS + _REFERENCE_FIELDS + _EDGE_FIELDS + _SHIFT_FIELDS + ('separatrixErrorId',) + tuple(_RADIUS_DEFINITIONS))
     return (isinstance(table, dict) and required.issubset(table)
-            and table['version'] == 2 and table['requestedRefinement'] == refinement
+            and table['version'] == 3 and table['requestedRefinement'] == refinement
             and np.array_equal(table['requestedPsiNLevels'], levels)
             and table['sourceHash'] == _geometry_flux_hash(g)
             and len(table['psiN']) >= 2 and np.all(np.diff(table['psiN']) > 0))
@@ -737,7 +817,7 @@ def _load_geometry_cache(g, refinement, levels):
     try:
         with np.load(path, allow_pickle=False) as data:
             offsets = data['contourOffsets']
-            names = _GEOMETRY_FIELDS + ('dVdxFromVolume',)
+            names = _GEOMETRY_FIELDS + _SHIFT_FIELDS + ('dVdxFromVolume',)
             table = {name: data[name] for name in names}
             table.update(version=int(data['version']),
                          requestedRefinement=None if int(data['requestedRefinement']) < 0 else int(data['requestedRefinement']),
@@ -745,7 +825,8 @@ def _load_geometry_cache(g, refinement, levels):
                          sourceHash=str(data['sourceHash'].item()), refinement=int(data['refinement']),
                          zSampling=float(data['zSampling']), zOMP=0.0,
                          xDefinition='R_out(psiN,Z=0) - R_out(1,Z=0)')
-            table.update({name: float(data[name]) for name in _REFERENCE_FIELDS})
+            table.update({name: float(data[name]) for name in _REFERENCE_FIELDS + _EDGE_FIELDS})
+            table['separatrixErrorId'] = str(data['separatrixErrorId'].item())
             table.update(_RADIUS_DEFINITIONS)
             table['contourR'] = [data['contourR'][offsets[i]:offsets[i + 1]] for i in range(len(offsets) - 1)]
             table['contourZ'] = [data['contourZ'][offsets[i]:offsets[i + 1]] for i in range(len(offsets) - 1)]
@@ -769,7 +850,7 @@ def _save_geometry_cache(g, table):
         return
     lengths = [len(contour) for contour in table['contourR']]
     offsets = np.r_[0, np.cumsum(lengths)]
-    fields = _GEOMETRY_FIELDS + _REFERENCE_FIELDS + ('dVdxFromVolume',)
+    fields = _GEOMETRY_FIELDS + _REFERENCE_FIELDS + _EDGE_FIELDS + _SHIFT_FIELDS + ('separatrixErrorId', 'dVdxFromVolume')
     arrays = {name: table[name] for name in fields}
     arrays.update(version=table['version'], refinement=table['refinement'],
                   requestedRefinement=-1 if table['requestedRefinement'] is None else table['requestedRefinement'],
@@ -783,13 +864,14 @@ def _save_geometry_cache(g, table):
 
 
 def postprocess_gfile_geometry(g, make_plots=False, refinement=None, psi_n_levels=None):
-    """Add or reuse a version-2 core geometry table, with x defined at Z=0.
+    """Add or reuse a version-3 core geometry table, with x defined at Z=0.
 
     Includes phiTor, rTor, rSaarelma, their derivatives, volume derivatives,
     squared-gradient averages and transport products. Enclosed integrals
-    include the axis region. No separatrix radius or normalized radius is
-    inferred from the last interior sample. Existing version-1 caches are
-    rebuilt; source hashes include the toroidal-field profile and reference.
+    include the axis region. Separatrix radii come from compute_flux_surface_endpoints,
+    independently of the sampled interval. rhoTor/rhoSaarelma divide by those
+    radii; xTor/xSaarelma subtract them. Check separatrixIErr before using these
+    fields. Older caches are rebuilt; the original x remains the OMP label.
     """
     if not isinstance(g, dict) or not {'R', 'Z', 'rmaxis', 'zmaxis', 'psi_bicub_coeffs_inv'}.issubset(g):
         raise ValueError('g must be a postprocessed gfile')
@@ -838,7 +920,7 @@ def postprocess_gfile_geometry(g, make_plots=False, refinement=None, psi_n_level
     table = {name: np.asarray(geo[name][good], dtype=float) for name in names}
     if any(np.any(np.diff(table[name]) <= 0) for name in ('x', 'volume', 'phiTor', 'rSaarelma')):
         raise ValueError('x, volume or a flux radius is not monotonic; adjust refinement or levels')
-    table.update(version=2, requestedRefinement=refinement, requestedPsiNLevels=levels,
+    table.update(version=3, requestedRefinement=refinement, requestedPsiNLevels=levels,
                  sourceHash=_geometry_flux_hash(g), refinement=int(geo['refinement'][0]),
                  zSampling=float(g['zmaxis']), zOMP=0.0,
                  xDefinition='R_out(psiN,Z=0) - R_out(1,Z=0)',
@@ -846,6 +928,17 @@ def postprocess_gfile_geometry(g, make_plots=False, refinement=None, psi_n_level
                  nRequested=len(levels), nComputed=int(np.count_nonzero(good)))
     table.update({name: float(geo[name][good][0]) for name in _REFERENCE_FIELDS})
     table.update(_RADIUS_DEFINITIONS)
+    edge = compute_flux_surface_endpoints(g, table['refinement'])
+    table.update({name: edge[name] for name in _EDGE_FIELDS + ('separatrixErrorId',)})
+    if edge['separatrixIErr'] == 0 and (table['rTorSep'] <= table['rTor'][-1] or table['rSaarelmaSep'] <= table['rSaarelma'][-1]):
+        table.update(phiTorSep=np.nan, rTorSep=np.nan, rSaarelmaSep=np.nan,
+                     separatrixIErr=1, separatrixErrorId='SeparatrixInsideTable')
+    table['rhoTor'] = table['rTor']/table['rTorSep']
+    table['rhoSaarelma'] = table['rSaarelma']/table['rSaarelmaSep']
+    table['xTor'] = table['rTor']-table['rTorSep']
+    table['xSaarelma'] = table['rSaarelma']-table['rSaarelmaSep']
+    if table['separatrixIErr']:
+        print('WARNING: Separatrix normalization unavailable: '+table['separatrixErrorId'], file=sys.stderr)
     table['dVdxFromVolume'] = np.gradient(table['volume'], table['x'])
     if table['nComputed'] < table['nRequested']:
         print(f"WARNING: Retained {table['nComputed']} of {table['nRequested']} requested geometry levels", file=sys.stderr)
@@ -859,9 +952,9 @@ def postprocess_gfile_geometry(g, make_plots=False, refinement=None, psi_n_level
 def _validated_geometry_table(g):
     """Reject obsolete tables and changes in raw equilibrium inputs."""
     table = g.get('fluxSurfaceGeometry') if isinstance(g, dict) else None
-    required = set(_GEOMETRY_FIELDS + _REFERENCE_FIELDS) | set(_RADIUS_DEFINITIONS)
+    required = set(_GEOMETRY_FIELDS + _REFERENCE_FIELDS + _EDGE_FIELDS + _SHIFT_FIELDS + ('separatrixErrorId',)) | set(_RADIUS_DEFINITIONS)
     required |= {'version', 'sourceHash', 'contourR', 'contourZ', 'refinement', 'zOMP', 'xDefinition'}
-    if not isinstance(table, dict) or not required.issubset(table) or table['version'] != 2:
+    if not isinstance(table, dict) or not required.issubset(table) or table['version'] != 3:
         raise ValueError('rebuild the geometry table with postprocess_gfile_geometry')
     if table['sourceHash'] != _geometry_flux_hash(g):
         raise ValueError('stale geometry table: equilibrium inputs changed; run postprocess_gfile_geometry again')
@@ -883,6 +976,10 @@ def _validated_geometry_table(g):
     if any(np.ndim(table[name]) or not np.isfinite(table[name]) or table[name] <= 0
            for name in ('b0Reference', 'r0Reference')):
         raise ValueError('invalid geometry reference field or radius')
+    if table['separatrixIErr'] not in (0, 1):
+        raise ValueError('invalid separatrix status')
+    if table['separatrixIErr'] == 0 and any(not np.isfinite(table[name]) or table[name] <= 0 for name in ('phiTorSep', 'rTorSep', 'rSaarelmaSep')):
+        raise ValueError('invalid separatrix normalization')
     if any(len(table[name]) != len(p) for name in ('contourR', 'contourZ')):
         raise ValueError('the cached contours are incomplete')
     return table
@@ -909,7 +1006,7 @@ def _lookup_flux_surface_table(g, psi_n, table=None):
     geo['errorId'][~np.isfinite(p)] = 'InvalidPoint'
     geo['errorId'][np.isfinite(p) & ~valid] = 'OutsideTable'
     if not np.any(valid):
-        return geo
+        return _add_edge_labels(geo, table)
     nodes = table['psiN']
     x_map = CubicHermiteSpline(nodes, table['x'], 1/table['dpsiNdx'], extrapolate=False)
     flux_map = CubicHermiteSpline(nodes, table['phiTor'], table['dPhiTorDpsiN'], extrapolate=False)
@@ -948,7 +1045,7 @@ def _lookup_flux_surface_table(g, psi_n, table=None):
     for name, value in values.items():
         geo[name].flat[indices[good]] = value[good]
     geo['iErr'].flat[indices[good]] = 0
-    return geo
+    return _add_edge_labels(geo, table)
 
 
 def _scalar_geometry(geo):
@@ -997,7 +1094,7 @@ def lookup_flux_surface_geometry(g, R, Z):
                     generator, spacing = _flux_contour_generator(g, table['refinement'])
                 _, error_id = _core_flux_contour(generator, level, rv, zv, g['rmaxis'], g['zmaxis'], spacing)
         if error_id:
-            for name in _GEOMETRY_FIELDS:
+            for name in _GEOMETRY_FIELDS + _SHIFT_FIELDS:
                 if name != 'psiN':
                     geo[name].flat[i] = np.nan
             geo['iErr'].flat[i] = 1
@@ -1009,7 +1106,7 @@ def _select_flux_surface_labels(geo):
     """Keep labels, their derivatives, reference metadata and query status."""
     fields = ('psiN', 'x', 'phiTor', 'rTor', 'rSaarelma', 'dpsiNdx',
               'dPhiTorDpsiN', 'drTorDx', 'drSaarelmaDx', 'zOMP',
-              'xDefinition', 'iErr', 'errorId') + _REFERENCE_FIELDS + tuple(_RADIUS_DEFINITIONS)
+              'xDefinition', 'iErr', 'errorId', 'separatrixErrorId') + _EDGE_FIELDS + _SHIFT_FIELDS + _REFERENCE_FIELDS + tuple(_RADIUS_DEFINITIONS)
     return {name: geo[name] for name in fields}
 
 
@@ -1019,12 +1116,32 @@ def lookup_flux_surface_labels(g, psi_n):
     Build g with postprocess_gfile_geometry first. Scalar input returns scalar
     fields; array inputs retain their shape. phiTor is a positive magnitude in
     Wb; x and both radii are in m. No normalization to the last table sample
-    is applied. Queries must be strictly inside the sampled interval; axis,
-    separatrix and other unsupported points have iErr=1 and a short errorId.
+    is applied. Interior queries must be strictly inside the sampled interval.
+    Exact psi_n=0 and 1 additionally return endpoint labels, with unavailable
+    derivatives left NaN. At the axis x is only defined if zOMP=zmaxis.
+    Check separatrixIErr for normalized/shifted labels even when iErr=0.
     A flux-only query assumes the core branch; use calc_flux_surface_labels
     when spatial measurements require a branch check.
     """
-    return _select_flux_surface_labels(_scalar_geometry(_lookup_flux_surface_table(g, psi_n)))
+    table = _validated_geometry_table(g)
+    geo = _lookup_flux_surface_table(g, psi_n, table)
+    axis, edge = geo['psiN'] == 0, geo['psiN'] == 1
+    for name in ('phiTor', 'rTor', 'rSaarelma'):
+        geo[name][axis] = 0
+        if table['separatrixIErr'] == 0:
+            geo[name][edge] = table[name+'Sep']
+    geo['iErr'][axis] = 0
+    geo['errorId'][axis] = ''
+    if np.any(axis) and table['zOMP'] == g['zmaxis']:
+        omp = _outboard_flux_map(g, table['zOMP'], table['refinement'])
+        geo['x'][axis] = g['rmaxis']-omp['r_sep']
+    if table['separatrixIErr'] == 0:
+        geo['x'][edge] = 0
+        geo['iErr'][edge] = 0
+        geo['errorId'][edge] = ''
+    else:
+        geo['errorId'][edge] = table['separatrixErrorId']
+    return _select_flux_surface_labels(_scalar_geometry(_add_edge_labels(geo, table)))
 
 
 def calc_flux_surface_labels(g, R, Z):

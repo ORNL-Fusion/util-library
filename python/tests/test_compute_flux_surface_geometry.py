@@ -229,9 +229,9 @@ class FluxSurfaceGeometryTests(unittest.TestCase):
         self.assertLess(abs((plus['phiTor']-minus['phiTor'])/2e-6/center['dPhiTorDpsiN']-1), 1e-7)
         p = np.r_[np.nan, 0, 1, g['fluxSurfaceGeometry']['psiN'][[0, -1]]]
         rejected = lookup_flux_surface_labels(g, p)
-        self.assertTrue(np.all(rejected['iErr'] == 1))
-        self.assertTrue(np.all(np.isnan(rejected['rTor'])))
-        self.assertEqual(rejected['errorId'].tolist(), ['InvalidPoint']+['OutsideTable']*4)
+        np.testing.assert_array_equal(rejected['iErr'], [1, 0, 0, 1, 1])
+        self.assertTrue(np.all(np.isnan(rejected['rTor'][[0, 3, 4]])))
+        self.assertEqual(rejected['errorId'].tolist(), ['InvalidPoint', '', '', 'OutsideTable', 'OutsideTable'])
         for key in ('bcentr', 'rzero', 'fpol'):
             changed = dict(g)
             changed[key] = 1.01*g[key]
@@ -240,6 +240,35 @@ class FluxSurfaceGeometryTests(unittest.TestCase):
         for value in ([1+2j], [], ['0.6']):
             with self.assertRaises(ValueError):
                 lookup_flux_surface_labels(g, value)
+
+    def test_separatrix_normalization_and_endpoints(self):
+        # Constant F gives equal radii. The enclosed inverse-R integral of
+        # an ellipse has an analytic value, including at its outer surface.
+        g = make_elliptical_gfile()
+        postprocess_gfile_geometry(g, refinement=4, psi_n_levels=[.1, .3, .6, .9])
+        table = g['fluxSurfaceGeometry']
+        self.assertEqual(table['separatrixIErr'], 0)
+        expected_phi = 2*np.pi*.7/.5*(2-np.sqrt(2**2-.5**2))
+        self.assertLess(abs(table['phiTorSep']/expected_phi-1), 1e-4)
+        self.assertLessEqual(table['separatrixRelativeChange'], 1e-4)
+        self.assertGreater(table['rTorSep'], table['rTor'][-1])
+        labels = lookup_flux_surface_labels(g, np.array([[0., .6, 1.]]))
+        np.testing.assert_array_equal(labels['iErr'], 0)
+        np.testing.assert_allclose(labels['rhoTor'][0, [0, 2]], [0, 1])
+        np.testing.assert_allclose(labels['rhoTor'], labels['rhoSaarelma'], rtol=1e-12)
+        np.testing.assert_allclose(labels['xSaarelma'], labels['rSaarelma']-table['rSaarelmaSep'])
+        self.assertEqual(labels['xSaarelma'][0, 2], 0)
+        self.assertTrue(np.isnan(labels['drSaarelmaDx'][0, 2]))
+        self.assertAlmostEqual(lookup_flux_surface_labels(g, 0)['x'], -.5)
+        # Metrics remain interior-only even though the flux-label endpoint exists.
+        self.assertEqual(lookup_flux_surface_geometry(g, 2.5, 0)['iErr'], 1)
+        # An unavailable edge must not silently normalize to the final sample.
+        table.update(phiTorSep=np.nan, rTorSep=np.nan, rSaarelmaSep=np.nan,
+                     separatrixIErr=1, separatrixErrorId='SeparatrixNotConverged')
+        interior = lookup_flux_surface_labels(g, .6)
+        self.assertEqual(interior['iErr'], 0)
+        self.assertTrue(np.isnan(interior['rhoTor']))
+        self.assertEqual(lookup_flux_surface_labels(g, 1)['errorId'], 'SeparatrixNotConverged')
 
     def test_close_contours_and_version_upgrade(self):
         from EFITutils import _point_inside_flux_contour
@@ -261,7 +290,7 @@ class FluxSurfaceGeometryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'rebuild'):
             lookup_flux_surface_labels(g, p)
         postprocess_gfile_geometry(g, refinement=4, psi_n_levels=levels)
-        self.assertEqual(g['fluxSurfaceGeometry']['version'], 2)
+        self.assertEqual(g['fluxSurfaceGeometry']['version'], 3)
 
     def test_call_wide_validation(self):
         g = make_elliptical_gfile()

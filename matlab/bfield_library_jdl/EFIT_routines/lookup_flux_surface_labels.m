@@ -9,10 +9,42 @@ function Labels = lookup_flux_surface_labels(g,psiN)
 % drTorDx, drSaarelmaDx, b0Reference, r0Reference, toroidalFieldSign,
 % zOMP, the coordinate-definition strings, iErr and errorId.
 % phiTor is a positive flux magnitude in Wb; x and the radii are in m.
-% Queries must lie strictly inside the sampled table interval. The axis,
-% separatrix and unsampled regions are not extrapolated. iErr = 1 marks
-% unavailable labels, with InvalidPoint, OutsideTable or InvalidInterpolation.
+% Interior queries must lie strictly inside the sampled table interval.
+% Exact psiN=0 and 1 also return endpoint labels, with derivatives NaN.
+% At the axis x is defined only if zOMP=zmaxis. Unsampled interior gaps
+% remain unavailable. rhoTor/rhoSaarelma normalize to rTorSep/rSaarelmaSep;
+% xTor/xSaarelma subtract those radii. Check separatrixIErr before using
+% normalization or shifts, even when iErr=0 for the interior geometry.
 
 Geo = lookup_flux_surface_table(g,psiN);
+Table = g.fluxSurfaceGeometry;
+for iPoint = 1:numel(Geo)
+    if psiN(iPoint) == 0
+        Geo(iPoint).phiTor = 0;
+        Geo(iPoint).rTor = 0;
+        Geo(iPoint).rSaarelma = 0;
+        Geo(iPoint).iErr = 0;
+        Geo(iPoint).errorId = '';
+        if Table.zOMP == g.zmaxis
+            Axis = compute_flux_surface_geometry(g,g.rmaxis,g.zmaxis,Table.refinement,Table.zOMP);
+            Geo(iPoint).x = Axis.x;
+        end
+    elseif psiN(iPoint) == 1
+        if Table.separatrixIErr == 0
+            Geo(iPoint).phiTor = Table.phiTorSep;
+            Geo(iPoint).rTor = Table.rTorSep;
+            Geo(iPoint).rSaarelma = Table.rSaarelmaSep;
+            Geo(iPoint).x = 0;
+            Geo(iPoint).iErr = 0;
+            Geo(iPoint).errorId = '';
+        else
+            Geo(iPoint).errorId = Table.separatrixErrorId;
+        end
+    end
+    Geo(iPoint).rhoTor = Geo(iPoint).rTor/Table.rTorSep;
+    Geo(iPoint).rhoSaarelma = Geo(iPoint).rSaarelma/Table.rSaarelmaSep;
+    Geo(iPoint).xTor = Geo(iPoint).rTor-Table.rTorSep;
+    Geo(iPoint).xSaarelma = Geo(iPoint).rSaarelma-Table.rSaarelmaSep;
+end
 Labels = select_flux_surface_labels(Geo);
 end

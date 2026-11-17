@@ -89,6 +89,10 @@ for iQuery = 1:numel(iValid)
     Geo(iPoint).gradRSaarelmaSqAvg = gradRSaarelmaSqAvg;
     Geo(iPoint).transportMetricRTor = transportMetricRTor;
     Geo(iPoint).transportMetricRSaarelma = transportMetricRSaarelma;
+    Geo(iPoint).rhoTor = rTor/Table.rTorSep;
+    Geo(iPoint).rhoSaarelma = rSaarelma/Table.rSaarelmaSep;
+    Geo(iPoint).xTor = rTor-Table.rTorSep;
+    Geo(iPoint).xSaarelma = rSaarelma-Table.rSaarelmaSep;
     Geo(iPoint).iErr = 0;
     Geo(iPoint).errorId = '';
 end
@@ -117,8 +121,8 @@ if ~isstruct(g) || ~isscalar(g) || ~isfield(g,'fluxSurfaceGeometry')
 end
 Table = g.fluxSurfaceGeometry;
 sampleFields = {'x','areaRZ','volume','dVdx','gradXSqAvg','dpsiNdx','transportMetric','centroidR','phiTor','rTor','rSaarelma','dPhiTorDpsiN','drTorDx','drSaarelmaDx','dVdrTor','dVdrSaarelma','gradRTorSqAvg','gradRSaarelmaSqAvg','transportMetricRTor','transportMetricRSaarelma'};
-metadataFields = {'version','Source','psiN','contourR','contourZ','refinement','zOMP','xDefinition','b0Reference','r0Reference','toroidalFieldSign','phiTorDefinition','rTorDefinition','rSaarelmaDefinition'};
-if ~isstruct(Table) || ~isscalar(Table) || ~all(isfield(Table,[sampleFields,metadataFields])) || ~isequal(Table.version,2)
+metadataFields = {'phiTorSep','rTorSep','rSaarelmaSep','separatrixRelativeChange','separatrixRefinement','separatrixIErr','separatrixErrorId','rhoTor','rhoSaarelma','xTor','xSaarelma','version','Source','psiN','contourR','contourZ','refinement','zOMP','xDefinition','b0Reference','r0Reference','toroidalFieldSign','phiTorDefinition','rTorDefinition','rSaarelmaDefinition'};
+if ~isstruct(Table) || ~isscalar(Table) || ~all(isfield(Table,[sampleFields,metadataFields])) || ~isequal(Table.version,3)
     error('lookup_flux_surface_geometry:InvalidTable','Rebuild the geometry table with postprocess_gfile_geometry')
 end
 if ~isnumeric(Table.psiN) || ~isreal(Table.psiN) || ~isvector(Table.psiN) || numel(Table.psiN) < 2 || any(~isfinite(Table.psiN(:))) || any(diff(Table.psiN(:)) <= 0) || any(Table.psiN(:) <= 0 | Table.psiN(:) >= 1)
@@ -139,6 +143,9 @@ if any(Table.dVdx <= 0 | Table.dpsiNdx <= 0 | Table.transportMetric <= 0 | Table
 end
 if ~iscell(Table.contourR) || ~iscell(Table.contourZ) || numel(Table.contourR) ~= nSamples || numel(Table.contourZ) ~= nSamples || ~isscalar(Table.b0Reference) || ~isfinite(Table.b0Reference) || Table.b0Reference <= 0 || ~isscalar(Table.r0Reference) || ~isfinite(Table.r0Reference) || Table.r0Reference <= 0
     error('lookup_flux_surface_geometry:InvalidTable','The cached contours or reference field are incomplete')
+end
+if ~isscalar(Table.separatrixIErr) || ~ismember(Table.separatrixIErr,[0,1]) || (Table.separatrixIErr == 0 && any(~isfinite([Table.phiTorSep,Table.rTorSep,Table.rSaarelmaSep]) | [Table.phiTorSep,Table.rTorSep,Table.rSaarelmaSep] <= 0))
+    error('lookup_flux_surface_geometry:InvalidTable','Invalid separatrix normalization or status')
 end
 sourceFields = {'psirz','ssimag','ssibry','rmaxis','zmaxis','r','z','ip_sign','pn','fpol','rzero','bcentr'};
 if ~isstruct(Table.Source) || ~isscalar(Table.Source) || ~all(isfield(Table.Source,sourceFields)) || ~all(isfield(g,sourceFields))
@@ -174,4 +181,12 @@ Geo.toroidalFieldSign = Table.toroidalFieldSign;
 Geo.phiTorDefinition = Table.phiTorDefinition;
 Geo.rTorDefinition = Table.rTorDefinition;
 Geo.rSaarelmaDefinition = Table.rSaarelmaDefinition;
+Geo.rhoTor = NaN;
+Geo.rhoSaarelma = NaN;
+Geo.xTor = NaN;
+Geo.xSaarelma = NaN;
+fields = {'phiTorSep','rTorSep','rSaarelmaSep','separatrixRelativeChange','separatrixRefinement','separatrixIErr','separatrixErrorId'};
+for iField = 1:numel(fields)
+    Geo.(fields{iField}) = Table.(fields{iField});
+end
 end

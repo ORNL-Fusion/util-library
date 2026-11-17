@@ -11,8 +11,11 @@ function g = postprocess_gfile_geometry(g,makePlots,refinement,psiNLevels)
 % volume derivatives, squared-gradient averages and transport products
 % for both radii. The original x fields always use the OMP coordinate.
 % b0Reference is the vacuum toroidal field magnitude at r0Reference=g.rmaxis.
-% These are interior-surface quantities; no separatrix radius is inferred
-% from the final table entry. Area quadrature includes the whole core.
+% phiTorSep, rTorSep and rSaarelmaSep come from independently converged
+% whole-core area limits in compute_flux_surface_endpoints. Check
+% separatrixIErr before using rhoTor/rhoSaarelma (radius/edge radius) or
+% xTor/xSaarelma (radius minus edge radius). The original x remains OMP.
+% Geometry metrics use interior surfaces; endpoint metrics are not inferred.
 
 if nargin < 2 || isempty(makePlots)
     makePlots = false;
@@ -81,7 +84,7 @@ end
 % Keep contour polygons for the core-branch check during fast lookup.
 % The product V'*<|grad x|^2> is useful directly in transport equations.
 Table = struct();
-Table.version = 2;
+Table.version = 3;
 Table.Source = geometry_source(g);
 Table.requestedRefinement = refinement;
 Table.requestedPsiNLevels = psiNLevels;
@@ -121,6 +124,26 @@ Table.zOMP = 0;
 Table.xDefinition = 'R_out(psiN,Z=0) - R_out(1,Z=0)';
 Table.nRequested = numel(psiNLevels);
 Table.nComputed = numel(Table.psiN);
+% Endpoint normalization is independent of the user-selected table levels.
+Endpoints = compute_flux_surface_endpoints(g,Table.refinement);
+edgeFields = {'phiTorSep','rTorSep','rSaarelmaSep','separatrixRelativeChange','separatrixRefinement','separatrixIErr','separatrixErrorId'};
+for iField = 1:numel(edgeFields)
+    Table.(edgeFields{iField}) = Endpoints.(edgeFields{iField});
+end
+if Table.separatrixIErr == 0 && (Table.rTorSep <= Table.rTor(end) || Table.rSaarelmaSep <= Table.rSaarelma(end))
+    Table.phiTorSep = NaN;
+    Table.rTorSep = NaN;
+    Table.rSaarelmaSep = NaN;
+    Table.separatrixIErr = 1;
+    Table.separatrixErrorId = 'SeparatrixInsideTable';
+end
+Table.rhoTor = Table.rTor/Table.rTorSep;
+Table.rhoSaarelma = Table.rSaarelma/Table.rSaarelmaSep;
+Table.xTor = Table.rTor-Table.rTorSep;
+Table.xSaarelma = Table.rSaarelma-Table.rSaarelmaSep;
+if Table.separatrixIErr ~= 0
+    warning('postprocess_gfile_geometry:NoSeparatrixLabels','Separatrix normalization unavailable: %s',Table.separatrixErrorId)
+end
 g.fluxSurfaceGeometry = Table;
 save_geometry_to_gfile_cache(g);
 
@@ -133,10 +156,10 @@ function valid = valid_geometry_table(Table,g,refinement,psiNLevels)
 % The source snapshot includes both flux geometry and toroidal-field data.
 % The optional geometry-table version is independent of the raw gfile cache.
 fields = {'version','Source','requestedRefinement','requestedPsiNLevels','psiN','x','areaRZ','volume','dVdx','gradXSqAvg','dpsiNdx','transportMetric','centroidR','contourR','contourZ','zSampling','zOMP'};
-radiusFields = {'phiTor','rTor','rSaarelma','dPhiTorDpsiN','drTorDx','drSaarelmaDx','dVdrTor','dVdrSaarelma','gradRTorSqAvg','gradRSaarelmaSqAvg','transportMetricRTor','transportMetricRSaarelma','b0Reference','r0Reference','toroidalFieldSign','phiTorDefinition','rTorDefinition','rSaarelmaDefinition'};
+radiusFields = {'phiTorSep','rTorSep','rSaarelmaSep','separatrixRelativeChange','separatrixRefinement','separatrixIErr','separatrixErrorId','rhoTor','rhoSaarelma','xTor','xSaarelma','phiTor','rTor','rSaarelma','dPhiTorDpsiN','drTorDx','drSaarelmaDx','dVdrTor','dVdrSaarelma','gradRTorSqAvg','gradRSaarelmaSqAvg','transportMetricRTor','transportMetricRSaarelma','b0Reference','r0Reference','toroidalFieldSign','phiTorDefinition','rTorDefinition','rSaarelmaDefinition'};
 valid = isstruct(Table) && all(isfield(Table,[fields,radiusFields]));
 if valid
-    valid = Table.version == 2 && isequaln(Table.Source,geometry_source(g)) && isequaln(Table.requestedRefinement,refinement) && isequaln(Table.requestedPsiNLevels,psiNLevels) && Table.zSampling == g.zmaxis && Table.zOMP == 0 && numel(Table.psiN) >= 2 && all(diff(Table.psiN) > 0);
+    valid = Table.version == 3 && isequaln(Table.Source,geometry_source(g)) && isequaln(Table.requestedRefinement,refinement) && isequaln(Table.requestedPsiNLevels,psiNLevels) && Table.zSampling == g.zmaxis && Table.zOMP == 0 && numel(Table.psiN) >= 2 && all(diff(Table.psiN) > 0);
 end
 end
 

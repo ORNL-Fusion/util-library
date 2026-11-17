@@ -93,9 +93,23 @@ assert(abs((Plus.rTor-Minus.rTor)/(Plus.x-Minus.x)/Center.drTorDx-1) < 1e-7);
 assert(abs((Plus.rSaarelma-Minus.rSaarelma)/(Plus.x-Minus.x)/Center.drSaarelmaDx-1) < 1e-7);
 assert(abs((Plus.phiTor-Minus.phiTor)/(2*step)/Center.dPhiTorDpsiN-1) < 1e-7);
 Rejected = lookup_flux_surface_labels(gTable,[NaN,0,1,gTable.fluxSurfaceGeometry.psiN([1,end])]);
-assert(all([Rejected.iErr] == 1) && all(isnan([Rejected.rTor])));
+assert(isequal([Rejected.iErr],[1,0,0,1,1]) && all(isnan([Rejected([1,4,5]).rTor])));
 assert(strcmp(Rejected(1).errorId,'InvalidPoint'));
-assert(all(strcmp({Rejected(2:end).errorId},'OutsideTable')));
+assert(all(strcmp({Rejected(4:end).errorId},'OutsideTable')));
+% Independent edge limits normalize the labels even when the table ends
+% well inside the separatrix. Endpoint derivatives remain unavailable.
+Table = gTable.fluxSurfaceGeometry;
+expectedPhiSep = 2*pi*b/a*(rAxis-sqrt(rAxis^2-a^2));
+assert(Table.separatrixIErr == 0 && Table.separatrixRelativeChange <= 1e-4);
+assert(abs(Table.phiTorSep/expectedPhiSep-1) < 1e-4);
+assert(Table.rTorSep > Table.rTor(end));
+EdgeLabels = lookup_flux_surface_labels(gTable,[0,0.6,1]);
+assert(all([EdgeLabels.iErr] == 0));
+assert(EdgeLabels(1).rhoTor == 0 && EdgeLabels(3).rhoTor == 1);
+assert(EdgeLabels(3).xSaarelma == 0 && isnan(EdgeLabels(3).drSaarelmaDx));
+assert(abs(EdgeLabels(1).x+a) < 1e-8);
+assert(max(abs([EdgeLabels.xSaarelma]-([EdgeLabels.rSaarelma]-Table.rSaarelmaSep))) < 1e-12);
+
 gChanged = gTable;
 gChanged.bcentr = 1.01*gChanged.bcentr;
 assert_error(@() lookup_flux_surface_labels(gChanged,0.6),'lookup_flux_surface_geometry:StaleTable');
