@@ -44,8 +44,8 @@ Phi_bry = g.ip_sign*trapz(g.qpsi)*2*pi*(g.ssibry-g.ssimag)/(g.mw-1)
 rho = sqrt(Phi/Phi_bry)
 
 
-Reff = sqrt(abs(2*pi*Phi/(pi*g.bcentr)))
-Reff_bry = sqrt(abs(2*pi*Phi_bry/(pi*g.bcentr)))
+Reff = sqrt(abs(Phi/(pi*g.bcentr)))
+Reff_bry = sqrt(abs(Phi_bry/(pi*g.bcentr)))
 rhofromReff = Reff/Reff_bry
 
 % q = dPhi/dPsi

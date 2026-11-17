@@ -1,8 +1,8 @@
 function [rho,Phi,Reff,Reff_bry] = calc_rho(g,R1,Z1)
 %  [rho,Phi,Reff,Reff_bry] = calc_rho(g,R1,Z1)
-% Rho is sqrt toroidal flux
-% Phi is toroidal flux
-% Reff is R from Bo*pi*R^2 = 2*pi*Phi
+% rho is sqrt normalized toroidal flux
+% Phi is total toroidal flux (Wb)
+% Reff satisfies pi*Reff^2 = abs(Phi/g.bcentr)
 
 % See test_toroidal_flux 
 
@@ -16,12 +16,12 @@ if any(psiN >= 1)
     end
 end
 
-% Integrate q = Phi'/Psi' and interpolate at psiN
+% Integrate q using poloidal flux per radian; 2*pi gives total toroidal flux.
 PhiEval = g.ip_sign*cumtrapz(g.qpsi)*2*pi*(g.ssibry-g.ssimag)/(g.mw-1);
 Phi = interp1(g.pn,PhiEval,psiN);
 rho = sqrt(Phi/PhiEval(end));
-Reff = sqrt(abs(2*pi*Phi/(pi*g.bcentr)));
-Reff_bry = sqrt(abs(2*pi*PhiEval(end)/(pi*g.bcentr)));
+Reff = sqrt(abs(Phi/(pi*g.bcentr)));
+Reff_bry = sqrt(abs(PhiEval(end)/(pi*g.bcentr)));
 
 
 
